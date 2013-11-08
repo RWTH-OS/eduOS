@@ -25,6 +25,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @author Stefan Lankes
+ * @file include/eduos/stdio.h
+ * @brief Stringstream related functions. Mainly printf-stuff.
+ */
+
 #ifndef __STDIO_H__
 #define __STDIO_H__
 
@@ -36,27 +42,27 @@
 extern "C" {
 #endif
 
-/*
+/**
  * Works like the ANSI C function puts 
  */
 int kputs(const char *);
 
-/*
- * Works like the ANSI c function putchar
+/**
+ * Works like the ANSI C function putchar
  */
 int kputchar(int);
 
-/*
+/**
  * Works like the ANSI C function printf
  */
 int kprintf(const char*, ...);
 
-/*
+/**
  * Initialize the I/O functions 
  */
 int koutput_init(void);
 
-/*
+/**
  * Scaled down version of printf(3)
  */
 int kvprintf(char const *fmt, void (*func) (int, void *), void *arg, int radix, va_list ap);

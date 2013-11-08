@@ -25,15 +25,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @author Stefan Lankes
+ * @file arch/x86/include/asm/multiboot.h
+ * @brief Structures related to the Multiboot interface
+ *
+ * eduOS is able to use Multiboot (http://www.gnu.org/software/grub/manual/multiboot/),
+ * which specifies an interface between a boot loader and a operating system.\n
+ * \n
+ * This file contains several structures needed to match the interface.
+ */
+
 #ifndef __ARCH_MULTIBOOT_H__
 #define __ARCH_MULTIBOOT_H__
 
 #include <eduos/stddef.h>
-
-/* 
- * eduOS is able to use Multiboot (http://www.gnu.org/software/grub/manual/multiboot/),
- * which specifies an interface between a boot loader and a operating system
- */
 
 typedef uint16_t multiboot_uint16_t;
 typedef uint32_t multiboot_uint32_t;
@@ -61,20 +67,20 @@ typedef struct multiboot_elf_section_header_table multiboot_elf_section_header_t
 
 struct multiboot_info
 {
-	/* Multiboot info version number */
+	/** Multiboot info version number */
 	multiboot_uint32_t flags;
 
-	/* Available memory from BIOS */
+	/** Available memory from BIOS */
 	multiboot_uint32_t mem_lower;
 	multiboot_uint32_t mem_upper;
 
-	/* "root" partition */
+	/** "root" partition */
 	multiboot_uint32_t boot_device;
 
-	/* Kernel command line */
+	/** Kernel command line */
 	multiboot_uint32_t cmdline;
 
-	/* Boot-Module list */
+	/** Boot-Module list */
 	multiboot_uint32_t mods_count;
 	multiboot_uint32_t mods_addr;
 
@@ -84,24 +90,24 @@ struct multiboot_info
 		multiboot_elf_section_header_table_t elf_sec;
 	} u;
 
-	/* Memory Mapping buffer */
+	/** Memory Mapping buffer */
 	multiboot_uint32_t mmap_length;
 	multiboot_uint32_t mmap_addr;
 
-	/* Drive Info buffer */
+	/** Drive Info buffer */
 	multiboot_uint32_t drives_length;
 	multiboot_uint32_t drives_addr;
 
-	/* ROM configuration table */
+	/** ROM configuration table */
 	multiboot_uint32_t config_table;
 
-	/* Boot Loader Name */
+	/** Boot Loader Name */
 	multiboot_uint32_t boot_loader_name;
 
-	/* APM table */
+	/** APM table */
 	multiboot_uint32_t apm_table;
 
-	/* Video */
+	/** Video */
 	multiboot_uint32_t vbe_control_info;
 	multiboot_uint32_t vbe_mode_info;
 	multiboot_uint16_t vbe_mode;
@@ -125,14 +131,14 @@ typedef struct multiboot_mmap_entry multiboot_memory_map_t;
 
 struct multiboot_mod_list
 {
-	/* the memory used goes from bytes ’mod start’ to ’mod end-1’ inclusive */
+	/** the memory used goes from bytes ’mod start’ to ’mod end-1’ inclusive */
 	multiboot_uint32_t mod_start;
 	multiboot_uint32_t mod_end;
 
-	/* Module command line */
+	/** Module command line */
 	multiboot_uint32_t cmdline;
 
-	/* padding to take it to 16 bytes (must be zero) */
+	/** padding to take it to 16 bytes (must be zero) */
 	multiboot_uint32_t pad;
 };
 typedef struct multiboot_mod_list multiboot_module_t;

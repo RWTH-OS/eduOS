@@ -25,6 +25,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/** 
+ * @author Stefan Lankes
+ * @file arch/x86/include/asm/processor.h
+ * @brief CPU-specific functions
+ *
+ * This file contains structures and functions related to CPU-specific assembler commands.
+ */
+
 #ifndef __ARCH_PROCESSOR_H__
 #define __ARCH_PROCESSOR_H__
 
@@ -34,6 +42,13 @@
 extern "C" {
 #endif
 
+/** @brief Read out time stamp counter
+ *
+ * The rdtsc asm command puts a 64 bit time stamp value
+ * into EDX:EAX.
+ *
+ * @return The 64 bit time stamp value
+ */
 inline static uint64_t rdtsc(void)
 {
 	uint64_t x;
@@ -41,36 +56,38 @@ inline static uint64_t rdtsc(void)
 	return x;
 }
 
+/** @brief Flush cache
+ *
+ * The wbinvd asm instruction which stands for "Write back and invalidate"
+ * is used here
+ */
 inline static void flush_cache(void) {
 	asm volatile ("wbinvd" : : : "memory");
 }
 
+/** @brief Invalidate cache
+ *
+ * The invd asm instruction which invalidates cache without writing back
+ * is used here
+ */
 inline static void invalid_cache(void) {
 	asm volatile ("invd");
 }
 
-inline static int get_return_value(void) {
-	int ret;
-
-	asm volatile ("movl %%eax, %0" : "=r"(ret));
-
-	return ret;
-}
-
-/* Force strict CPU ordering */
-#ifdef CONFIG_ROCKCREEK
-inline static void mb(void) { asm volatile ("lock; addl $0,0(%%esp)" ::: "memory", "cc"); }
-inline static void rmb(void) { asm volatile ("lock; addl $0,0(%%esp)" ::: "memory", "cc"); }
-inline static void wmb(void) { asm volatile ("lock; addl $0,0(%%esp)" ::: "memory", "cc"); }
-#else
+/// Force strict CPU ordering, serializes load and store operations.
 inline static void mb(void) { asm volatile("mfence" ::: "memory"); }
+/// Force strict CPU ordering, serializes load operations.
 inline static void rmb(void) { asm volatile("lfence" ::: "memory"); }
+/// Force strict CPU ordering, serializes store operations.
 inline static void wmb(void) { asm volatile("sfence" ::: "memory"); }
-#endif
 
+/// A one-instruction-do-nothing
 #define NOP1	asm  volatile ("nop")
+/// A two-instruction-do-nothing
 #define NOP2	asm  volatile ("nop;nop")
+/// A four-instruction-do-nothing
 #define NOP4	asm  volatile ("nop;nop;nop;nop")
+/// A eight-instruction-do-nothing
 #define NOP8	asm  volatile ("nop;nop;nop;nop;nop;nop;nop;nop")
 
 #ifdef __cplusplus

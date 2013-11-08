@@ -25,6 +25,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @author Stefan Lankes
+ * @file include/eduos/stdlib.h
+ * @brief Kernel space malloc and free functions and conversion functions
+ *
+ * This file contains some memory alloc and free calls for the kernel
+ * and conversion functions.
+ */
+
 #ifndef __STDLIB_H__
 #define __STDLIB_H__
 
@@ -35,10 +44,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void NORETURN abort(void);
-void* kmalloc(size_t);
-void kfree(void*, size_t);
 
 #ifdef __cplusplus
 }

@@ -25,6 +25,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/** 
+ * @author Stefan Lankes
+ * @file arch/x86/include/asm/vga.h
+ * @brief VGA output related code
+ */
+
 #ifndef __ARCH_VGA_H__
 #define __ARCH_VGA_H__
 
@@ -34,9 +40,24 @@
 extern "C" {
 #endif
 
+/** @brief Initialize VGA output and clear the screen */
 void vga_init(void);
+
+/** @brief Simple string output on screen.
+ *
+ * If you want a new line you will have to "\\n".
+ *
+ * @return Length of output in bytes
+ */
 int vga_puts(const char *text);
+
+/** @brief Simple character output on screen.
+ *
+ * @return The original input character casted to int 
+ */
 int vga_putchar(unsigned char c);
+
+/** @brief Clear the screen */
 void vga_cls(void);
 
 #ifdef __cplusplus
