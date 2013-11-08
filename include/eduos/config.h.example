@@ -42,6 +42,12 @@ extern "C" {
 #define NORETURN 		__attribute__((noreturn))
 #define STDCALL 		__attribute__((stdcall))
 
+#define HAVE_ARCH_MEMSET
+#define HAVE_ARCH_MEMCPY
+#define HAVE_ARCH_STRLEN
+#define HAVE_ARCH_STRCPY
+#define HAVE_ARCH_STRNCPY
+
 #ifdef __cplusplus
 }
 #endif

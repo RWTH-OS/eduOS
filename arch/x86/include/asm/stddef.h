@@ -25,6 +25,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @author Stefan Lankes
+ * @file arch/x86/include/asm/stddef.h
+ * @brief Standard datatypes
+ *
+ * This file contains typedefs for standard datatypes for numerical and character values.
+ */
+
 #ifndef __ARCH_STDDEF_H__
 #define __ARCH_STDDEF_H__
 
@@ -32,21 +40,47 @@
 extern "C" {
 #endif
 
+#if __SIZEOF_POINTER__ == 4
+#define CONFIG_X86_32
+/// A popular type for addresses
 typedef unsigned long size_t;
+/// Pointer differences
 typedef long ptrdiff_t;
 #ifdef __KERNEL__
 typedef long ssize_t;
 typedef long off_t;
 #endif
+#elif __SIZEOF_POINTER__ == 8
+#define CONFIG_X86_64
+// A popular type for addresses
+typedef unsigned long long size_t;
+/// Pointer differences
+typedef long long ptrdiff_t;
+#ifdef __KERNEL__
+typedef long long ssize_t;
+typedef long long off_t;
+#endif
+#else
+#error unsupported architecture
+#endif
 
+/// Unsigned 64 bit integer
 typedef unsigned long long uint64_t;
+/// Signed 64 bit integer
 typedef long long int64_t;
+/// Unsigned 32 bit integer
 typedef unsigned int uint32_t;
+/// Signed 32 bit integer
 typedef int int32_t;
+/// Unsigned 16 bit integer
 typedef unsigned short uint16_t;
+/// Signed 16 bit integer
 typedef short int16_t;
+/// Unsigned 8 bit integer (/char)
 typedef unsigned char uint8_t;
+/// Signed 8 bit integer (/char)
 typedef char int8_t;
+/// 16 bit wide char type
 typedef unsigned short wchar_t;
 
 #ifndef _WINT_T
@@ -54,16 +88,89 @@ typedef unsigned short wchar_t;
 typedef unsigned int wint_t;
 #endif
 
-/* This defines what the stack looks like after an ISR was running */
+/** @brief This defines what the stack looks like after an ISR was called.
+ *
+ * All the interrupt handler routines use this type for their only parameter.
+ * Note: Our kernel doesn't use the GS and FS registers.
+ */
 struct state {
-	/* 
-	 * We switched from software- to hardwaree-based multitasking
-	 * Therefore, we do not longer save the registers by hand.
-         */
-	/*unsigned int gs, fs, es, ds; */				/* pushed the segs last */
-	unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;		/* pushed by 'pusha' */
-	unsigned int int_no, err_code;					/* our 'push byte #' and ecodes do this */
-	/*unsigned int eip, cs, eflags, useresp, ss;*/			/* pushed by the processor automatically */
+#ifdef CONFIG_X86_32
+	// ds register
+	uint32_t ds;
+	// es register
+	uint32_t es;
+	/// EDI register
+	uint32_t edi;
+	/// ESI register
+	uint32_t esi;
+	/// EBP register
+	uint32_t ebp;
+	/// ESP register
+	uint32_t esp;
+	/// EBX register 
+	uint32_t ebx;
+	/// EDX register
+	uint32_t edx;
+	/// ECX register
+	uint32_t ecx;
+	/// EAX register
+	uint32_t eax;		/* pushed by 'pusha' */
+
+	/// Interrupt number
+	uint32_t int_no;
+	
+	// pushed by the processor automatically
+	uint32_t error;
+	uint32_t eip;
+	uint32_t cs;
+	uint32_t eflags;
+	uint32_t useresp;
+	uint32_t ss;
+#elif defined(CONFIG_X86_64)
+	/// R15 register
+	uint64_t r15;
+	/// R14 register
+	uint64_t r14;
+	/// R13 register
+	uint64_t r13;
+	/// R12 register
+	uint64_t r12;
+	/// R11 register
+	uint64_t r11;
+	/// R10 register
+	uint64_t r10;
+	/// R9 register
+	uint64_t r9;
+	/// R8 register
+	uint64_t r8;
+	/// RDI register
+	uint64_t rdi;
+	/// RSI register
+	uint64_t rsi;
+	/// RBP register
+	uint64_t rbp;
+	/// (pseudo) RSP register
+	uint64_t rsp;
+	/// RBX register
+	uint64_t rbx;
+	/// RDX register
+	uint64_t rdx;
+	/// RCX register
+	uint64_t rcx;
+	/// RAX register
+	uint64_t rax;
+
+	/// Interrupt number
+	uint64_t int_no;
+
+	// pushed by the processor automatically
+	uint64_t error;
+	uint64_t rip;
+	uint64_t cs;
+	uint64_t rflags;
+	uint64_t userrsp;
+	uint64_t ss;
+#endif
 };
 
 #ifdef __cplusplus
