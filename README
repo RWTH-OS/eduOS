@@ -21,7 +21,7 @@ Start eduOS via qemu
 
 Boot eduOS via grub
 ===================
-1.) Copy eduos.elf into the /boot directory.
+1.) Copy eduos.elf as eduos.bin into the directory /boot. (cp eduos.elf /boot/eduos.bin)
 2.) Create a boot entry in the grub menu. This depends on the version of grub, which is used by 
     the installed Linux system. For instance, we added following lines to /boot/grub/grub.cfg:
 
@@ -30,6 +30,6 @@ Boot eduOS via grub
    # menu entries you want to add after this comment.  Be careful not to change
    # the 'exec tail' line above.
    menuentry "Boot eduOS!" {
-          multiboot       /boot/eduos.elf
+          multiboot       /boot/eduos.bin
           boot
    }
