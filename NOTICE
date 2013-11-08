@@ -1,0 +1,23 @@
+
+   eduOS
+   Copyright 2010-2013, Stefan Lankes, RWTH Aachen University
+
+The learning operating system eduOS is derived from following tutorials
+and software distributions.
+
+=========================================================================
+= bkerndev - Bran's Kernel Development Tutorial                         =
+=========================================================================
+The first steps to realize eduOS based on Bran's Kernel Development 
+Tutorial (http://www.osdever.net/bkerndev/index.php). In particular, the
+initialization of GDT, IDT and the interrupt handlers are derived from
+this tutorial.
+
+=========================================================================
+= kprintf, umoddu3, udivdi3, qdivrem, divdi3, lshrdi3, moddi3, strtol,  =
+= strtoul, ucmpdi2                                                      =
+=========================================================================
+This software contains code derived from material licensed
+to the University of California by American Telephone and Telegraph
+Co. or Unix System Laboratories, Inc. and are reproduced herein with
+the permission of UNIX System Laboratories, Inc.

@@ -1,0 +1,28 @@
+Requirements of eduOS
+=====================
+
+1.) Currently, eduOS supports only x86-based architectures.
+2.) Following command line tools have to be installed:
+    make, gcc, binutil, git, qemu, nams, gdb
+3.) The test PC has to use grub as bootloader.
+
+Building eduOS
+==============
+
+1.) Copy Makefile.example to Makefile and edit this Makefile to meet your individual convenience.
+2.) Copy include/eduos/config.h.example to include/eduos/config.h and edit this config file to 
+    meet your individual convenience.
+3.) Create the dependencies of eduOS with "make depend".
+4.) Build kernel with "make"
+5.) Copy eduos.bin into the /boot directory.
+6.) Create a boot entry in the grub menu. This depends on the version of grub, which is used by 
+    the installed Linux system. For instance, we added following lines to /boot/grub/grub.cfg:
+
+   ### BEGIN /etc/grub.d/40_custom ###
+   # This file provides an easy way to add custom menu entries.  Simply type the
+   # menu entries you want to add after this comment.  Be careful not to change
+   # the 'exec tail' line above.
+   menuentry "Boot eduOS!" {
+          multiboot       /boot/eduos.bin
+          boot
+   }
