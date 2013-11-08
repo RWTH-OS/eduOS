@@ -67,6 +67,10 @@ qemu: $(NAME).elf
 qemu-dbg: $(NAME).elf
 	qemu-system-i386 -monitor stdio -s -S -smp 2 -net nic,model=rtl8139 -net user,hostfwd=tcp::12345-:7 -net dump -kernel $(NAME).elf
 
+doc:
+	@doxygen
+	@echo Create documentation...
+
 %.o : %.c
 	@echo [CC] $@
 	$Q$(CC_FOR_TARGET) -c -D__KERNEL__ $(CFLAGS) -o $@ $<
