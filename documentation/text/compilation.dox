@@ -1,0 +1,37 @@
+/**
+ * @file compilation.dox
+ * @page compilation Compiling and Running eduOS
+ *
+ * @section toc Table of Contents
+ * - @ref checkout
+ * - @ref compiling
+ * - @ref runqemu
+ *
+ * @section checkout Checking out eduOS online
+ * 
+ * The eduOS project is hosted in a Git repository. To check it out, just type:
+ *
+ * \verbatim$ git clone https://github.com/stlankes/eduOS.git  \endverbatim
+ *
+ * @section compiling Compiling eduOS
+ *
+ * To compile eduOS, you will need a proper Makefile and configuration. To use the example files, just do the following:
+ *
+ * \verbatim 
+$ cd eduOS
+$ cp Makefile.example Makefile
+$ (cd include/eduos; cp config.h.example config.h) \endverbatim
+ * 
+ * The standard configuration works on usual PC hardware configurations as well as in emulators.
+ *
+ * Compiler settings can be edited in the Makefile, while the kernel configuration can be found in the just copied configuration file.
+ *
+ * @section runqemu Running eduOS in Qemu
+ *
+ * There is a Make-target for running eduOS in Qemu:
+ * \verbatim$ make qemu \endverbatim
+ *
+ * The emulator is then started with the following parameters:
+ * \verbatim$ qemu -monitor stdio -smp 2 -net nic,model=rtl8139 -net user,hostfwd=tcp::12345-:7 -net dump -kernel eduos.elf \endverbatim
+ *
+ */
