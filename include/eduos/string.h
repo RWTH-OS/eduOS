@@ -30,7 +30,6 @@
 
 #include <eduos/stddef.h>
 #include <asm/string.h>
-#include <asm/io.h>
 
 #ifdef __cplusplus
 extern "C" {
