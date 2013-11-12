@@ -94,7 +94,7 @@ inline static void outportw(unsigned short _port, unsigned short _data) {
 /** @brief Write a double word (4 bytes) to an IO port
  *
  * @param _port The port you want to write to
- * @
+ */
 inline static void outportl(unsigned short _port, unsigned int _data)
 {
 	 asm volatile("outl %1, %0"::"dN"(_port), "a"(_data));
