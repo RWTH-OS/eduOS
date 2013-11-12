@@ -8,7 +8,6 @@ SECTIONS
   kernel_start = phys;
   .mboot phys : AT(ADDR(.mboot)) {
     *(.mboot)
-    *(.kmsg)
   }
   .text ALIGN(4096) : AT(ADDR(.text)) {
     *(.text)
