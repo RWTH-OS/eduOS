@@ -37,32 +37,12 @@ extern "C" {
 
 #define NULL 		((void*) 0)
 
+/*
+ * macros, which are later used to determine the core id
+ * and their "private" data
+ */
 #define per_core(name)	name
 #define CORE_ID		0
-
-/** @brief String to long
- *
- * @return Long value of the parsed numerical string
- */
-long strtol(const char* str, char** endptr, int base);
-
-/** @brief String to unsigned long
- *
- * @return Unsigned long value of the parsed numerical string
- */
-unsigned long strtoul(const char* nptr, char** endptr, int base);
-
-/** @brief ASCII to integer
- *
- * Convenience function using strtol().
- *
- * @return Integer value of the parsed numerical string
- */
-static inline int atoi(const char *str)
-{
-	return (int)strtol(str, (char **)NULL, 10);
-}
-
 
 #ifdef __cplusplus
 }
