@@ -47,11 +47,13 @@ Boot eduOS via grub
 2. Create a boot entry in the grub menu. This depends on the version of grub, which is used by 
    the installed Linux system. For instance, we added following lines to /boot/grub/grub.cfg:
 
-   \#\#\# BEGIN /etc/grub.d/40_custom \#\#\#
-   \# This file provides an easy way to add custom menu entries.  Simply type the
-   \# menu entries you want to add after this comment.  Be careful not to change
-   \# the 'exec tail' line above.
+<pre>
+   ### BEGIN /etc/grub.d/40_custom ###
+   # This file provides an easy way to add custom menu entries.  Simply type the
+   # menu entries you want to add after this comment.  Be careful not to change
+   # the 'exec tail' line above.
    menuentry "Boot eduOS!" {
           multiboot       /boot/eduos.bin
           boot
    }
+</pre>
