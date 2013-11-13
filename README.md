@@ -59,3 +59,8 @@ Boot eduOS via grub
           boot
    }
 </pre>
+
+Usefull Links
+-------------
+1. http://www.gnu.org/software/grub/manual/multiboot/
+2. http://techblog.lankes.org/tutorials/
