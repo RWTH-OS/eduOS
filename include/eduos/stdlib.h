@@ -44,33 +44,6 @@
 extern "C" {
 #endif
 
-/** @brief String to long
- *
- * Convert a string value to a long
- *
- * @return Long value of the parsed numerical string
- */
-long strtol(const char* str, char** endptr, int base);
-
-/** @brief String to unsigned long
- *
- * Convert a string value to a unsigned long
- *
- * @return Unsigned long value of the parsed numerical string
- */
-unsigned long strtoul(const char* nptr, char** endptr, int base);
-
-/** @brief ASCII to integer
- *
- * Convert ASCII string to integer
- *
- * @return Integer value of the parsed numerical string
- */
-static inline int atoi(const char *str)
-{
-	return (int)strtol(str, (char **)NULL, 10);
-}
-
 #ifdef __cplusplus
 }
 #endif
