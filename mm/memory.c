@@ -25,32 +25,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __STDARG_H__
-#define __STDARG_H__
+#include <eduos/stddef.h>
+#include <eduos/stdlib.h>
 
-/**
- * @author Stefan Lankes
- * @file include/eduos/stdarg.h
- * @brief Definition of variable argument lists
- */
+static char stack[MAX_TASKS-1][KERNEL_STACK_SIZE];
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+void* create_stack(tid_t id)
+{
+	// idle task uses stack, which is defined in entry.asm
+	if (BUILTIN_EXPECT(!id, 0))
+		return NULL;
+	// do we have a valid task id?
+	if (BUILTIN_EXPECT(id >= MAX_TASKS, 0))
+		return NULL;
 
-typedef __builtin_va_list va_list;
-
-/// Initialize a variable argument list
-#define va_start        __builtin_va_start
-/// Retrieve next argument 
-#define va_arg          __builtin_va_arg
-/// End using variable argument list 
-#define va_end          __builtin_va_end 
-/// copies the (previously initialized) variable argument list
-#define va_copy         __builtin_va_copy
-
-#ifdef __cplusplus
+	return (void*) stack[id-1];
 }
-#endif
-
-#endif

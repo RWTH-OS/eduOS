@@ -28,6 +28,12 @@
 #ifndef __STRING_H__
 #define __STRING_H__
 
+/**
+ * @author Stefan Lankes
+ * @file include/eduos/string.h
+ * @brief Definition of basic string and memory opeations
+ */
+
 #include <eduos/stddef.h>
 #include <asm/string.h>
 

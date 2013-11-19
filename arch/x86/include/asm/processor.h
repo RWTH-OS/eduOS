@@ -81,6 +81,42 @@ inline static void rmb(void) { asm volatile("lfence" ::: "memory"); }
 /// Force strict CPU ordering, serializes store operations.
 inline static void wmb(void) { asm volatile("sfence" ::: "memory"); }
 
+/** @brief search the first most significant bit
+ *
+ * @param i source operand
+ * @return 
+ * - first bit, which is set in the source operand
+ * - invalid value, if not bit ist set
+ */
+static inline size_t msb(size_t i)
+{
+	size_t ret;
+
+	if (!i)
+		return (sizeof(size_t)*8);
+	asm volatile ("bsr %1, %0" : "=r"(ret) : "r"(i) : "cc");
+
+	return ret;
+}
+
+/** @brief search the least significant bit
+ *
+ * @param i source operand
+ * @return 
+ * - first bit, which is set in the source operand
+ * - invalid value, if not bit ist set
+ */
+static inline size_t lsb(size_t i)
+{
+	size_t ret;
+
+	if (!i)
+		return (sizeof(size_t)*8);
+	asm volatile ("bsf %1, %0" : "=r"(ret) : "r"(i) : "cc");
+
+	return ret;
+}
+
 /// A one-instruction-do-nothing
 #define NOP1	asm  volatile ("nop")
 /// A two-instruction-do-nothing

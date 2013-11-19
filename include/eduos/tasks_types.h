@@ -25,29 +25,77 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __STDARG_H__
-#define __STDARG_H__
-
 /**
  * @author Stefan Lankes
- * @file include/eduos/stdarg.h
- * @brief Definition of variable argument lists
+ * @file include/eduos/tasks_types.h
+ * @brief Task related structure definitions
+ *
+ * This file contains the task_t structure definition 
+ * and task state define constants
  */
+
+#ifndef __TASKS_TYPES_H__
+#define __TASKS_TYPES_H__
+
+#include <eduos/stddef.h>
+#include <asm/tasks_types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef __builtin_va_list va_list;
+#define TASK_INVALID	0
+#define TASK_READY	1
+#define TASK_RUNNING	2
+#define TASK_BLOCKED	3
+#define TASK_FINISHED	4
+#define TASK_IDLE	5
 
-/// Initialize a variable argument list
-#define va_start        __builtin_va_start
-/// Retrieve next argument 
-#define va_arg          __builtin_va_arg
-/// End using variable argument list 
-#define va_end          __builtin_va_end 
-/// copies the (previously initialized) variable argument list
-#define va_copy         __builtin_va_copy
+#define MAX_PRIO	31
+#define REALTIME_PRIO	31
+#define HIGH_PRIO	16
+#define NORMAL_PRIO	8
+#define LOW_PRIO	1
+#define IDLE_PRIO	0
+
+typedef int (*entry_point_t)(void*);
+
+/** @brief Represents a the process control block */
+typedef struct task {
+	/// Task id = position in the task table
+	tid_t			id;
+	/// Task status (INVALID, READY, RUNNING, ...)
+	uint32_t		status;
+	/// copy of the stack pointer before a context switch
+	size_t*			last_stack_pointer;
+	/// start address of the stack 
+	void*			stack;
+	/// Task priority
+	uint8_t			prio;
+	/// next task in the queue
+	struct task*		next;
+	/// previous task in the queue
+	struct task*		prev;
+} task_t;
+
+typedef struct {
+        task_t* first;
+        task_t* last;
+} task_list_t;
+
+/** @brief Represents a queue for all runable tasks */
+typedef struct {
+	/// idle task
+	task_t*		idle __attribute__ ((aligned (CACHE_LINE)));
+        /// previous task
+	task_t*		old_task;
+	/// total number of tasks in the queue
+	uint32_t	nr_tasks;
+	/// indicates the used priority queues
+	uint32_t	prio_bitmap;
+	/// a queue for each priority
+	task_list_t	queue[MAX_PRIO];
+} runqueue_t;
 
 #ifdef __cplusplus
 }

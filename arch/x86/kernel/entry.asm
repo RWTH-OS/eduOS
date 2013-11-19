@@ -82,11 +82,34 @@ cpu_init:
     mov cr4, eax
     ret
 
+extern get_current_stack
+extern finish_task_switch
+
+global switch_context
+ALIGN 4
+switch_context:
+    mov eax, [esp+4]            ; on the stack is already the address to store the old esp
+    pushf                       ; push controll register
+    pusha                       ; push all general purpose registers...
+
+    mov [eax], esp              ; store old esp
+    call get_current_stack      ; get new esp
+    xchg eax, esp
+
+    ; call cleanup code
+    call finish_task_switch
+
+    ; restore context
+    popa
+    popf
+    ret
+
 ; Here is the definition of our stack. Remember that a stack actually grows
 ; downwards, so we declare the size of the data before declaring
 ; the identifier 'default_stack_pointer'
 SECTION .data
     resb 8192               ; This reserves 8KBytes of memory here
+global default_stack_pointer
 default_stack_pointer:
 
 SECTION .note.GNU-stack noalloc noexec nowrite progbits

@@ -28,6 +28,12 @@
 #ifndef __STDDEF_H__
 #define __STDDEF_H__
 
+/**
+ * @author Stefan Lankes
+ * @file include/eduos/stddef.h
+ * @brief Definition of basic data types
+ */
+
 #include <eduos/config.h>
 #include <asm/stddef.h>
 
@@ -37,12 +43,12 @@ extern "C" {
 
 #define NULL 		((void*) 0)
 
-/*
- * macros, which are later used to determine the core id
- * and their "private" data
- */
-#define per_core(name)	name
-#define CORE_ID		0
+/// represents a task identifier
+typedef unsigned int tid_t;
+
+struct task;
+/// pointer to the current (running) task
+extern struct task* current_task;
 
 #ifdef __cplusplus
 }

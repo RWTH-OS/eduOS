@@ -25,29 +25,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __STDARG_H__
-#define __STDARG_H__
-
 /**
  * @author Stefan Lankes
- * @file include/eduos/stdarg.h
- * @brief Definition of variable argument lists
+ * @file arch/x86/include/asm/tasks.h
+ * @brief Task related structure definitions
+ *
+ * This file contains the task_t structure definition 
+ * and task state define constants
  */
+
+#ifndef __ASM_TASKS_H__
+#define __ASM_TASKS_H__
+
+#include <eduos/stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef __builtin_va_list va_list;
+/**
+ * @brief Switch to current task
+ *
+ * @param stack Pointer to the old stack pointer
+ */
+void switch_context(size_t** stack);
 
-/// Initialize a variable argument list
-#define va_start        __builtin_va_start
-/// Retrieve next argument 
-#define va_arg          __builtin_va_arg
-/// End using variable argument list 
-#define va_end          __builtin_va_end 
-/// copies the (previously initialized) variable argument list
-#define va_copy         __builtin_va_copy
+/** @brief Setup a default frame for a new task
+ *
+ * @param task Pointer to the task structure
+ * @param ep The entry point for code execution
+ * @param arg Arguments list pointer for the task's stack
+ * @return
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+int create_default_frame(task_t* task, entry_point_t ep, void* arg);
 
 #ifdef __cplusplus
 }

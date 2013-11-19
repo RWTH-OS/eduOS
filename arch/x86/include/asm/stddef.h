@@ -40,29 +40,15 @@
 extern "C" {
 #endif
 
-#if __SIZEOF_POINTER__ == 4
 #define CONFIG_X86_32
-/// A popular type for addresses
+/// This type is used to represent the size of an object.
 typedef unsigned long size_t;
 /// Pointer differences
 typedef long ptrdiff_t;
-#ifdef __KERNEL__
+/// It is similar to size_t, but must be a signed type.
 typedef long ssize_t;
+/// The type represents an offset and is similar to size_t, but must be a signed type.
 typedef long off_t;
-#endif
-#elif __SIZEOF_POINTER__ == 8
-#define CONFIG_X86_64
-// A popular type for addresses
-typedef unsigned long long size_t;
-/// Pointer differences
-typedef long long ptrdiff_t;
-#ifdef __KERNEL__
-typedef long long ssize_t;
-typedef long long off_t;
-#endif
-#else
-#error unsupported architecture
-#endif
 
 /// Unsigned 64 bit integer
 typedef unsigned long long uint64_t;
@@ -83,22 +69,8 @@ typedef char int8_t;
 /// 16 bit wide char type
 typedef unsigned short wchar_t;
 
-#ifndef _WINT_T
-#define _WINT_T
-typedef unsigned int wint_t;
-#endif
-
-/** @brief This defines what the stack looks like after an ISR was called.
- *
- * All the interrupt handler routines use this type for their only parameter.
- * Note: Our kernel doesn't use the GS and FS registers.
- */
+/// This defines what the stack looks like after the task context is saved.
 struct state {
-#ifdef CONFIG_X86_32
-	// ds register
-	uint32_t ds;
-	// es register
-	uint32_t es;
 	/// EDI register
 	uint32_t edi;
 	/// ESI register
@@ -116,61 +88,10 @@ struct state {
 	/// EAX register
 	uint32_t eax;		/* pushed by 'pusha' */
 
-	/// Interrupt number
-	uint32_t int_no;
-	
-	// pushed by the processor automatically
-	uint32_t error;
-	uint32_t eip;
-	uint32_t cs;
+	// state of the controll register
 	uint32_t eflags;
-	uint32_t useresp;
-	uint32_t ss;
-#elif defined(CONFIG_X86_64)
-	/// R15 register
-	uint64_t r15;
-	/// R14 register
-	uint64_t r14;
-	/// R13 register
-	uint64_t r13;
-	/// R12 register
-	uint64_t r12;
-	/// R11 register
-	uint64_t r11;
-	/// R10 register
-	uint64_t r10;
-	/// R9 register
-	uint64_t r9;
-	/// R8 register
-	uint64_t r8;
-	/// RDI register
-	uint64_t rdi;
-	/// RSI register
-	uint64_t rsi;
-	/// RBP register
-	uint64_t rbp;
-	/// (pseudo) RSP register
-	uint64_t rsp;
-	/// RBX register
-	uint64_t rbx;
-	/// RDX register
-	uint64_t rdx;
-	/// RCX register
-	uint64_t rcx;
-	/// RAX register
-	uint64_t rax;
-
-	/// Interrupt number
-	uint64_t int_no;
-
-	// pushed by the processor automatically
-	uint64_t error;
-	uint64_t rip;
-	uint64_t cs;
-	uint64_t rflags;
-	uint64_t userrsp;
-	uint64_t ss;
-#endif
+	/// state of instruction pointer
+	uint32_t eip;
 };
 
 #ifdef __cplusplus

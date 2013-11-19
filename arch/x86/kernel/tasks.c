@@ -25,63 +25,65 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <eduos/stddef.h>
 #include <eduos/stdio.h>
+#include <eduos/stdlib.h>
 #include <eduos/string.h>
 #include <eduos/tasks.h>
+#include <eduos/errno.h>
 #include <eduos/processor.h>
-#include <eduos/tasks.h>
 
-/* 
- * Note that linker symbols are not variables, they have no memory allocated for
- * maintaining a value, rather their address is their value.
- */
-extern const void kernel_start;
-extern const void kernel_end;
-extern const void bss_start;
-extern const void bss_end;
-extern char __BUILD_DATE;
-extern char __BUILD_TIME;
-
-static int foo(void* arg)
+size_t* get_current_stack(void)
 {
-	int i = 0;
+	task_t* curr_task = current_task;
 
-	for(i=0; i<5; i++) {
-		kprintf("hello from %s\n", (char*) arg);
-		reschedule();
-	}
-
-	return 0;
+	return curr_task->last_stack_pointer;
 }
 
-static int eduos_init(void)
+int create_default_frame(task_t* task, entry_point_t ep, void* arg)
 {
-	// initialize .bss section
-	memset((void*)&bss_start, 0x00, ((size_t) &bss_end - (size_t) &bss_start));
+	size_t *stack;
+	struct state *stptr;
+	size_t state_size;
 
-	koutput_init();
-	multitasking_init();
+	if (BUILTIN_EXPECT(!task, 0))
+		return -EINVAL; 
 
-	return 0;
-}
+	if (BUILTIN_EXPECT(!task->stack, 0))
+		return -EINVAL;
 
-int main(void)
-{
-	tid_t id1;
-	tid_t id2;
-	eduos_init();
+	memset(task->stack, 0xCD, KERNEL_STACK_SIZE);
 
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
-	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
+	/* The difference between setting up a task for SW-task-switching
+	 * and not for HW-task-switching is setting up a stack and not a TSS.
+	 * This is the stack which will be activated and popped off for iret later.
+	 */
+	stack = (size_t*) (task->stack + KERNEL_STACK_SIZE - 16); // => stack is 16byte aligned
 
-	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_kernel_task(&id2, foo, "foo2", NORMAL_PRIO);
-	reschedule();
+	/* Only marker for debugging purposes, ... */
+	*stack-- = 0xDEADBEEF;
+	/* the first-function-to-be-called's arguments, ... */
+	*stack-- = (size_t) arg;
 
-	while(1) { 
-		NOP8;
-	}
+	/* and the "caller" we shall return to.
+	 * This procedure cleans the task after exit. */
+	*stack = (size_t) leave_kernel_task;
+
+	/* Next bunch on the stack is the initial register state. 
+	 * The stack must look like the stack of a task which was
+	 * scheduled away previously. */
+
+	state_size = sizeof(struct state);
+	stack = (size_t*) ((size_t) stack - state_size);
+
+	stptr = (struct state *) stack;
+	memset(stptr, 0x00, state_size);
+	stptr->esp = (size_t)stack + state_size;
+
+	stptr->eip = (size_t)ep;
+	stptr->eflags = 0x1202;
+
+	/* Set the task's stack pointer entry to the stack we have crafted right now. */
+	task->last_stack_pointer = (size_t*)stack;
 
 	return 0;
 }

@@ -25,29 +25,57 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __STDARG_H__
-#define __STDARG_H__
-
 /**
  * @author Stefan Lankes
- * @file include/eduos/stdarg.h
- * @brief Definition of variable argument lists
+ * @file include/eduos/tasks.h
+ * @brief Task related
+ *
+ * Create and leave tasks or fork them.
  */
+
+#ifndef __TASKS_H__
+#define __TASKS_H__
+
+#include <eduos/stddef.h>
+#include <eduos/tasks_types.h>
+#include <asm/tasks.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef __builtin_va_list va_list;
+/** @brief Initialize the multitasking subsystem
+ *
+ * This procedure sets the current task to the
+ * current "task" (there are no tasks, yet) and that was it.
+ *
+ * @return
+ * - 0 on success
+ * - -ENOMEM (-12) on failure
+ */
+int multitasking_init(void);
 
-/// Initialize a variable argument list
-#define va_start        __builtin_va_start
-/// Retrieve next argument 
-#define va_arg          __builtin_va_arg
-/// End using variable argument list 
-#define va_end          __builtin_va_end 
-/// copies the (previously initialized) variable argument list
-#define va_copy         __builtin_va_copy
+/** @brief create a kernel task. 
+ *
+ * @param id The value behind this pointer will be set to the new task's id
+ * @param ep Pointer to the entry function for the new task
+ * @param args Arguments the task shall start with
+ * @param prio Desired priority of the new kernel task
+ *
+ * @return 
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio);
+
+/** @brief Call to rescheduling
+ *
+ * This is a purely assembled procedure for rescheduling
+ */
+void reschedule(void);
+
+/** @brief This function shall be called by leaving kernel level tasks */
+void NORETURN leave_kernel_task(void);
 
 #ifdef __cplusplus
 }

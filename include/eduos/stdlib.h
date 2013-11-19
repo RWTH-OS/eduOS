@@ -44,6 +44,12 @@
 extern "C" {
 #endif
 
+/** @brief Create a new stack for a new task
+ *
+ * @return start address of the new stack
+ */
+void* create_stack(tid_t id);
+
 #ifdef __cplusplus
 }
 #endif
