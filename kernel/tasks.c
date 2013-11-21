@@ -195,50 +195,49 @@ int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio)
 size_t** scheduler(void)
 {
 	task_t* orig_task;
-	task_t* curr_task;
 	uint32_t prio;
 
-	orig_task = curr_task = current_task;
+	orig_task = current_task;
 
 	/* signalizes that this task could be reused */
-	if (curr_task->status == TASK_FINISHED) {
-		curr_task->status = TASK_INVALID;
-		runqueue.old_task = curr_task;
+	if (current_task->status == TASK_FINISHED) {
+		current_task->status = TASK_INVALID;
+		runqueue.old_task = current_task;
 	} else runqueue.old_task = NULL; // reset old task
 
 	prio = msb(runqueue.prio_bitmap); // determines highest priority
-	if (prio >= sizeof(size_t)*8) {
-		if ((curr_task->status == TASK_RUNNING) || (curr_task->status == TASK_IDLE))
+	if (prio > MAX_PRIO) {
+		if ((current_task->status == TASK_RUNNING) || (current_task->status == TASK_IDLE))
 			goto get_task_out;
-		curr_task = current_task = runqueue.idle;
+		current_task = runqueue.idle;
 	} else {
 		// Does the current task have an higher priority? => no task switch
-		if ((curr_task->prio > prio) && (curr_task->status == TASK_RUNNING))
+		if ((current_task->prio > prio) && (current_task->status == TASK_RUNNING))
 			goto get_task_out;
 
-		if (curr_task->status == TASK_RUNNING) {
-			curr_task->status = TASK_READY;
-			runqueue.old_task = curr_task;
+		if (current_task->status == TASK_RUNNING) {
+			current_task->status = TASK_READY;
+			runqueue.old_task = current_task;
 		}
 
-		curr_task = current_task = runqueue.queue[prio-1].first;
-		if (BUILTIN_EXPECT(curr_task->status == TASK_INVALID, 0)) {
-			kprintf("Upps!!!!!!! Got invalid task %d, orig task %d\n", curr_task->id, orig_task->id);
+		current_task = runqueue.queue[prio-1].first;
+		if (BUILTIN_EXPECT(current_task->status == TASK_INVALID, 0)) {
+			kprintf("Upps!!!!!!! Got invalid task %d, orig task %d\n", current_task->id, orig_task->id);
 		}
-		curr_task->status = TASK_RUNNING;
+		current_task->status = TASK_RUNNING;
 
 		// remove new task from queue
-		runqueue.queue[prio-1].first = curr_task->next;
-		if (!curr_task->next) {
+		runqueue.queue[prio-1].first = current_task->next;
+		if (!current_task->next) {
 			runqueue.queue[prio-1].last = NULL;
 			runqueue.prio_bitmap &= ~(1 << prio);
 		}
-		curr_task->next = curr_task->prev = NULL;
+		current_task->next = current_task->prev = NULL;
 	}
 
 get_task_out:
-	if (curr_task != orig_task) {
-		//kprintf("schedule from %u to %u with prio %u\n", orig_task->id, curr_task->id, (uint32_t)curr_task->prio);
+	if (current_task != orig_task) {
+		//kprintf("schedule from %u to %u with prio %u\n", orig_task->id, curr_task->id, (uint32_t)current_task->prio);
 
 		return (size_t**) &(orig_task->last_stack_pointer);
 	}
