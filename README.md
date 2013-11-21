@@ -60,6 +60,17 @@ Boot eduOS via grub
    }
 </pre>
 
+Overview of all branches
+------------------------
+1. stage0 - Smallest HelloWorld of the World 
+
+   Description of loading a minimal 32bit kernel
+
+2. stage1 - Non-preemptive multitasking
+
+   Introduction into a simple form of multitasking, where no interrupts are
+   required.
+
 Usefull Links
 -------------
 1. http://www.gnu.org/software/grub/manual/multiboot/
