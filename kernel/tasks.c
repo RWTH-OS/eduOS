@@ -54,14 +54,6 @@ task_t* get_current_task(void)
 	return current_task;
 }
 
-/** @brief determines the highest priority of the all runable task 
- * @return Highest priority
- */
-uint32_t get_highest_priority(void)
-{
-	return msb(readyqueues.prio_bitmap);
-}
-
 int multitasking_init(void)
 {
 	if (BUILTIN_EXPECT(task_table[0].status != TASK_IDLE, 0)) {
