@@ -42,7 +42,7 @@ static task_t task_table[MAX_TASKS] = { \
 		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, NULL, NULL}, \
 		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, NULL, NULL}};
 
-static readyqueues_t readyqueues = { task_table+0, NULL, 0, 0, {[0 ... MAX_PRIO-1] = {NULL, NULL}}};
+static readyqueues_t readyqueues = { task_table+0, NULL, 0, 0, {[0 ... MAX_PRIO-2] = {NULL, NULL}}};
 
 task_t* current_task = task_table+0;
 
@@ -219,6 +219,7 @@ size_t** scheduler(void)
 		current_task->status = TASK_RUNNING;
 
 		// remove new task from queue
+		// by the way, priority 0 is only used by the idle task and doesn't need own queue
 		readyqueues.queue[prio-1].first = current_task->next;
 		if (!current_task->next) {
 			readyqueues.queue[prio-1].last = NULL;

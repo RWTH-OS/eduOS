@@ -94,7 +94,7 @@ typedef struct {
 	/// indicates the used priority queues
 	uint32_t	prio_bitmap;
 	/// a queue for each priority
-	task_list_t	queue[MAX_PRIO];
+	task_list_t	queue[MAX_PRIO-1];
 } readyqueues_t;
 
 #ifdef __cplusplus
