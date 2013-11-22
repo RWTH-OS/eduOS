@@ -63,7 +63,7 @@ typedef int (*entry_point_t)(void*);
 /** @brief Represents a the process control block */
 typedef struct task {
 	/// Task id = position in the task table
-	tid_t			id;
+	tid_t			id __attribute__ ((aligned (CACHE_LINE)));
 	/// Task status (INVALID, READY, RUNNING, ...)
 	uint32_t		status;
 	/// copy of the stack pointer before a context switch
@@ -95,7 +95,7 @@ typedef struct {
 	uint32_t	prio_bitmap;
 	/// a queue for each priority
 	task_list_t	queue[MAX_PRIO];
-} runqueue_t;
+} readyqueues_t;
 
 #ifdef __cplusplus
 }

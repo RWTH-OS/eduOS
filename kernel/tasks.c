@@ -42,7 +42,7 @@ static task_t task_table[MAX_TASKS] = { \
 		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, NULL, NULL}, \
 		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, NULL, NULL}};
 
-static runqueue_t runqueue = { task_table+0, NULL, 0, 0, {[0 ... MAX_PRIO-1] = {NULL, NULL}}};
+static readyqueues_t readyqueues = { task_table+0, NULL, 0, 0, {[0 ... MAX_PRIO-1] = {NULL, NULL}}};
 
 task_t* current_task = task_table+0;
 
@@ -59,7 +59,7 @@ task_t* get_current_task(void)
  */
 uint32_t get_highest_priority(void)
 {
-	return msb(runqueue.prio_bitmap);
+	return msb(readyqueues.prio_bitmap);
 }
 
 int multitasking_init(void)
@@ -80,24 +80,24 @@ void finish_task_switch(void)
 	task_t* old;
 	uint8_t prio;
 
-	if ((old = runqueue.old_task) != NULL) {
+	if ((old = readyqueues.old_task) != NULL) {
 		if (old->status == TASK_INVALID) {
 			old->stack = NULL;
 			old->last_stack_pointer = NULL;
-			runqueue.old_task = NULL;
+			readyqueues.old_task = NULL;
 		} else {
 			prio = old->prio;
-			if (!runqueue.queue[prio-1].first) {
+			if (!readyqueues.queue[prio-1].first) {
 				old->next = old->prev = NULL;
-				runqueue.queue[prio-1].first = runqueue.queue[prio-1].last = old;
+				readyqueues.queue[prio-1].first = readyqueues.queue[prio-1].last = old;
 			} else {
 				old->next = NULL;
-				old->prev = runqueue.queue[prio-1].last;
-				runqueue.queue[prio-1].last->next = old;
-				runqueue.queue[prio-1].last = old;
+				old->prev = readyqueues.queue[prio-1].last;
+				readyqueues.queue[prio-1].last->next = old;
+				readyqueues.queue[prio-1].last = old;
 			}
-			runqueue.old_task = NULL;
-			runqueue.prio_bitmap |= (1 << prio);
+			readyqueues.old_task = NULL;
+			readyqueues.prio_bitmap |= (1 << prio);
 		}
 	}
 }
@@ -164,18 +164,18 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 
 			ret = create_default_frame(task_table+i, ep, arg);
 
-			// add task in the runqueue
-			runqueue.prio_bitmap |= (1 << prio);
-			runqueue.nr_tasks++;
-			if (!runqueue.queue[prio-1].first) {
+			// add task in the readyqueues
+			readyqueues.prio_bitmap |= (1 << prio);
+			readyqueues.nr_tasks++;
+			if (!readyqueues.queue[prio-1].first) {
 				task_table[i].next = task_table[i].prev = NULL;
-				runqueue.queue[prio-1].first = task_table+i;
-				runqueue.queue[prio-1].last = task_table+i;
+				readyqueues.queue[prio-1].first = task_table+i;
+				readyqueues.queue[prio-1].last = task_table+i;
 			} else {
-				task_table[i].prev = runqueue.queue[prio-1].last;
+				task_table[i].prev = readyqueues.queue[prio-1].last;
 				task_table[i].next = NULL;
-				runqueue.queue[prio-1].last->next = task_table+i;
-				runqueue.queue[prio-1].last = task_table+i;
+				readyqueues.queue[prio-1].last->next = task_table+i;
+				readyqueues.queue[prio-1].last = task_table+i;
 			}
 			break;
 		}
@@ -202,14 +202,14 @@ size_t** scheduler(void)
 	/* signalizes that this task could be reused */
 	if (current_task->status == TASK_FINISHED) {
 		current_task->status = TASK_INVALID;
-		runqueue.old_task = current_task;
-	} else runqueue.old_task = NULL; // reset old task
+		readyqueues.old_task = current_task;
+	} else readyqueues.old_task = NULL; // reset old task
 
-	prio = msb(runqueue.prio_bitmap); // determines highest priority
+	prio = msb(readyqueues.prio_bitmap); // determines highest priority
 	if (prio > MAX_PRIO) {
 		if ((current_task->status == TASK_RUNNING) || (current_task->status == TASK_IDLE))
 			goto get_task_out;
-		current_task = runqueue.idle;
+		current_task = readyqueues.idle;
 	} else {
 		// Does the current task have an higher priority? => no task switch
 		if ((current_task->prio > prio) && (current_task->status == TASK_RUNNING))
@@ -217,27 +217,27 @@ size_t** scheduler(void)
 
 		if (current_task->status == TASK_RUNNING) {
 			current_task->status = TASK_READY;
-			runqueue.old_task = current_task;
+			readyqueues.old_task = current_task;
 		}
 
-		current_task = runqueue.queue[prio-1].first;
+		current_task = readyqueues.queue[prio-1].first;
 		if (BUILTIN_EXPECT(current_task->status == TASK_INVALID, 0)) {
 			kprintf("Upps!!!!!!! Got invalid task %d, orig task %d\n", current_task->id, orig_task->id);
 		}
 		current_task->status = TASK_RUNNING;
 
 		// remove new task from queue
-		runqueue.queue[prio-1].first = current_task->next;
+		readyqueues.queue[prio-1].first = current_task->next;
 		if (!current_task->next) {
-			runqueue.queue[prio-1].last = NULL;
-			runqueue.prio_bitmap &= ~(1 << prio);
+			readyqueues.queue[prio-1].last = NULL;
+			readyqueues.prio_bitmap &= ~(1 << prio);
 		}
 		current_task->next = current_task->prev = NULL;
 	}
 
 get_task_out:
 	if (current_task != orig_task) {
-		//kprintf("schedule from %u to %u with prio %u\n", orig_task->id, curr_task->id, (uint32_t)current_task->prio);
+		//kprintf("schedule from %u to %u with prio %u\n", orig_task->id, current_task->id, (uint32_t)current_task->prio);
 
 		return (size_t**) &(orig_task->last_stack_pointer);
 	}
