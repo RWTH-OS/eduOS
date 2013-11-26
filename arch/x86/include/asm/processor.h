@@ -125,6 +125,8 @@ static inline size_t lsb(size_t i)
 #define NOP4	asm  volatile ("nop;nop;nop;nop")
 /// A eight-instruction-do-nothing
 #define NOP8	asm  volatile ("nop;nop;nop;nop;nop;nop;nop;nop")
+/// The PAUSE instruction provides a hint to the processor that the code sequence is a spin-wait loop.
+#define PAUSE	asm volatile ("pause")
 
 #ifdef __cplusplus
 }
