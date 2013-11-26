@@ -31,6 +31,7 @@
 #include <eduos/tasks.h>
 #include <eduos/processor.h>
 #include <eduos/tasks.h>
+#include <eduos/semaphore.h>
 
 /* 
  * Note that linker symbols are not variables, they have no memory allocated for
@@ -43,13 +44,17 @@ extern const void bss_end;
 extern char __BUILD_DATE;
 extern char __BUILD_TIME;
 
+static sem_t sem;
+
 static int foo(void* arg)
 {
 	int i = 0;
 
 	for(i=0; i<5; i++) {
+		sem_wait(&sem);
 		kprintf("hello from %s\n", (char*) arg);
 		reschedule();
+		sem_post(&sem);
 	}
 
 	return 0;
@@ -75,6 +80,7 @@ int main(void)
 	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
 	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
 
+	sem_init(&sem, 1);
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
 	create_kernel_task(&id2, foo, "foo2", NORMAL_PRIO);
 	reschedule();
