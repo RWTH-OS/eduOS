@@ -71,7 +71,13 @@ Overview of all branches
    Introduction into a simple form of multitasking, where no interrupts are
    required.
 
+3. stage2 - Synchronisation primitives
+
+   Description of basic synchronization primitives
+
 Usefull Links
 -------------
 1. http://www.gnu.org/software/grub/manual/multiboot/
-2. http://techblog.lankes.org/tutorials/
+2. http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial
+3. http://www.jamesmolloy.co.uk/tutorial_html/index.html
+4. http://techblog.lankes.org/tutorials/
