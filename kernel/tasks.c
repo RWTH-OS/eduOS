@@ -184,6 +184,89 @@ int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio)
 	return create_task(id, ep, args, prio);
 }
 
+/** @brief Wakeup a blocked task
+ * @param id The task's tid_t structure
+ * @return
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+int wakeup_task(tid_t id)
+{
+	task_t* task;
+	uint32_t prio;
+	int ret = -EINVAL;
+
+	task = task_table + id;
+	prio = task->prio;
+
+	if (task->status == TASK_BLOCKED) {
+		task->status = TASK_READY;
+		ret = 0;
+
+		// increase the number of ready tasks
+		readyqueues.nr_tasks++;
+
+		// add task to the runqueue
+		if (!readyqueues.queue[prio-1].last) {
+			readyqueues.queue[prio-1].last = readyqueues.queue[prio-1].first = task;
+			task->next = task->prev = NULL;
+			readyqueues.prio_bitmap |= (1 << prio);
+		} else {
+			task->prev = readyqueues.queue[prio-1].last;
+			task->next = NULL;
+			readyqueues.queue[prio-1].last->next = task;
+			readyqueues.queue[prio-1].last = task;
+                }
+	}
+
+	return ret;
+}
+
+/** @brief Block current task
+ *
+ * The current task's status will be changed to TASK_BLOCKED
+ *
+ * @return
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+int block_current_task(void)
+{
+	tid_t id;
+	uint32_t prio;
+	int ret = -EINVAL;
+
+	id = current_task->id;
+	prio = current_task->prio;
+
+	if (task_table[id].status == TASK_RUNNING) {
+		task_table[id].status = TASK_BLOCKED;
+		ret = 0;
+
+		// reduce the number of ready tasks
+		readyqueues.nr_tasks--;
+
+		// remove task from queue
+		if (task_table[id].prev)
+			task_table[id].prev->next = task_table[id].next;
+		if (task_table[id].next)
+			task_table[id].next->prev = task_table[id].prev;
+		if (readyqueues.queue[prio-1].first == task_table+id)
+			readyqueues.queue[prio-1].first = task_table[id].next;
+		if (readyqueues.queue[prio-1].last == task_table+id) {
+			readyqueues.queue[prio-1].last = task_table[id].prev;
+			if (!readyqueues.queue[prio-1].last)
+				readyqueues.queue[prio-1].last = readyqueues.queue[prio-1].first;
+		}
+
+		// No valid task in queue => update prio_bitmap
+		if (!readyqueues.queue[prio-1].first)
+			readyqueues.prio_bitmap &= ~(1 << prio);
+	}
+
+	return ret;
+}
+
 size_t** scheduler(void)
 {
 	task_t* orig_task;

@@ -74,6 +74,26 @@ int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio);
  */
 void reschedule(void);
 
+/** @brief Wake up a blocked task
+ *
+ * The task's status will be changed to TASK_READY 
+ *
+ * @return
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+int wakeup_task(tid_t);
+
+/** @brief Block current task
+ *
+ * The current task's status will be changed to TASK_BLOCKED
+ *
+ * @return
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+int block_current_task(void);
+
 /** @brief This function shall be called by leaving kernel level tasks */
 void NORETURN leave_kernel_task(void);
 
