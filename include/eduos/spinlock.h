@@ -40,6 +40,7 @@
 #include <eduos/errno.h>
 #include <asm/atomic.h>
 #include <asm/processor.h>
+#include <asm/irqflags.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,6 +121,92 @@ inline static int spinlock_unlock(spinlock_t* s) {
 	if (!s->counter) {
 		s->owner = MAX_TASKS;
 		atomic_int32_inc(&s->dequeue);
+	}
+
+	return 0;
+}
+
+/** @brief Initialization of a irqsave spinlock
+ *
+ * Initialize each irqsave spinlock before use!
+ *
+ * @return 
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+inline static int spinlock_irqsave_init(spinlock_irqsave_t* s) {
+	if (BUILTIN_EXPECT(!s, 0))
+		return -EINVAL;
+
+	atomic_int32_set(&s->queue, 0);
+	atomic_int32_set(&s->dequeue, 1);
+	s->flags = 0;
+	s->counter = 0;
+
+	return 0;
+}
+
+/** @brief Destroy irqsave spinlock after use
+ * @return 
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+inline static int spinlock_irqsave_destroy(spinlock_irqsave_t* s) {
+	if (BUILTIN_EXPECT(!s, 0))
+		return -EINVAL;
+
+	s->flags = 0;
+	s->counter = 0;
+
+	return 0;
+}
+
+/** @brief Unlock an irqsave spinlock on exit of critical section 
+ * @return 
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+inline static int spinlock_irqsave_lock(spinlock_irqsave_t* s) {
+	int32_t ticket;
+	uint8_t flags;
+
+	if (BUILTIN_EXPECT(!s, 0))
+		return -EINVAL;
+
+	flags = irq_nested_disable();
+	if (s->counter == 1) {
+		s->counter++;
+		return 0;
+	}
+
+	ticket = atomic_int32_add(&s->queue, 1);
+	while (atomic_int32_read(&s->dequeue) != ticket) {
+		PAUSE;
+	}
+
+	s->flags = flags;
+	s->counter = 1;
+
+	return 0;
+}
+
+/** @brief Unlock irqsave spinlock on exit of critical section and re-enable interrupts
+ * @return 
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+inline static int spinlock_irqsave_unlock(spinlock_irqsave_t* s) {
+	uint8_t flags;
+
+	if (BUILTIN_EXPECT(!s, 0))
+		return -EINVAL;
+
+	s->counter--;
+	if (!s->counter) {
+		flags = s->flags;
+		s->flags = 0;
+                atomic_int32_inc(&s->dequeue);
+		irq_nested_enable(flags);
 	}
 
 	return 0;

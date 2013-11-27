@@ -27,33 +27,76 @@
 
 /**
  * @author Stefan Lankes
- * @file include/eduos/semaphore_types.h
- * @brief semaphore type definition
+ * @file arch/x86/include/asm/irqflags.h
+ * @brief Functions related to IRQ configuration
+ *
+ * This file contains definitions of inline functions 
+ * for enabling and disabling IRQ handling.
  */
 
-#ifndef __SEMAPHORE_TYPES_H__
-#define __SEMAPHORE_TYPES_H__
-
-#include <eduos/spinlock_types.h>
+#ifndef __ARCH_IRQFLAGS_H__
+#define __ARCH_IRQFLAGS_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** @brief Semaphore structure */
-typedef struct {
-	/// Resource available count
-	unsigned int value;
-	/// Queue of waiting tasks
-	tid_t queue[MAX_TASKS];
-	/// Position in queue
-	unsigned int pos;
-	/// Access lock
-	spinlock_irqsave_t lock;
-} sem_t;
+/** @brief Disable IRQs
+ *
+ * This inline function just clears out the interrupt bit
+ */
+inline static void irq_disable(void) {
+	asm volatile("cli" ::: "memory");
+}
 
-/// Macro for initialization of semaphore
-#define SEM_INIT(v) {v, {[0 ... MAX_TASKS-1] = MAX_TASKS}, 0, SPINLOCK_IRQSAVE_INIT}
+/** @brief Disable IRQs (nested)
+ *
+ * Disable IRQs when unsure if IRQs were enabled at all.\n
+ * This function together with irq_nested_enable can be used
+ * in situations when interrupts shouldn't be activated if they
+ * were not activated before calling this function.
+ *
+ * @return The set of flags which have been set until now
+ */
+inline static uint32_t irq_nested_disable(void) {
+	size_t flags;
+	asm volatile("pushf; cli; pop %0": "=r"(flags) : : "memory");
+	if (flags & (1 << 9))
+		return 1;	
+	return 0;
+}
+
+/** @brief Enable IRQs */
+inline static void irq_enable(void) {
+	asm volatile("sti" ::: "memory");
+}
+
+/** @brief Enable IRQs (nested)
+ *
+ * If called after calling irq_nested_disable, this function will
+ * not activate IRQs if they were not active before.
+ *
+ * @param flags Flags to set. Could be the old ones you got from irq_nested_disable.
+ */
+inline static void irq_nested_enable(uint8_t flags) {
+	if (flags)
+		irq_enable();
+}
+
+/** @brief Determines, if the interrupt flags (IF) is ser
+ *
+ * @return
+ * - 1 interrupt flag is set
+ * - 0 interrupt flag is cleared
+ */ 
+inline static uint8_t is_irq_enabled(void)
+{
+	size_t flags;
+	asm volatile("pushf; pop %0": "=r"(flags) : : "memory");
+	if (flags & (1 << 9))
+		return 1;
+	return 0;
+}
 
 #ifdef __cplusplus
 }

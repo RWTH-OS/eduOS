@@ -64,7 +64,7 @@ inline static int sem_init(sem_t* s, unsigned int v) {
 	s->pos = 0;
 	for(i=0; i<MAX_TASKS; i++)
 		s->queue[i] = MAX_TASKS;
-	spinlock_init(&s->lock);
+	spinlock_irqsave_init(&s->lock);
 
 	return 0;
 }
@@ -78,7 +78,7 @@ inline static int sem_destroy(sem_t* s) {
 	if (BUILTIN_EXPECT(!s, 0))
 		return -EINVAL;
 
-	spinlock_destroy(&s->lock);
+	spinlock_irqsave_destroy(&s->lock);
 
 	return 0;
 }
@@ -98,12 +98,12 @@ inline static int sem_trywait(sem_t* s) {
 	if (BUILTIN_EXPECT(!s, 0))
 		return -EINVAL;
 
-	spinlock_lock(&s->lock);
+	spinlock_irqsave_lock(&s->lock);
 	if (s->value > 0) {
 		s->value--;
 		ret = 0;
 	}
-	spinlock_unlock(&s->lock);
+	spinlock_irqsave_unlock(&s->lock);
 
 	return ret;
 }
@@ -121,15 +121,15 @@ inline static int sem_wait(sem_t* s) {
 		return -EINVAL;
 
 next_try1:
-	spinlock_lock(&s->lock);
+	spinlock_irqsave_lock(&s->lock);
 	if (s->value > 0) {
 		s->value--;
-		spinlock_unlock(&s->lock);
+		spinlock_irqsave_unlock(&s->lock);
 	} else {
 		s->queue[s->pos] = current_task->id;
 		s->pos = (s->pos + 1) % MAX_TASKS;
 		block_current_task();
-		spinlock_unlock(&s->lock);
+		spinlock_irqsave_unlock(&s->lock);
 		reschedule();
 		goto next_try1;
 	}
@@ -146,10 +146,10 @@ inline static int sem_post(sem_t* s) {
 	if (BUILTIN_EXPECT(!s, 0))
 		return -EINVAL;
 
-	spinlock_lock(&s->lock);
+	spinlock_irqsave_lock(&s->lock);
 	if (s->value > 0) {
 		s->value++;
-		spinlock_unlock(&s->lock);
+		spinlock_irqsave_unlock(&s->lock);
 	} else {
 		unsigned int k, i;
 
@@ -163,7 +163,7 @@ inline static int sem_post(sem_t* s) {
 			}
 			i = (i + 1) % MAX_TASKS;
 		}
-		spinlock_unlock(&s->lock);
+		spinlock_irqsave_unlock(&s->lock);
 	}
 
 	return 0;
