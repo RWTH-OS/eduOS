@@ -4,4 +4,6 @@
 *.elf
 *.sym
 Makefile
+documentation/html/
 include/eduos/config.h
+include/eduos/config.inc

@@ -22,7 +22,7 @@ STRIP_FOR_TARGET = $(CROSSCOMPREFIX)strip
 READELF_FOR_TARGET = $(CROSSCOMPREFIX)readelf
 NASM = nasm
 
-NASMFLAGS = -felf32 -g
+NASMFLAGS = -felf32 -g -i$(TOPDIR)/include/eduos/
 INCLUDE = -I$(TOPDIR)/include -I$(TOPDIR)/arch/$(ARCH)/include
 # Compiler options for final code
 CFLAGS = -g -m32 -march=i586 -Wall -O2 -fno-builtin -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc $(INCLUDE) -fno-stack-protector
@@ -77,7 +77,12 @@ doc:
 	@echo [DEP] $*.dep
 	$Q$(CC_FOR_TARGET) -MF $*.dep -MT $*.o -MM $(CFLAGS) $<
 
-%.o : %.asm
+include/eduos/config.inc: include/eduos/config.h
+	@echo "; This file is generated automatically from the config.h file." > include/eduos/config.inc
+	@echo "; Before editing this, you should consider editing config.h." >> include/eduos/config.inc
+	@awk '/^#define KERNEL_STACK_SIZE/{ print "%define KERNEL_STACK_SIZE", $$3 }' include/eduos/config.h >> include/eduos/config.inc
+
+%.o : %.asm include/eduos/config.inc
 	@echo [ASM] $@
 	$Q$(NASM) $(NASMFLAGS) -o $@ $<
 
