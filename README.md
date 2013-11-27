@@ -77,7 +77,7 @@ Overview of all branches
 
 4. stage3 - Preemptive multitasking
 
-   Introduction into a preemptive multitasking and interrupt handling
+   Introduction into preemptive multitasking and interrupt handling
 
 Usefull Links
 -------------
