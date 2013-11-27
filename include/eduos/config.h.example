@@ -34,11 +34,16 @@ extern "C" {
 
 #define EDUOS_VERSION		"0.1"
 #define MAX_TASKS		16
-#define VIDEO_MEM_ADDR		0xB8000 // the video memora address
+#define TIMER_FREQ		100	/* in HZ */
+#define CLOCK_TICK_RATE		1193182	/* 8254 chip's internal oscillator frequency */
+#define VIDEO_MEM_ADDR		0xB8000	// the video memora address
 #define CACHE_LINE		64
 #define KERNEL_STACK_SIZE	(8*1024)
+#define PAGE_SHIFT		12
 
 #define BYTE_ORDER LITTLE_ENDIAN
+
+#define CONFIG_VGA
 
 #define BUILTIN_EXPECT(exp, b) 	__builtin_expect((exp), (b))
 //#define BUILTIN_EXPECT(exp, b)	(exp)

@@ -37,6 +37,7 @@
 #define __ARCH_PROCESSOR_H__
 
 #include <eduos/stddef.h>
+#include <asm/gdt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,6 +128,57 @@ static inline size_t lsb(size_t i)
 #define NOP8	asm  volatile ("nop;nop;nop;nop;nop;nop;nop;nop")
 /// The PAUSE instruction provides a hint to the processor that the code sequence is a spin-wait loop.
 #define PAUSE	asm volatile ("pause")
+/// The HALT instruction stops the processor until the next interrupt arrives 
+#define HALT	asm volatile ("hlt")
+
+/** @brief Init several subsystems
+ *
+ * This function calls the initialization procedures for:
+ * - GDT
+ * - APIC
+ * - PCI [if configured]
+ *
+ * @return 0 in any case
+ */
+inline static int system_init(void)
+{
+	gdt_install();
+
+	return 0;
+}
+
+/** @brief Detect and read out CPU frequency
+ *
+ * @return The CPU frequency in MHz
+ */
+uint32_t detect_cpu_frequency(void);
+
+/** @brief Read out CPU frequency if detected before
+ *
+ * If you did not issue the detect_cpu_frequency() function before,
+ * this function will call it implicitly.
+ *
+ * @return The CPU frequency in MHz
+ */
+uint32_t get_cpu_frequency(void);
+
+/** @brief Busywait an microseconds interval of time
+ * @param usecs The time to wait in microseconds
+ */
+void udelay(uint32_t usecs);
+
+/** @brief System calibration
+ *
+ * This procedure will detect the CPU frequency and calibrate the APIC timer.
+ *
+ * @return 0 in any case.
+ */
+inline static int system_calibration(void)
+{
+	detect_cpu_frequency();
+
+	return 0;
+}
 
 #ifdef __cplusplus
 }

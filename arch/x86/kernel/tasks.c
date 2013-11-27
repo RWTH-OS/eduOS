@@ -72,15 +72,25 @@ int create_default_frame(task_t* task, entry_point_t ep, void* arg)
 	 * The stack must look like the stack of a task which was
 	 * scheduled away previously. */
 
-	state_size = sizeof(struct state);
+	/* In legacy modes, this push is conditional and based on a change in current privilege level (CPL).*/
+	state_size = sizeof(struct state) - 2*sizeof(size_t);
 	stack = (size_t*) ((size_t) stack - state_size);
 
 	stptr = (struct state *) stack;
 	memset(stptr, 0x00, state_size);
 	stptr->esp = (size_t)stack + state_size;
 
+	stptr->int_no = 0xB16B00B5;
+	stptr->error =  0xC03DB4B3;
+
+	/* The instruction pointer shall be set on the first function to be called
+	   after IRETing */
 	stptr->eip = (size_t)ep;
+	stptr->cs = 0x08;
+	stptr->ds = stptr->es = 0x10;
 	stptr->eflags = 0x1202;
+	// the creation of a kernel tasks didn't change the IOPL level
+	// => useresp & ss is not required
 
 	/* Set the task's stack pointer entry to the stack we have crafted right now. */
 	task->last_stack_pointer = (size_t*)stack;

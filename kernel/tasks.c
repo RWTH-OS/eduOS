@@ -30,9 +30,8 @@
 #include <eduos/stdio.h>
 #include <eduos/tasks.h>
 #include <eduos/tasks_types.h>
+#include <eduos/spinlock.h>
 #include <eduos/errno.h>
-
-extern void* default_stack_pointer;
 
 /** @brief Array of task structures (aka PCB)
  *
@@ -42,9 +41,12 @@ static task_t task_table[MAX_TASKS] = { \
 		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, NULL, NULL}, \
 		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, NULL, NULL}};
 
-static readyqueues_t readyqueues = { task_table+0, NULL, 0, 0, {[0 ... MAX_PRIO-2] = {NULL, NULL}}};
+static spinlock_irqsave_t table_lock = SPINLOCK_IRQSAVE_INIT;
+
+static readyqueues_t readyqueues = {task_table+0, NULL, 0, 0, {[0 ... MAX_PRIO-2] = {NULL, NULL}}, SPINLOCK_IRQSAVE_INIT};
 
 task_t* current_task = task_table+0;
+extern const void boot_stack;
 
 /** @brief helper function for the assembly code to determine the current task
  * @return Pointer to the task_t structure of current task
@@ -52,6 +54,11 @@ task_t* current_task = task_table+0;
 task_t* get_current_task(void) 
 {
 	return current_task;
+}
+
+uint32_t get_highest_priority(void)
+{
+	return msb(readyqueues.prio_bitmap);
 }
 
 int multitasking_init(void)
@@ -62,7 +69,7 @@ int multitasking_init(void)
 	}
 
 	task_table[0].prio = IDLE_PRIO;
-	task_table[0].stack = default_stack_pointer - 8192;
+	task_table[0].stack = (void*) &boot_stack;
 
 	return 0;
 }
@@ -71,6 +78,8 @@ void finish_task_switch(void)
 {
 	task_t* old;
 	uint8_t prio;
+
+	spinlock_irqsave_lock(&readyqueues.lock);
 
 	if ((old = readyqueues.old_task) != NULL) {
 		if (old->status == TASK_INVALID) {
@@ -92,6 +101,8 @@ void finish_task_switch(void)
 			readyqueues.prio_bitmap |= (1 << prio);
 		}
 	}
+
+	spinlock_irqsave_unlock(&readyqueues.lock);
 }
 
 /** @brief A procedure to be called by
@@ -105,9 +116,14 @@ static void NORETURN do_exit(int arg)
 	curr_task->status = TASK_FINISHED;
 	reschedule();
 
+	// decrease the number of active tasks
+	spinlock_irqsave_lock(&readyqueues.lock);
+	readyqueues.nr_tasks--;
+	spinlock_irqsave_unlock(&readyqueues.lock);
+
 	kprintf("Kernel panic: scheduler found no valid task\n");
 	while(1) {
-		NOP8;
+		HALT;
 	}
 }
 
@@ -117,6 +133,11 @@ void NORETURN leave_kernel_task(void) {
 
 	result = 0; //get_return_value();
 	do_exit(result);
+}
+
+/** @brief Aborting a task is like exiting it with result -1 */
+void NORETURN abort(void) {
+	do_exit(-1);
 }
 
 /** @brief Create a task with a specific entry point
@@ -143,6 +164,8 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 	if (BUILTIN_EXPECT(prio > MAX_PRIO, 0))
 		return -EINVAL;
 
+	spinlock_irqsave_lock(&table_lock);
+
 	for(i=0; i<MAX_TASKS; i++) {
 		if (task_table[i].status == TASK_INVALID) {
 			task_table[i].id = i;
@@ -157,6 +180,7 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 			ret = create_default_frame(task_table+i, ep, arg);
 
 			// add task in the readyqueues
+			spinlock_irqsave_lock(&readyqueues.lock);
 			readyqueues.prio_bitmap |= (1 << prio);
 			readyqueues.nr_tasks++;
 			if (!readyqueues.queue[prio-1].first) {
@@ -169,9 +193,12 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 				readyqueues.queue[prio-1].last->next = task_table+i;
 				readyqueues.queue[prio-1].last = task_table+i;
 			}
+			spinlock_irqsave_unlock(&readyqueues.lock);
 			break;
 		}
 	}
+
+	spinlock_irqsave_unlock(&table_lock);
 
 	return ret;
 }
@@ -195,6 +222,9 @@ int wakeup_task(tid_t id)
 	task_t* task;
 	uint32_t prio;
 	int ret = -EINVAL;
+	uint8_t flags;
+
+	flags = irq_nested_disable();
 
 	task = task_table + id;
 	prio = task->prio;
@@ -203,6 +233,7 @@ int wakeup_task(tid_t id)
 		task->status = TASK_READY;
 		ret = 0;
 
+		spinlock_irqsave_lock(&readyqueues.lock);
 		// increase the number of ready tasks
 		readyqueues.nr_tasks++;
 
@@ -217,7 +248,10 @@ int wakeup_task(tid_t id)
 			readyqueues.queue[prio-1].last->next = task;
 			readyqueues.queue[prio-1].last = task;
                 }
+		spinlock_irqsave_unlock(&readyqueues.lock);
 	}
+
+	irq_nested_enable(flags);
 
 	return ret;
 }
@@ -235,6 +269,9 @@ int block_current_task(void)
 	tid_t id;
 	uint32_t prio;
 	int ret = -EINVAL;
+	uint8_t flags;
+
+	flags = irq_nested_disable();
 
 	id = current_task->id;
 	prio = current_task->prio;
@@ -243,6 +280,7 @@ int block_current_task(void)
 		task_table[id].status = TASK_BLOCKED;
 		ret = 0;
 
+		spinlock_irqsave_lock(&readyqueues.lock);
 		// reduce the number of ready tasks
 		readyqueues.nr_tasks--;
 
@@ -262,7 +300,10 @@ int block_current_task(void)
 		// No valid task in queue => update prio_bitmap
 		if (!readyqueues.queue[prio-1].first)
 			readyqueues.prio_bitmap &= ~(1 << prio);
+		spinlock_irqsave_unlock(&readyqueues.lock);
 	}
+
+	irq_nested_enable(flags);
 
 	return ret;
 }
@@ -273,6 +314,8 @@ size_t** scheduler(void)
 	uint32_t prio;
 
 	orig_task = current_task;
+
+	spinlock_irqsave_lock(&readyqueues.lock);
 
 	/* signalizes that this task could be reused */
 	if (current_task->status == TASK_FINISHED) {
@@ -312,6 +355,8 @@ size_t** scheduler(void)
 	}
 
 get_task_out:
+	spinlock_irqsave_unlock(&readyqueues.lock);
+
 	if (current_task != orig_task) {
 		//kprintf("schedule from %u to %u with prio %u\n", orig_task->id, current_task->id, (uint32_t)current_task->prio);
 
@@ -324,6 +369,10 @@ get_task_out:
 void reschedule(void)
 {
 	size_t** stack;
+	uint8_t flags;
+
+	flags = irq_nested_disable();
 	if ((stack = scheduler()))
 		switch_context(stack);
+	irq_nested_enable(flags);
 }

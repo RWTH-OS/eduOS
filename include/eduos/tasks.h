@@ -44,6 +44,16 @@
 extern "C" {
 #endif
 
+/** @brief Task switcher
+ *
+ * Timer-interrupted use of this function for task switching
+ *
+ * @return
+ * - 0 no context switch
+ * - !0 address of the old stack pointer
+ */
+size_t** scheduler(void);
+
 /** @brief Initialize the multitasking subsystem
  *
  * This procedure sets the current task to the
@@ -67,6 +77,14 @@ int multitasking_init(void);
  * - -EINVAL (-22) on failure
  */
 int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio);
+
+/** @brief determine the highest priority of all tasks, which are ready
+ *
+ * @return 
+ * - return highest priority
+ * - if no task is ready, the function returns an invalid value (> MAX_PRIO)
+ */
+uint32_t get_highest_priority(void);
 
 /** @brief Call to rescheduling
  *
@@ -93,6 +111,9 @@ int wakeup_task(tid_t);
  * - -EINVAL (-22) on failure
  */
 int block_current_task(void);
+
+/** @brief Abort current task */
+void NORETURN abort(void);
 
 /** @brief This function shall be called by leaving kernel level tasks */
 void NORETURN leave_kernel_task(void);

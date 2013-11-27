@@ -25,76 +25,56 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <eduos/stddef.h>
-#include <eduos/stdio.h>
-#include <eduos/string.h>
-#include <eduos/time.h>
-#include <eduos/tasks.h>
-#include <eduos/processor.h>
-#include <eduos/tasks.h>
-#include <eduos/semaphore.h>
-#include <asm/irq.h>
-#include <asm/irqflags.h>
-
-/* 
- * Note that linker symbols are not variables, they have no memory allocated for
- * maintaining a value, rather their address is their value.
+/**
+ * @author Stefan Lankes
+ * @file arch/x86/include/asm/irq.h
+ * @brief Functions related to IRQs
+ *
+ * This file contains functions and a pointer type related to interrupt requests.
  */
-extern const void kernel_start;
-extern const void kernel_end;
-extern const void bss_start;
-extern const void bss_end;
-extern char __BUILD_DATE;
-extern char __BUILD_TIME;
 
-static sem_t sem;
+#ifndef __ARCH_IRQ_H__
+#define __ARCH_IRQ_H__
 
-static int foo(void* arg)
-{
-	int i;
+#include <eduos/stddef.h>
+#include <eduos/tasks_types.h>
 
-	for(i=0; i<10; i++) {
-		kprintf("hello from %s\n", (char*) arg);
-	}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-	return 0;
+/** @brief Pointer-type to IRQ-handling functions
+ *
+ * Whenever you write a IRQ-handling function it has to match this signature.
+ */
+typedef void (*irq_handler_t)(struct state *);
+
+/** @brief Install a custom IRQ handler for a given IRQ 
+ *
+ * @param irq The desired irq
+ * @param handler The handler to install
+ */
+int irq_install_handler(unsigned int irq, irq_handler_t handler);
+
+/** @brief Clear the handler for a given IRQ 
+ *
+ * @param irq The handler's IRQ
+ */
+int irq_uninstall_handler(unsigned int irq);
+
+/** @brief Procedure to initialize IRQ
+ *
+ * This procedure is just a small collection of calls:
+ * - idt_install();
+ * - isrs_install();
+ * - irq_install();
+ *
+ * @return Just returns 0 in any case
+ */
+int irq_init(void);
+
+#ifdef __cplusplus
 }
+#endif
 
-static int eduos_init(void)
-{
-	// initialize .bss section
-	memset((void*)&bss_start, 0x00, ((size_t) &bss_end - (size_t) &bss_start));
-
-	system_init();
-	irq_init();
-	timer_init();
-	koutput_init();
-	multitasking_init();
-
-	return 0;
-}
-
-int main(void)
-{
-	tid_t id1;
-	tid_t id2;
-	eduos_init();
-
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
-	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
-
-	irq_enable();
-	system_calibration();
-
-	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
-	
-	sem_init(&sem, 1);
-	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_kernel_task(&id2, foo, "foo2", NORMAL_PRIO);
-
-	while(1) { 
-		HALT;
-	}
-
-	return 0;
-}
+#endif

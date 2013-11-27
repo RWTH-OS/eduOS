@@ -75,6 +75,10 @@ Overview of all branches
 
    Description of basic synchronization primitives
 
+4. stage3 - Preemptive multitasking
+
+   Introduction into a preemptive multitasking and interrupt handling
+
 Usefull Links
 -------------
 1. http://www.gnu.org/software/grub/manual/multiboot/

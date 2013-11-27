@@ -25,76 +25,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <eduos/stddef.h>
-#include <eduos/stdio.h>
-#include <eduos/string.h>
-#include <eduos/time.h>
-#include <eduos/tasks.h>
-#include <eduos/processor.h>
-#include <eduos/tasks.h>
-#include <eduos/semaphore.h>
-#include <asm/irq.h>
-#include <asm/irqflags.h>
-
-/* 
- * Note that linker symbols are not variables, they have no memory allocated for
- * maintaining a value, rather their address is their value.
+/**
+ * @author Stefan Lankes
+ * @file arch/x86/include/asm/isrs.h
+ * @brief Installation of interrupt service routines
+ *
+ * This file contains the declaration of the ISR installer procedure.\n
+ * There is more interesting code related to ISRs in the isrs.c file.
  */
-extern const void kernel_start;
-extern const void kernel_end;
-extern const void bss_start;
-extern const void bss_end;
-extern char __BUILD_DATE;
-extern char __BUILD_TIME;
 
-static sem_t sem;
+#ifndef __ARCH_ISRS_H__
+#define __ARCH_ISRS_H__
 
-static int foo(void* arg)
-{
-	int i;
+#include <eduos/stddef.h>
 
-	for(i=0; i<10; i++) {
-		kprintf("hello from %s\n", (char*) arg);
-	}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-	return 0;
+/** @brief ISR installer procedure
+ *
+ * This procedure sets the first 32 entries in the IDT 
+ * to the first 32 ISRs to call one general fault handler 
+ * which will do some dispatching and exception message logging.\n
+ * The access flags are set to 0x8E (PRESENT, privilege: RING0, size: 32bit gate, type: interrupt gate). 
+ */
+void isrs_install(void);
+
+#ifdef __cplusplus
 }
+#endif
 
-static int eduos_init(void)
-{
-	// initialize .bss section
-	memset((void*)&bss_start, 0x00, ((size_t) &bss_end - (size_t) &bss_start));
-
-	system_init();
-	irq_init();
-	timer_init();
-	koutput_init();
-	multitasking_init();
-
-	return 0;
-}
-
-int main(void)
-{
-	tid_t id1;
-	tid_t id2;
-	eduos_init();
-
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
-	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
-
-	irq_enable();
-	system_calibration();
-
-	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
-	
-	sem_init(&sem, 1);
-	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_kernel_task(&id2, foo, "foo2", NORMAL_PRIO);
-
-	while(1) { 
-		HALT;
-	}
-
-	return 0;
-}
+#endif

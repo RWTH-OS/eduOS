@@ -25,76 +25,48 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <eduos/stddef.h>
-#include <eduos/stdio.h>
-#include <eduos/string.h>
-#include <eduos/time.h>
-#include <eduos/tasks.h>
-#include <eduos/processor.h>
-#include <eduos/tasks.h>
-#include <eduos/semaphore.h>
-#include <asm/irq.h>
-#include <asm/irqflags.h>
-
-/* 
- * Note that linker symbols are not variables, they have no memory allocated for
- * maintaining a value, rather their address is their value.
+/**
+ * @author Stefan Lankes
+ * @file arch/x86/include/asm/tss.h
+ * @brief Task state segment structure definition
  */
-extern const void kernel_start;
-extern const void kernel_end;
-extern const void bss_start;
-extern const void bss_end;
-extern char __BUILD_DATE;
-extern char __BUILD_TIME;
 
-static sem_t sem;
+#ifndef __ARCH_TSS_H__
+#define __ARCH_TSS_H__
 
-static int foo(void* arg)
-{
-	int i;
+#include <eduos/stddef.h>
 
-	for(i=0; i<10; i++) {
-		kprintf("hello from %s\n", (char*) arg);
-	}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-	return 0;
+/** @brief The tast state segment structure
+ */
+typedef struct {
+	uint16_t	backlink, __blh;
+	uint32_t	esp0;
+	uint16_t	ss0, __ss0h;
+	uint32_t	esp1;	
+	uint16_t	ss1, __ss1h;
+	uint32_t	esp2;
+	uint16_t	ss2, __ss2h;
+	uint32_t	cr3;
+	uint32_t	eip;
+	uint32_t	eflags;
+	uint32_t	eax, ecx, edx, ebx;
+	uint32_t	esp, ebp, esi, edi;
+	uint16_t	es, __esh;
+	uint16_t	cs, __csh;
+	uint16_t	ss, __ssh;
+	uint16_t	ds, __dsh;
+	uint16_t	fs, __fsh;
+	uint16_t	gs, __gsh;
+	uint16_t	ldt, __ldth;
+	uint16_t	trace, bitmap;
+} __attribute__ ((packed)) tss_t;
+
+#ifdef __cplusplus
 }
+#endif
 
-static int eduos_init(void)
-{
-	// initialize .bss section
-	memset((void*)&bss_start, 0x00, ((size_t) &bss_end - (size_t) &bss_start));
-
-	system_init();
-	irq_init();
-	timer_init();
-	koutput_init();
-	multitasking_init();
-
-	return 0;
-}
-
-int main(void)
-{
-	tid_t id1;
-	tid_t id2;
-	eduos_init();
-
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
-	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
-
-	irq_enable();
-	system_calibration();
-
-	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
-	
-	sem_init(&sem, 1);
-	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_kernel_task(&id2, foo, "foo2", NORMAL_PRIO);
-
-	while(1) { 
-		HALT;
-	}
-
-	return 0;
-}
+#endif

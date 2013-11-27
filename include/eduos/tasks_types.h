@@ -38,6 +38,7 @@
 #define __TASKS_TYPES_H__
 
 #include <eduos/stddef.h>
+#include <eduos/spinlock_types.h>
 #include <asm/tasks_types.h>
 
 #ifdef __cplusplus
@@ -95,6 +96,8 @@ typedef struct {
 	uint32_t	prio_bitmap;
 	/// a queue for each priority
 	task_list_t	queue[MAX_PRIO-1];
+	/// lock for this runqueue
+	spinlock_irqsave_t lock;
 } readyqueues_t;
 
 #ifdef __cplusplus

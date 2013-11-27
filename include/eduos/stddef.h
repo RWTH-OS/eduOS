@@ -46,6 +46,10 @@ extern "C" {
 /// represents a task identifier
 typedef unsigned int tid_t;
 
+#define PAGE_SIZE		(1 << PAGE_SHIFT)
+#define PAGE_MASK		~(PAGE_SIZE - 1)
+#define PAGE_ALIGN(addr)	(((addr) + PAGE_SIZE - 1) & PAGE_MASK)
+
 struct task;
 /// pointer to the current (running) task
 extern struct task* current_task;

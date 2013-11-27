@@ -29,72 +29,44 @@
 #include <eduos/stdio.h>
 #include <eduos/string.h>
 #include <eduos/time.h>
-#include <eduos/tasks.h>
 #include <eduos/processor.h>
 #include <eduos/tasks.h>
-#include <eduos/semaphore.h>
-#include <asm/irq.h>
-#include <asm/irqflags.h>
 
-/* 
- * Note that linker symbols are not variables, they have no memory allocated for
- * maintaining a value, rather their address is their value.
- */
-extern const void kernel_start;
-extern const void kernel_end;
-extern const void bss_start;
-extern const void bss_end;
-extern char __BUILD_DATE;
-extern char __BUILD_TIME;
+static uint32_t cpu_freq = 0;
 
-static sem_t sem;
-
-static int foo(void* arg)
+uint32_t detect_cpu_frequency(void)
 {
-	int i;
+	uint64_t start, end, diff;
+	uint64_t ticks, old;
 
-	for(i=0; i<10; i++) {
-		kprintf("hello from %s\n", (char*) arg);
-	}
+	if (BUILTIN_EXPECT(cpu_freq > 0, 0))
+		return cpu_freq;
 
-	return 0;
-}
+	old = get_clock_tick();
 
-static int eduos_init(void)
-{
-	// initialize .bss section
-	memset((void*)&bss_start, 0x00, ((size_t) &bss_end - (size_t) &bss_start));
-
-	system_init();
-	irq_init();
-	timer_init();
-	koutput_init();
-	multitasking_init();
-
-	return 0;
-}
-
-int main(void)
-{
-	tid_t id1;
-	tid_t id2;
-	eduos_init();
-
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
-	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
-
-	irq_enable();
-	system_calibration();
-
-	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
-	
-	sem_init(&sem, 1);
-	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_kernel_task(&id2, foo, "foo2", NORMAL_PRIO);
-
-	while(1) { 
+	/* wait for the next time slice */
+	while((ticks = get_clock_tick()) - old == 0)
 		HALT;
-	}
 
-	return 0;
+	rmb();
+	start = rdtsc();
+	/* wait a second to determine the frequency */
+	while(get_clock_tick() - ticks < TIMER_FREQ)
+		HALT;
+	rmb();
+	end = rdtsc();
+
+	diff = end > start ? end - start : start - end;
+	cpu_freq = (uint32_t) (diff / (uint64_t) 1000000);
+
+	return cpu_freq;
 }
+
+uint32_t get_cpu_frequency(void)
+{	
+	if (cpu_freq > 0)
+		return cpu_freq;
+
+	return detect_cpu_frequency();
+}
+

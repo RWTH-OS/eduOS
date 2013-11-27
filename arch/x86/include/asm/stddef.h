@@ -71,6 +71,10 @@ typedef unsigned short wchar_t;
 
 /// This defines what the stack looks like after the task context is saved.
 struct state {
+	/// ds register
+	uint32_t ds;
+	/// es register
+	uint32_t es;
 	/// EDI register
 	uint32_t edi;
 	/// ESI register
@@ -88,10 +92,16 @@ struct state {
 	/// EAX register
 	uint32_t eax;		/* pushed by 'pusha' */
 
-	// state of the controll register
-	uint32_t eflags;
-	/// state of instruction pointer
+	/// Interrupt number
+	uint32_t int_no;
+
+	// pushed by the processor automatically
+	uint32_t error;
 	uint32_t eip;
+	uint32_t cs;
+	uint32_t eflags;
+	uint32_t useresp;
+	uint32_t ss;
 };
 
 #ifdef __cplusplus
