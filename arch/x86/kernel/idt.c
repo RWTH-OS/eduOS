@@ -74,8 +74,6 @@ void idt_set_gate(unsigned char num, size_t base, unsigned short sel,
 	configure_idt_entry(&idt[num], base, sel, flags);
 }
 
-extern void isrsyscall(void);
-
 /* Installs the IDT */
 void idt_install(void)
 {
