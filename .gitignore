@@ -3,5 +3,4 @@
 *~
 *.elf
 *.sym
-Makefile
 include/eduos/config.h
