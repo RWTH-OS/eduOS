@@ -32,7 +32,7 @@
 #include <eduos/tasks.h>
 #include <eduos/processor.h>
 #include <eduos/tasks.h>
-#include <eduos/semaphore.h>
+#include <eduos/syscall.h>
 #include <asm/irq.h>
 #include <asm/irqflags.h>
 
@@ -47,7 +47,14 @@ extern const void bss_end;
 extern char __BUILD_DATE;
 extern char __BUILD_TIME;
 
-static sem_t sem;
+/*static*/ int userfoo(void* arg)
+{
+	//SYSCALL1(__NR_write, "hello from userfoo\n");
+	//kprintf("hello from %s\n", (char*) arg);
+	while(1) { }
+
+	return 0;
+}
 
 static int foo(void* arg)
 {
@@ -56,6 +63,11 @@ static int foo(void* arg)
 	for(i=0; i<10; i++) {
 		kprintf("hello from %s\n", (char*) arg);
 	}
+
+	// demo of an exception
+	/*i = 0;
+	i = 32 / i;
+	kprintf("i = %d\n", i);*/
 
 	return 0;
 }
@@ -88,9 +100,8 @@ int main(void)
 
 	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
 	
-	sem_init(&sem, 1);
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_kernel_task(&id2, foo, "foo2", NORMAL_PRIO);
+	create_user_task(&id2, userfoo, "userfoo", NORMAL_PRIO);
 
 	while(1) { 
 		HALT;

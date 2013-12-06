@@ -196,6 +196,47 @@ isrstub_pseudo_error 9
 %assign i i+1
 %endrep
 
+extern syscall_handler
+global isrsyscall
+
+; used to realize system calls
+; by entering the handler, the interrupt flag is not cleared
+isrsyscall:
+    cli
+    push es
+    push ds
+    push ebp
+    push edi
+    push esi
+    push edx
+    push ecx
+    push ebx
+    push eax
+
+    ; set kernel data segmenets
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov eax, [esp]
+    sti
+
+    call syscall_handler
+
+    cli
+    add esp, 4 ; eax contains the return value
+               ; => we did not restore eax
+
+    pop ebx
+    pop ecx
+    pop edx
+    pop esi
+    pop edi
+    pop ebp
+    pop ds
+    pop es
+    sti
+    iret
+
 extern irq_handler
 extern get_current_stack
 extern finish_task_switch

@@ -74,6 +74,8 @@ void idt_set_gate(unsigned char num, size_t base, unsigned short sel,
 	configure_idt_entry(&idt[num], base, sel, flags);
 }
 
+extern void isrsyscall(void);
+
 /* Installs the IDT */
 void idt_install(void)
 {
@@ -87,6 +89,8 @@ void idt_install(void)
 		idtp.base = (size_t)&idt;
 
 		/* Add any new ISRs to the IDT here using idt_set_gate */
+		idt_set_gate(INT_SYSCALL, (size_t)isrsyscall, KERNEL_CODE_SELECTOR,
+			IDT_FLAG_PRESENT|IDT_FLAG_RING3|IDT_FLAG_32BIT|IDT_FLAG_TRAPGATE);
 	}
 
 	/* Points the processor's internal register to the new IDT */

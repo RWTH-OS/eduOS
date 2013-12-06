@@ -28,10 +28,12 @@
 #include <eduos/stddef.h>
 #include <eduos/stdlib.h>
 #include <eduos/stdio.h>
+#include <eduos/string.h>
 #include <eduos/tasks.h>
 #include <eduos/tasks_types.h>
 #include <eduos/spinlock.h>
 #include <eduos/errno.h>
+#include <eduos/syscall.h>
 
 /** @brief Array of task structures (aka PCB)
  *
@@ -70,6 +72,9 @@ int multitasking_init(void)
 
 	task_table[0].prio = IDLE_PRIO;
 	task_table[0].stack = (void*) &boot_stack;
+
+	// register idle task
+	register_task();
 
 	return 0;
 }
@@ -127,12 +132,26 @@ static void NORETURN do_exit(int arg)
 	}
 }
 
+/** @brief A procedure to be called by user-level tasks */
+void NORETURN leave_user_task(void)
+{
+	SYSCALL1(__NR_exit, 0);
+
+	// we should never reach this point
+	while(1) { HALT; }
+}
+
 /** @brief A procedure to be called by kernel tasks */
 void NORETURN leave_kernel_task(void) {
 	int result;
 
 	result = 0; //get_return_value();
 	do_exit(result);
+}
+
+/** @brief To be called by the systemcall to exit tasks */
+void NORETURN sys_exit(int arg) {
+	do_exit(arg);
 }
 
 /** @brief Aborting a task is like exiting it with result -1 */
@@ -152,7 +171,7 @@ void NORETURN abort(void) {
  * - 0 on success
  * - -ENOMEM (-12) or -EINVAL (-22) on failure
  */
-static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
+static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio, uint8_t user)
 {
 	int ret = -ENOMEM;
 	uint32_t i;
@@ -177,7 +196,7 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 			if (id)
 				*id = i;
 
-			ret = create_default_frame(task_table+i, ep, arg);
+			ret = create_default_frame(task_table+i, ep, arg, user);
 
 			// add task in the readyqueues
 			spinlock_irqsave_lock(&readyqueues.lock);
@@ -208,7 +227,15 @@ int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio)
 	if (prio > MAX_PRIO)
 		prio = NORMAL_PRIO;
 
-	return create_task(id, ep, args, prio);
+	return create_task(id, ep, args, prio, 0);
+}
+
+int create_user_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio)
+{
+	if (prio > MAX_PRIO)
+		prio = NORMAL_PRIO;
+	
+	return create_task(id, ep, args, prio, 1);
 }
 
 /** @brief Wakeup a blocked task
@@ -247,7 +274,7 @@ int wakeup_task(tid_t id)
 			task->next = NULL;
 			readyqueues.queue[prio-1].last->next = task;
 			readyqueues.queue[prio-1].last = task;
-                }
+		}
 		spinlock_irqsave_unlock(&readyqueues.lock);
 	}
 
@@ -358,7 +385,7 @@ get_task_out:
 	spinlock_irqsave_unlock(&readyqueues.lock);
 
 	if (current_task != orig_task) {
-		//kprintf("schedule from %u to %u with prio %u\n", orig_task->id, current_task->id, (uint32_t)current_task->prio);
+		kprintf("schedule from %u to %u with prio %u\n", orig_task->id, current_task->id, (uint32_t)current_task->prio);
 
 		return (size_t**) &(orig_task->last_stack_pointer);
 	}

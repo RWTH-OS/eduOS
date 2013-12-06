@@ -58,7 +58,7 @@ inline static void irq_disable(void) {
  *
  * @return The set of flags which have been set until now
  */
-inline static uint32_t irq_nested_disable(void) {
+inline static uint8_t irq_nested_disable(void) {
 	size_t flags;
 	asm volatile("pushf; cli; pop %0": "=r"(flags) : : "memory");
 	if (flags & (1 << 9))

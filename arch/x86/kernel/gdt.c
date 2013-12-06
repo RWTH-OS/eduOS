@@ -36,9 +36,9 @@
 #include <asm/tss.h>
 
 gdt_ptr_t				gp;
-static tss_t				task_state_segment __attribute__ ((aligned (PAGE_SIZE)));
+static tss_t			task_state_segment __attribute__ ((aligned (PAGE_SIZE)));
 // currently, our kernel has full access to the ioports
-static gdt_entry_t			gdt[GDT_ENTRIES] = {[0 ... GDT_ENTRIES-1] = {0, 0, 0, 0, 0, 0}};
+static gdt_entry_t		gdt[GDT_ENTRIES] = {[0 ... GDT_ENTRIES-1] = {0, 0, 0, 0, 0, 0}};
 
 /* 
  * This is defined in entry.asm. We use this to properly reload

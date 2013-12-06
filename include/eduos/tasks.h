@@ -44,6 +44,9 @@
 extern "C" {
 #endif
 
+/** @brief System call to terminate a user level process */
+void NORETURN sys_exit(int);
+
 /** @brief Task switcher
  *
  * Timer-interrupted use of this function for task switching
@@ -65,7 +68,7 @@ size_t** scheduler(void);
  */
 int multitasking_init(void);
 
-/** @brief create a kernel task. 
+/** @brief create a kernel-level task. 
  *
  * @param id The value behind this pointer will be set to the new task's id
  * @param ep Pointer to the entry function for the new task
@@ -77,6 +80,19 @@ int multitasking_init(void);
  * - -EINVAL (-22) on failure
  */
 int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio);
+
+/** @brief create a user-level task.
+ *
+ * @param id The value behind this pointer will be set to the new task's id
+ * @param ep Pointer to the entry function for the new task
+ * @param args Arguments the task shall start with
+ * @param prio Desired priority of the new kernel task
+ *
+ * @return
+ * - 0 on success
+ * - -EINVAL (-22) on failure
+ */
+int create_user_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio);
 
 /** @brief determine the highest priority of all tasks, which are ready
  *
@@ -115,8 +131,11 @@ int block_current_task(void);
 /** @brief Abort current task */
 void NORETURN abort(void);
 
-/** @brief This function shall be called by leaving kernel level tasks */
+/** @brief This function shall be called by leaving kernel-level tasks */
 void NORETURN leave_kernel_task(void);
+
+/** @brief This function shall be called by leaving user-level tasks */
+void NORETURN leave_user_task(void);
 
 #ifdef __cplusplus
 }

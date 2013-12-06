@@ -59,7 +59,21 @@ void switch_context(size_t** stack);
  * - 0 on success
  * - -EINVAL (-22) on failure
  */
-int create_default_frame(task_t* task, entry_point_t ep, void* arg);
+int create_default_frame(task_t* task, entry_point_t ep, void* arg, uint8_t user);
+
+/** @brief Register a task's TSS at GDT
+ *
+ * @return
+ * - 0 on success
+ */
+static inline int register_task(void)
+{
+	uint16_t sel = 5 << 3;
+
+	asm volatile ("ltr %%ax" : : "a"(sel));
+
+	return 0;
+}
 
 #ifdef __cplusplus
 }

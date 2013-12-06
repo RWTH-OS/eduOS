@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Stefan Lankes, RWTH Aachen University
+ * Copyright (c) 2011, Stefan Lankes, RWTH Aachen University
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,37 +25,57 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+/**
+ * @author Stefan Lankes
+ * @file include/eduos/syscall.h
+ * @brief System call number definitions
+ *
+ * This file contains define constants for every syscall's number.
+ */
+
+#ifndef __SYSCALL_H__
+#define __SYSCALL_H__
+
+#include <eduos/stddef.h>
+#include <asm/syscall.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define EDUOS_VERSION		"0.1"
-#define MAX_TASKS		16
-#define TIMER_FREQ		100	/* in HZ */
-#define CLOCK_TICK_RATE		1193182	/* 8254 chip's internal oscillator frequency */
-#define VIDEO_MEM_ADDR		0xB8000	// the video memora address
-#define CACHE_LINE		64
-#define KERNEL_STACK_SIZE	(8*1024)
-#define PAGE_SHIFT		12
-#define INT_SYSCALL		0x80
-
-#define BYTE_ORDER LITTLE_ENDIAN
-
-#define CONFIG_VGA
-
-#define BUILTIN_EXPECT(exp, b) 	__builtin_expect((exp), (b))
-//#define BUILTIN_EXPECT(exp, b)	(exp)
-#define NORETURN 		__attribute__((noreturn))
-#define STDCALL 		__attribute__((stdcall))
-
-#define HAVE_ARCH_MEMSET
-#define HAVE_ARCH_MEMCPY
-#define HAVE_ARCH_STRLEN
-#define HAVE_ARCH_STRCPY
-#define HAVE_ARCH_STRNCPY
+#define __NR_exit 		0
+#define __NR_write		1
+#define __NR_open		2
+#define __NR_close		3
+#define __NR_read		4
+#define __NR_lseek		6
+#define __NR_unlink		7
+#define __NR_getpid		8
+#define __NR_kill		9
+#define __NR_fstat		10
+#define __NR_sbrk		11
+#define __NR_fork		12
+#define __NR_wait		13
+#define __NR_execve		14
+#define __NR_times		15
+#define __NR_accept		16
+#define __NR_bind		17
+#define __NR_closesocket	18
+#define __NR_connect		19
+#define __NR_listen		20
+#define __NR_recv		21
+#define __NR_send		22
+#define __NR_socket		23
+#define __NR_getsockopt		24
+#define __NR_setsockopt		25
+#define __NR_gethostbyname	26
+#define __NR_sendto		27
+#define __NR_recvfrom		28
+#define __NR_select		29
+#define __NR_stat		30
+#define __NR_dup		31
+#define __NR_dup2		32
+#define __NR_clone		33
 
 #ifdef __cplusplus
 }

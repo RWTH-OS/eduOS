@@ -25,40 +25,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#include <eduos/stddef.h>
+#include <eduos/stdio.h>
+#include <eduos/tasks.h>
+#include <eduos/errno.h>
+#include <eduos/syscall.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+static int sys_write(const char* buff)
+{
+	kputs("bbba\n");
+	kputs(buff);
 
-#define EDUOS_VERSION		"0.1"
-#define MAX_TASKS		16
-#define TIMER_FREQ		100	/* in HZ */
-#define CLOCK_TICK_RATE		1193182	/* 8254 chip's internal oscillator frequency */
-#define VIDEO_MEM_ADDR		0xB8000	// the video memora address
-#define CACHE_LINE		64
-#define KERNEL_STACK_SIZE	(8*1024)
-#define PAGE_SHIFT		12
-#define INT_SYSCALL		0x80
-
-#define BYTE_ORDER LITTLE_ENDIAN
-
-#define CONFIG_VGA
-
-#define BUILTIN_EXPECT(exp, b) 	__builtin_expect((exp), (b))
-//#define BUILTIN_EXPECT(exp, b)	(exp)
-#define NORETURN 		__attribute__((noreturn))
-#define STDCALL 		__attribute__((stdcall))
-
-#define HAVE_ARCH_MEMSET
-#define HAVE_ARCH_MEMCPY
-#define HAVE_ARCH_STRLEN
-#define HAVE_ARCH_STRCPY
-#define HAVE_ARCH_STRNCPY
-
-#ifdef __cplusplus
+	return 0;
 }
-#endif
 
-#endif
+int syscall_handler(uint32_t sys_nr, ...)
+{
+	int ret = -EINVAL;
+	va_list vl;
+
+	va_start(vl, sys_nr);
+
+	switch(sys_nr)
+	{
+	case __NR_exit:
+		sys_exit(va_arg(vl, uint32_t));
+		ret = 0;
+		break;
+	case __NR_write:
+		ret = sys_write(va_arg(vl, const char*));
+		break;
+	default:
+		kputs("invalid system call\n");
+		ret = -ENOSYS;
+		break;
+	};
+
+	va_end(vl);
+
+	return ret;
+}
