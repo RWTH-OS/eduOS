@@ -65,9 +65,7 @@ static int wrapper(void* arg)
 
 	memset(ustack, 0xCD, KERNEL_STACK_SIZE);
 	*stack-- = (size_t) arg;
-	*stack = (size_t) leave_user_task; // add dummy return value
-
-	set_kernel_stack((size_t) &stack);
+	*stack = (size_t) leave_user_task; // put exit function as caller on the stack
 
 	return jump_to_user_code((uint32_t) userfoo, (uint32_t) stack);
 }

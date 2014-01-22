@@ -263,6 +263,8 @@ ALIGN 4
 rollback:
     ret
 
+extern set_kernel_stack
+
 ALIGN 4
 common_stub:
     pusha
@@ -289,6 +291,9 @@ common_switch:
     mov eax, cr0
     or eax, 8
     mov cr0, eax
+
+    ; set esp0 in the task state segment
+    call set_kernel_stack
 
     ; call cleanup code
     call finish_task_switch

@@ -46,9 +46,11 @@ static gdt_entry_t		gdt[GDT_ENTRIES] = {[0 ... GDT_ENTRIES-1] = {0, 0, 0, 0, 0, 
  */
 extern void gdt_flush(void);
 
-void set_kernel_stack(size_t stack)
+void set_kernel_stack(void)
 {
-	task_state_segment.esp0 = stack;
+	task_t* curr_task = current_task;
+
+	task_state_segment.esp0 = (size_t) curr_task->stack + KERNEL_STACK_SIZE-16;
 }
 
 /* Setup a descriptor in the Global Descriptor Table */

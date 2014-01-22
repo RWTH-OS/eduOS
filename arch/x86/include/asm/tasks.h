@@ -61,9 +61,6 @@ void switch_context(size_t** stack);
  */
 int create_default_frame(task_t* task, entry_point_t ep, void* arg);
 
-/** @brief Copy kernel stack pointer to TSS */
-void set_kernel_stack(size_t stack);
-
 /** @brief Register a task's TSS at GDT
  *
  * @return
