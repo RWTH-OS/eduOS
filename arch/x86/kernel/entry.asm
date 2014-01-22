@@ -199,6 +199,7 @@ isrstub_pseudo_error 9
 extern irq_handler
 extern get_current_stack
 extern finish_task_switch
+extern set_kernel_stack
 
 global switch_context
 ALIGN 4
@@ -248,6 +249,9 @@ common_switch:
     mov eax, cr0
     or eax, 8
     mov cr0, eax
+
+    ; set esp0 in the task state segment
+    call set_kernel_stack
 
     ; call cleanup code
     call finish_task_switch
