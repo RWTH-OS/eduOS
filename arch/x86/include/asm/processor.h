@@ -82,6 +82,17 @@ inline static void rmb(void) { asm volatile("lfence" ::: "memory"); }
 /// Force strict CPU ordering, serializes store operations.
 inline static void wmb(void) { asm volatile("sfence" ::: "memory"); }
 
+/** @brief Read EFLAGS
+ *
+ * @return The EFLAGS value
+ */
+static inline uint32_t read_eflags(void)
+{
+	uint32_t result;
+	asm volatile ("pushf; pop %0" : "=r"(result));
+	return result;
+}
+
 /** @brief search the first most significant bit
  *
  * @param i source operand

@@ -132,21 +132,21 @@ static void NORETURN do_exit(int arg)
 	}
 }
 
-/** @brief A procedure to be called by user-level tasks */
-void NORETURN leave_user_task(void)
-{
-	SYSCALL1(__NR_exit, 0);
-
-	// we should never reach this point
-	while(1) { HALT; }
-}
-
 /** @brief A procedure to be called by kernel tasks */
 void NORETURN leave_kernel_task(void) {
 	int result;
 
 	result = 0; //get_return_value();
 	do_exit(result);
+}
+
+/** @brief This function shall be called by leaving user-level tasks */
+void NORETURN leave_user_task(void)
+{
+	SYSCALL1(__NR_exit, 0);
+
+	// this point should never reached
+	while(1) {}
 }
 
 /** @brief To be called by the systemcall to exit tasks */
@@ -171,7 +171,7 @@ void NORETURN abort(void) {
  * - 0 on success
  * - -ENOMEM (-12) or -EINVAL (-22) on failure
  */
-static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio, uint8_t user)
+static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 {
 	int ret = -ENOMEM;
 	uint32_t i;
@@ -196,7 +196,7 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio, uin
 			if (id)
 				*id = i;
 
-			ret = create_default_frame(task_table+i, ep, arg, user);
+			ret = create_default_frame(task_table+i, ep, arg);
 
 			// add task in the readyqueues
 			spinlock_irqsave_lock(&readyqueues.lock);
@@ -227,15 +227,7 @@ int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio)
 	if (prio > MAX_PRIO)
 		prio = NORMAL_PRIO;
 
-	return create_task(id, ep, args, prio, 0);
-}
-
-int create_user_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio)
-{
-	if (prio > MAX_PRIO)
-		prio = NORMAL_PRIO;
-	
-	return create_task(id, ep, args, prio, 1);
+	return create_task(id, ep, args, prio);
 }
 
 /** @brief Wakeup a blocked task

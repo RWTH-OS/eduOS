@@ -32,8 +32,6 @@
 #include <eduos/errno.h>
 #include <eduos/processor.h>
 
-static unsigned char	ustacks[MAX_TASKS][KERNEL_STACK_SIZE] __attribute__ ((aligned (PAGE_SIZE)));
-
 size_t* get_current_stack(void)
 {
 	task_t* curr_task = current_task;
@@ -41,11 +39,9 @@ size_t* get_current_stack(void)
 	return curr_task->last_stack_pointer;
 }
 
-int create_default_frame(task_t* task, entry_point_t ep, void* arg, uint8_t user)
+int create_default_frame(task_t* task, entry_point_t ep, void* arg)
 {
-	uint16_t cs = user ? 0x1B : 0x08;
-	uint16_t ds = user ? 0x23 : 0x10;
-	size_t *stack, *ustack;
+	size_t *stack;
 	struct state *stptr;
 	size_t state_size;
 
@@ -56,16 +52,12 @@ int create_default_frame(task_t* task, entry_point_t ep, void* arg, uint8_t user
 		return -EINVAL;
 
 	memset(task->stack, 0xCD, KERNEL_STACK_SIZE);
-	memset(ustacks[task->id] , 0xCD, KERNEL_STACK_SIZE);
 
 	/* The difference between setting up a task for SW-task-switching
 	 * and not for HW-task-switching is setting up a stack and not a TSS.
 	 * This is the stack which will be activated and popped off for iret later.
 	 */
-	if (user)
-		stack = (size_t*) (ustacks[task->id] + KERNEL_STACK_SIZE - 16);	// => stack is 16byte aligned
-	else
-		stack = (size_t*) (task->stack + KERNEL_STACK_SIZE - 16);		// => stack is 16byte aligned
+	stack = (size_t*) (task->stack + KERNEL_STACK_SIZE - 16);		// => stack is 16byte aligned
 
 	/* Only marker for debugging purposes, ... */
 	*stack-- = 0xDEADBEEF;
@@ -74,21 +66,13 @@ int create_default_frame(task_t* task, entry_point_t ep, void* arg, uint8_t user
 
 	/* and the "caller" we shall return to.
 	 * This procedure cleans the task after exit. */
-	if (user)
-		*stack = (size_t) leave_user_task;
-	else
-		*stack = (size_t) leave_kernel_task;
+	*stack = (size_t) leave_kernel_task;
 
 	/* Next bunch on the stack is the initial register state. 
 	 * The stack must look like the stack of a task which was
 	 * scheduled away previously. */
 
-	if (user) {
-		ustack = stack;
-		stack = (size_t*) (task->stack + KERNEL_STACK_SIZE - 16);
-		state_size = sizeof(struct state);
-	} else state_size = sizeof(struct state) - 2*sizeof(size_t);
-
+	state_size = sizeof(struct state) - 2*sizeof(size_t);
 	stack = (size_t*) ((size_t) stack - state_size);
 
 	stptr = (struct state *) stack;
@@ -101,16 +85,12 @@ int create_default_frame(task_t* task, entry_point_t ep, void* arg, uint8_t user
 	/* The instruction pointer shall be set on the first function to be called
 	   after IRETing */
 	stptr->eip = (size_t)ep;
-	stptr->cs = cs;
-	stptr->ds = stptr->es = ds;
+	stptr->cs = 0x08;
+	stptr->ds = stptr->es = 0x10;
 	stptr->eflags = 0x1202;
 
-	if (user) {
-		// the creation of a user-level tasks change the IOPL level
-		// => useresp & ss is required
-		stptr->ss = ds;
-		stptr->useresp = (size_t)ustack;
-	}
+	// the creation of a kernel-level tasks don't change the IOPL level
+	// => useresp & ss isn't required
 
 	/* Set the task's stack pointer entry to the stack we have crafted right now. */
 	task->last_stack_pointer = (size_t*)stack;

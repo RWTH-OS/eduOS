@@ -63,6 +63,16 @@ int kprintf(const char*, ...);
 int koutput_init(void);
 
 /**
+ * Works like the ANSI c function sprintf
+ */
+int ksprintf(char *str, const char *format, ...);
+
+/**
+ * Works like the ANSI c function sprintf
+ */
+int ksnprintf(char *str, size_t size, const char *format, ...);
+
+/**
  * Scaled down version of printf(3)
  */
 int kvprintf(char const *fmt, void (*func) (int, void *), void *arg, int radix, va_list ap);

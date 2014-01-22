@@ -47,13 +47,29 @@ extern const void bss_end;
 extern char __BUILD_DATE;
 extern char __BUILD_TIME;
 
-/*static*/ int userfoo(void* arg)
+static void userfoo(void* arg)
 {
-	//SYSCALL1(__NR_write, "hello from userfoo\n");
-	//kprintf("hello from %s\n", (char*) arg);
-	while(1) { }
+	char str[256];
 
-	return 0;
+	ksnprintf(str, 256, "hello from %s\n", (char*) arg);
+	SYSCALL1(__NR_write, "hello from userfoo\n");
+
+	//kprintf("hello from %s\n", (char*) arg);
+}
+
+static char ustack[KERNEL_STACK_SIZE];
+
+static int wrapper(void* arg)
+{
+	size_t* stack = (size_t*) (ustack+KERNEL_STACK_SIZE-16);
+
+	memset(ustack, 0xCD, KERNEL_STACK_SIZE);
+	*stack-- = (size_t) arg;
+	*stack = (size_t) leave_user_task; // add dummy return value
+
+	set_kernel_stack((size_t) &stack);
+
+	return jump_to_user_code((uint32_t) userfoo, (uint32_t) stack);
 }
 
 static int foo(void* arg)
@@ -101,7 +117,7 @@ int main(void)
 	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
 	
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_user_task(&id2, userfoo, "userfoo", NORMAL_PRIO);
+	create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
 
 	while(1) { 
 		HALT;

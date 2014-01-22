@@ -25,77 +25,58 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @author Stefan Lankes
- * @file arch/x86/include/asm/tasks.h
- * @brief Task related structure definitions
- *
- * This file contains the task_t structure definition 
- * and task state define constants
- */
+#include <eduos/stdio.h>
 
-#ifndef __ASM_TASKS_H__
-#define __ASM_TASKS_H__
+typedef struct {
+	char *str;
+	size_t pos;
+	size_t max;
+} sputchar_arg_t;
 
-#include <eduos/stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Switch to current task
- *
- * @param stack Pointer to the old stack pointer
- */
-void switch_context(size_t** stack);
-
-/** @brief Setup a default frame for a new task
- *
- * @param task Pointer to the task structure
- * @param ep The entry point for code execution
- * @param arg Arguments list pointer for the task's stack
- * @return
- * - 0 on success
- * - -EINVAL (-22) on failure
- */
-int create_default_frame(task_t* task, entry_point_t ep, void* arg);
-
-/** @brief Copy kernel stack pointer to TSS */
-void set_kernel_stack(size_t stack);
-
-/** @brief Register a task's TSS at GDT
- *
- * @return
- * - 0 on success
- */
-static inline int register_task(void)
+static void sputchar(int c, void *arg)
 {
-	uint16_t sel = 5 << 3;
+	sputchar_arg_t *dest = (sputchar_arg_t *) arg;
 
-	asm volatile ("ltr %%ax" : : "a"(sel));
-
-	return 0;
+	if (dest->pos < dest->max) {
+		dest->str[dest->pos] = (char)c;
+		dest->pos++;
+	}
 }
 
-/** @brief Jump back to user code
- *
- * This function runs the user code after stopping it just as if
- * it was a return from a procedure.
- *
- * @return 0 in any case
- */
-static inline int jump_to_user_code(uint32_t ep, uint32_t stack)
+int ksnprintf(char *str, size_t size, const char *format, ...)
 {
-	asm volatile ("mov %0, %%ds; mov %0, %%fs; mov %0, %%gs; mov %0, %%es" :: "r"(0x23));
-	asm volatile ("push $0x23; push %0; push $0x1B; push %1" :: "r"(stack), "r"(ep));
-	asm volatile ("lret" ::: "cc");
+	int ret;
+	va_list ap;
+	sputchar_arg_t dest;
 
-	return 0;
+	dest.str = str;
+	dest.pos = 0;
+	dest.max = size;
+
+	va_start(ap, format);
+	ret = kvprintf(format, sputchar, &dest, 10, ap);
+	va_end(ap);
+
+	str[ret] = 0;
+
+	return ret;
 }
 
-#ifdef __cplusplus
-}
-#endif
+int ksprintf(char *str, const char *format, ...)
+{
+	int ret;
+	va_list ap;
+	sputchar_arg_t dest;
 
-#endif
+	dest.str = str;
+	dest.pos = 0;
+	dest.max = (size_t) -1;
+
+	va_start(ap, format);
+	ret = kvprintf(format, sputchar, &dest, 10, ap);
+	va_end(ap);
+
+	str[ret] = 0;
+
+	return ret;
+}

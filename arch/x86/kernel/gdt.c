@@ -46,6 +46,11 @@ static gdt_entry_t		gdt[GDT_ENTRIES] = {[0 ... GDT_ENTRIES-1] = {0, 0, 0, 0, 0, 
  */
 extern void gdt_flush(void);
 
+void set_kernel_stack(size_t stack)
+{
+	task_state_segment.esp0 = stack;
+}
+
 /* Setup a descriptor in the Global Descriptor Table */
 void gdt_set_gate(int num, unsigned long base, unsigned long limit,
 			  unsigned char access, unsigned char gran)
@@ -122,13 +127,15 @@ void gdt_install(void)
 	 * Create data segement for userspace applications (ring 3)
 	 */
 	gdt_set_gate(4, 0, limit,
-                GDT_FLAG_RING3 | GDT_FLAG_SEGMENT | GDT_FLAG_DATASEG | GDT_FLAG_PRESENT,
-                GDT_FLAG_4K_GRAN | mode);
+		GDT_FLAG_RING3 | GDT_FLAG_SEGMENT | GDT_FLAG_DATASEG | GDT_FLAG_PRESENT,
+		GDT_FLAG_4K_GRAN | mode);
 
 	/* set default values */
 	task_state_segment.eflags = 0x1202;
-	task_state_segment.ss0 = 0x10;		// data segment
+	task_state_segment.ss0 = 0x10;			// data segment
 	task_state_segment.esp0 = 0xDEADBEEF;	// invalid pseudo address
+	task_state_segment.cs = 0x0b;
+	task_state_segment.ss = task_state_segment.ds = task_state_segment.es = task_state_segment.fs = task_state_segment.gs = 0x13;
 	gdt_set_gate(5, (unsigned long) (&task_state_segment), sizeof(tss_t)-1,
 			GDT_FLAG_PRESENT | GDT_FLAG_TSS | GDT_FLAG_RING0, mode);
 

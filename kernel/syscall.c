@@ -33,7 +33,6 @@
 
 static int sys_write(const char* buff)
 {
-	kputs("bbba\n");
 	kputs(buff);
 
 	return 0;

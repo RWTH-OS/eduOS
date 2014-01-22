@@ -81,19 +81,6 @@ int multitasking_init(void);
  */
 int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio);
 
-/** @brief create a user-level task.
- *
- * @param id The value behind this pointer will be set to the new task's id
- * @param ep Pointer to the entry function for the new task
- * @param args Arguments the task shall start with
- * @param prio Desired priority of the new kernel task
- *
- * @return
- * - 0 on success
- * - -EINVAL (-22) on failure
- */
-int create_user_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio);
-
 /** @brief determine the highest priority of all tasks, which are ready
  *
  * @return 
