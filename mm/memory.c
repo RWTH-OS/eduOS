@@ -27,12 +27,20 @@
 
 #include <eduos/stddef.h>
 #include <eduos/stdlib.h>
+#include <eduos/stdio.h>
+#include <eduos/string.h>
 #include <eduos/spinlock.h>
 
 #include <asm/atomic.h>
 #include <asm/multiboot.h>
 #include <asm/page.h>
 
+/*
+ * Note that linker symbols are not variables, they have no memory allocated for
+ * maintaining a value, rather their address is their value.
+ */
+extern const void kernel_start;
+extern const void kernel_end;
 
 static char stack[MAX_TASKS-1][KERNEL_STACK_SIZE];
 static char bitmap[BITMAP_SIZE];
@@ -139,6 +147,93 @@ int put_pages(size_t phyaddr, size_t npages)
 
 	atomic_int32_sub(&total_allocated_pages, ret);
 	atomic_int32_add(&total_available_pages, ret);
+
+	return ret;
+}
+
+int memory_init(void)
+{
+	unsigned int i;
+	size_t addr;
+	int ret = 0;
+
+	// mark all memory as used
+	memset(bitmap, 0xff, BITMAP_SIZE);
+
+	if (mb_info) {
+		if (mb_info->flags & MULTIBOOT_INFO_MEM_MAP) {
+			multiboot_memory_map_t* mmap = (multiboot_memory_map_t*) ((size_t) mb_info->mmap_addr);
+			multiboot_memory_map_t* mmap_end = (void*) ((size_t) mb_info->mmap_addr + mb_info->mmap_length);
+
+			// mark available memory as free
+			while (mmap < mmap_end) {
+				if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
+					for (addr=mmap->addr; addr < mmap->addr + mmap->len; addr += PAGE_SIZE) {
+						page_clear_mark(addr >> PAGE_BITS);
+						atomic_int32_inc(&total_pages);
+						atomic_int32_inc(&total_available_pages);
+					}
+				}
+				mmap++;
+			}
+		}
+		else if (mb_info->flags & MULTIBOOT_INFO_MEM) {
+			size_t page;
+			size_t pages_lower = mb_info->mem_lower >> 2;
+			size_t pages_upper = mb_info->mem_upper >> 2;
+
+			for (page=0; page<pages_lower; page++)
+				page_clear_mark(page);
+
+			for (page=0; page<pages_upper; page++)
+				page_clear_mark(page + (1<<8)); /* 1 MiB offset */
+
+			atomic_int32_add(&total_pages, pages_lower + pages_upper);
+			atomic_int32_add(&total_available_pages, pages_lower + pages_upper);
+		}
+		else {
+			kputs("Unable to initialize the memory management subsystem\n");
+			while (1) HALT;
+		}
+
+		// mark mb_info as used
+		page_set_mark((size_t) mb_info >> PAGE_BITS);
+		atomic_int32_inc(&total_allocated_pages);
+		atomic_int32_dec(&total_available_pages);
+
+
+		if (mb_info->flags & MULTIBOOT_INFO_MODS) {
+			// mark modules list as used
+			for(addr=mb_info->mods_addr; addr<mb_info->mods_addr+mb_info->mods_count*sizeof(multiboot_module_t); addr+=PAGE_SIZE) {
+				page_set_mark(addr >> PAGE_BITS);
+				atomic_int32_inc(&total_allocated_pages);
+				atomic_int32_dec(&total_available_pages);
+			}
+
+			// mark modules as used
+			multiboot_module_t* mmodule = (multiboot_module_t*) ((size_t) mb_info->mods_addr);
+			for(i=0; i<mb_info->mods_count; i++) {
+				for(addr=mmodule[i].mod_start; addr<mmodule[i].mod_end; addr+=PAGE_SIZE) {
+					page_set_mark(addr >> PAGE_BITS);
+					atomic_int32_inc(&total_allocated_pages);
+					atomic_int32_dec(&total_available_pages);
+				}
+			}
+		}
+	}
+
+	// mark kernel as used
+	for(addr=(size_t) &kernel_start; addr<(size_t) &kernel_end; addr+=PAGE_SIZE) {
+		page_set_mark(addr >> PAGE_BITS);
+		atomic_int32_inc(&total_allocated_pages);
+		atomic_int32_dec(&total_available_pages);
+	}
+
+	// enable paging and map SMP, VGA, Multiboot modules etc.
+	/*ret = page_init();
+	if (BUILTIN_EXPECT(ret, 0))
+		return ret;
+	*/
 
 	return ret;
 }
