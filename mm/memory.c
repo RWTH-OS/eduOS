@@ -179,14 +179,14 @@ int memory_init(void)
 		}
 		else if (mb_info->flags & MULTIBOOT_INFO_MEM) {
 			size_t page;
-			size_t pages_lower = mb_info->mem_lower >> 2;
+			size_t pages_lower = mb_info->mem_lower >> 2; /* KiB to page number */
 			size_t pages_upper = mb_info->mem_upper >> 2;
 
 			for (page=0; page<pages_lower; page++)
 				page_clear_mark(page);
 
 			for (page=0; page<pages_upper; page++)
-				page_clear_mark(page + (1<<8)); /* 1 MiB offset */
+				page_clear_mark(page + 256); /* 1 MiB == 256 pages offset */
 
 			atomic_int32_add(&total_pages, pages_lower + pages_upper);
 			atomic_int32_add(&total_available_pages, pages_lower + pages_upper);
