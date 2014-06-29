@@ -76,10 +76,12 @@ stublet:
 
 ; This will set up the x86 control registers:
 ; Caching and the floating point unit are enabled
+; Bootstrap page tables are loaded and page size
+; extensions (huge pages) enabled.
 global cpu_init
 cpu_init:
-; clears the current pgd entry
-    xor eax, eax
+; Set CR3
+    mov eax, boot_pgd
     mov cr3, eax
 
 ; Set CR4
@@ -318,6 +320,19 @@ global boot_stack
 ALIGN 4096
 boot_stack:
 	TIMES (KERNEL_STACK_SIZE) DB 0xcd
+
+; Bootstrap page tables are used during the initialization.
+; These tables do a simple identity paging and will
+; be replaced in page_init() by more fine-granular mappings.
+global boot_map
+ALIGN 4096
+boot_map:
+boot_pgd:
+	%assign i 0
+	%rep 1024
+	DD (i << 12) | 0x083
+	%assign i i+1
+	%endrep
 
 ; add some hints to the ELF file
 SECTION .note.GNU-stack noalloc noexec nowrite progbits
