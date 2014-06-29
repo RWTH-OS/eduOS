@@ -34,6 +34,7 @@
 #include <eduos/time.h>
 #include <asm/gdt.h>
 #include <asm/tss.h>
+#include <asm/page.h>
 
 gdt_ptr_t				gp;
 static tss_t			task_state_segment __attribute__ ((aligned (PAGE_SIZE)));

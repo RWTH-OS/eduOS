@@ -57,6 +57,23 @@ inline static uint64_t rdtsc(void)
 	return x;
 }
 
+/** @brief Read cr3 register
+ * @return cr3's value
+ */
+static inline size_t read_cr3(void) {
+	size_t val;
+	asm volatile("mov %%cr3, %0" : "=r"(val));
+	return val;
+}
+
+/** @brief Write a value into cr3 register
+ * @param val The value you want to write into cr3
+ */
+static inline void write_cr3(size_t val) {
+	asm volatile("mov %0, %%cr3" : : "r"(val));
+}
+
+
 /** @brief Flush cache
  *
  * The wbinvd asm instruction which stands for "Write back and invalidate"
@@ -64,6 +81,18 @@ inline static uint64_t rdtsc(void)
  */
 inline static void flush_cache(void) {
 	asm volatile ("wbinvd" : : : "memory");
+}
+
+/** @brief Flush Translation Lookaside Buffer
+ *
+ * Just reads cr3 and writes the same value back into it.
+ */
+static inline void flush_tlb(void)
+{
+	size_t val = read_cr3();
+
+	if (val)
+		write_cr3(val);
 }
 
 /** @brief Invalidate cache
