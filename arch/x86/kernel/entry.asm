@@ -64,10 +64,7 @@ stublet:
 ; Initialize CPU features
     call cpu_init
 ; Interpret multiboot information
-    extern multiboot_init
-    push ebx
-    call multiboot_init
-    add esp, 4
+    mov DWORD [mb_info], ebx
 
 ; Jump to the boot processors's C code
     extern main
@@ -315,6 +312,11 @@ no_context_switch:
     iret
 
 SECTION .data
+
+global mb_info:
+ALIGN 4
+mb_info:
+	DD 0
 
 global boot_stack
 ALIGN 4096
