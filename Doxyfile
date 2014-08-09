@@ -1178,7 +1178,7 @@ GENERATE_DOCSET        = NO
 # The default value is: Doxygen generated docs.
 # This tag requires that the tag GENERATE_DOCSET is set to YES.
 
-DOCSET_FEEDNAME        = "MetalSVM Documentation"
+DOCSET_FEEDNAME        = "eduOS Documentation"
 
 # This tag specifies a string that should uniquely identify the documentation
 # set bundle. This should be a reverse domain-name style string, e.g.
@@ -1186,7 +1186,7 @@ DOCSET_FEEDNAME        = "MetalSVM Documentation"
 # The default value is: org.doxygen.Project.
 # This tag requires that the tag GENERATE_DOCSET is set to YES.
 
-DOCSET_BUNDLE_ID       = org.metalsvm
+DOCSET_BUNDLE_ID       = com.github/RWTH-OS/eduOS
 
 # The DOCSET_PUBLISHER_ID tag specifies a string that should uniquely identify
 # the documentation publisher. This should be a reverse domain-name style
