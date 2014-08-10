@@ -11,7 +11,7 @@
  * 
  * The eduOS project is hosted in a Git repository. To check it out, just type:
  *
- * \verbatim$ git clone https://github.com/stlankes/eduOS.git  \endverbatim
+ * \verbatim$ git clone https://github.com/RWTH-OS/eduOS.git  \endverbatim
  *
  * @section compiling Compiling eduOS
  *
