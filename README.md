@@ -1,4 +1,4 @@
-eduOS - A learning operating system
+eduOS - A teaching operating system
 ===================================
 
 Introduction
