@@ -7,14 +7,14 @@ Introduction
 eduOS is a Unix-like computer operating system based on a monolithic architecture for educational purposes.
 It is derived from following tutorials and software distributions.
  
-1. bkerndev - Bran's Kernel Development Tutorial
+0. bkerndev - Bran's Kernel Development Tutorial
 
    The first steps to realize eduOS based on Bran's Kernel Development 
    Tutorial (http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial).
    In particular, the initialization of GDT, IDT and the interrupt handlers are derived
    from this tutorial.
 
-2. kprintf, umoddu3, udivdi3, qdivrem, divdi3, lshrdi3, moddi3, strtol, strtoul, ucmpdi2
+1. kprintf, umoddu3, udivdi3, qdivrem, divdi3, lshrdi3, moddi3, strtol, strtoul, ucmpdi2
 
    This software contains code derived from material licensed
    to the University of California by American Telephone and Telegraph
@@ -62,5 +62,8 @@ Boot eduOS via grub
 
 Usefull Links
 -------------
-1. http://www.gnu.org/software/grub/manual/multiboot/
-2. http://techblog.lankes.org/tutorials/
+0. http://www.gnu.org/software/grub/manual/multiboot/
+1. http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial
+2. http://www.jamesmolloy.co.uk/tutorial_html/index.html
+3. http://techblog.lankes.org/tutorials/
+4. http://www.os.rwth-aachen.de
