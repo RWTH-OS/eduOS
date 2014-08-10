@@ -33,20 +33,20 @@ Requirements of eduOS
 Building eduOS
 --------------
 
-1. Copy Makefile.example to Makefile and edit this Makefile to meet your individual convenience.
-2. Copy include/eduos/config.h.example to include/eduos/config.h and edit this config file to 
+0. Copy Makefile.example to Makefile and edit this Makefile to meet your individual convenience.
+1. Copy include/eduos/config.h.example to include/eduos/config.h and edit this config file to 
    meet your individual convenience.
-3. Build kernel with "make"
+2. Build kernel with "make"
 
 Start eduOS via qemu
 --------------------
-1. Install qemu to emulate an x86 architecture
-2. Start emulator with "make qemu"
+0. Install qemu to emulate an x86 architecture
+1. Start emulator with "make qemu"
 
 Boot eduOS via grub
 -------------------
-1. Copy eduos.elf as eduos.bin into the directory /boot. (cp eduos.elf /boot/eduos.bin)
-2. Create a boot entry in the grub menu. This depends on the version of grub, which is used by 
+0. Copy eduos.elf as eduos.bin into the directory /boot. (cp eduos.elf /boot/eduos.bin)
+1. Create a boot entry in the grub menu. This depends on the version of grub, which is used by 
    the installed Linux system. For instance, we added following lines to /boot/grub/grub.cfg:
 
 <pre>
