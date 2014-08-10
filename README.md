@@ -62,11 +62,11 @@ Boot eduOS via grub
 
 Overview of all branches
 ------------------------
-1. stage0 - Smallest HelloWorld of the World 
+0. stage0 - Smallest HelloWorld of the World 
 
    Description of loading a minimal 32bit kernel
 
-2. stage1 - Non-preemptive multitasking
+1. stage1 - Non-preemptive multitasking
 
    Introduction into a simple form of multitasking, where no interrupts are
    required.
