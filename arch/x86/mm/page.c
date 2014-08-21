@@ -219,9 +219,6 @@ int page_init()
 	irq_uninstall_handler(14);
 	irq_install_handler(14, page_fault_handler);
 
-	// create self-reference
-	boot_map[PAGE_MAP_ENTRIES-1] = (size_t) &boot_map | PG_PRESENT | PG_RW;
-
 	// map kernel
 	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
 	page_map((size_t) &kernel_start, (size_t) &kernel_start, npages, PG_PRESENT | PG_RW | PG_GLOBAL);

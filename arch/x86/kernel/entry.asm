@@ -331,7 +331,8 @@ global boot_map
 boot_map:
 boot_pgd:
 	DD boot_pgt + 0x103	; PG_GLOBAL | PG_RW | PG_PRESENT
-	times 1023 DD 0		; PAGE_MAP_ENTRIES - 1
+	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
+	DD boot_pgd + 0x103 ; PG_GLOBAL | PG_RW | PG_PRESENT (self-reference)
 boot_pgt:
 	%assign i 0
 	%rep 1024		; PAGE_MAP_ENTRIES
