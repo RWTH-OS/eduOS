@@ -54,12 +54,20 @@
 /// Mask the page address without page map flags
 #define PAGE_MASK		0xFFFFF000
 
+/// Make address canonical
+#define CANONICAL(addr)		(addr) // only for 32 bit paging
+
 /// The number of entries in a page map table
 #define PAGE_MAP_ENTRIES	(1L << PAGE_MAP_BITS)
 
 // Base addresses of the self-mapped pagetables
 #define PAGE_MAP_PGD		0xFFFFF000
 #define PAGE_MAP_PGT		0xFFC00000
+
+/// Align to next page
+#define PAGE_FLOOR(addr)        (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
+/// Align to page
+#define PAGE_CEIL(addr)         ( (addr)                  & PAGE_MASK)
 
 /// Page is present
 #define PG_PRESENT		(1 << 0)
@@ -84,10 +92,6 @@
 /// This page or table is used during the boot process
 #define PG_BOOT			(1 << 9)
 
-/// This is a whole set of flags (PRESENT,RW,ACCESSED,DIRTY) for kernelspace tables
-#define PG_TABLE		(PG_PRESENT|PG_RW)
-/// This is a whole set of flags (PRESENT,RW,GLOBAL) for kernelspace pages
-#define PG_PAGE			(PG_PRESENT|PG_RW|PG_GLOBAL)
 
 /** @brief A single entry in a page map
  *
