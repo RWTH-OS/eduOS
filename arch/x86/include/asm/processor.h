@@ -66,13 +66,28 @@ static inline size_t read_cr3(void) {
 	return val;
 }
 
+/** @brief Read cr2 register
+ * @return cr2's value
+ */
+static inline size_t read_cr2(void) {
+	size_t val;
+	asm volatile("mov %%cr2, %0" : "=r"(val));
+	return val;
+}
+
+/** @brief Write a value into cr2 register
+ * @param val The value you want to write into cr2
+ */
+static inline void write_cr2(size_t val) {
+	asm volatile("mov %0, %%cr2" : : "r"(val));
+}
+
 /** @brief Write a value into cr3 register
  * @param val The value you want to write into cr3
  */
 static inline void write_cr3(size_t val) {
 	asm volatile("mov %0, %%cr3" : : "r"(val));
 }
-
 
 /** @brief Flush cache
  *
@@ -93,6 +108,14 @@ static inline void flush_tlb(void)
 
 	if (val)
 		write_cr3(val);
+}
+
+/** @brief Flush a specific page entry in TLB
+ * @param addr The (virtual) address of the page to flush
+ */
+static inline void tlb_flush_one_page(size_t addr)
+{
+	asm volatile("invlpg (%0)" : : "r"(addr) : "memory");
 }
 
 /** @brief Invalidate cache
