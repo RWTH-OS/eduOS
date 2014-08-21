@@ -1,4 +1,4 @@
-;
+
 ; Copyright (c) 2010, Stefan Lankes, RWTH Aachen University
 ; All rights reserved.
 ;
@@ -318,22 +318,25 @@ ALIGN 4
 mb_info:
 	DD 0
 
-global boot_stack
 ALIGN 4096
+global boot_stack
 boot_stack:
 	TIMES (KERNEL_STACK_SIZE) DB 0xcd
 
 ; Bootstrap page tables are used during the initialization.
 ; These tables do a simple identity paging and will
 ; be replaced in page_init() by more fine-granular mappings.
-global boot_map
 ALIGN 4096
+global boot_map
 boot_map:
 boot_pgd:
+	DD boot_pgt + 0x103	; PG_GLOBAL | PG_RW | PG_PRESENT
+	times 1023 DD 0		; PAGE_MAP_ENTRIES - 1
+boot_pgt:
 	%assign i 0
-	%rep 1024
-	DD (i << 12) | 0x083
-	%assign i i+1
+	%rep 1024		; PAGE_MAP_ENTRIES
+	DD i        | 0x203	; PG_BOOT | PG_RW | PG_PRESENT
+	%assign i i + 4096	; PAGE_SIZE
 	%endrep
 
 ; add some hints to the ELF file

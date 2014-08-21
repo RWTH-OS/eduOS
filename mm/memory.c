@@ -230,10 +230,11 @@ int memory_init(void)
 	}
 
 	// enable paging and map SMP, VGA, Multiboot modules etc.
-	/*ret = page_init();
-	if (BUILTIN_EXPECT(ret, 0))
+	ret = page_init();
+	if (BUILTIN_EXPECT(ret, 0)) {
+		kputs("Failed to initialize paging!\n");
 		return ret;
-	*/
+	}
 
 	return ret;
 }

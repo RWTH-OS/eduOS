@@ -50,7 +50,7 @@
 /// Page map bits
 #define PAGE_MAP_BITS		10
 /// Number of page map indirections
-#define PAGE_MAP_LEVELS	2
+#define PAGE_LEVELS	2
 /// Mask the page address without page map flags
 #define PAGE_MASK		0xFFFFF000
 
@@ -93,11 +93,14 @@
 #define PG_BOOT			(1 << 9)
 
 
-/** @brief A single entry in a page map
+/** @brief Converts a virtual address to a physical
  *
- * Usually used as a pointer to a mapped page map entry.
+ * A non mapped virtual address causes a pagefault!
+ *
+ * @param addr Virtual address to convert
+ * @return physical address
  */
-typedef size_t page_entry_t;
+size_t page_virt_to_phys(size_t vir);
 
 /** @brief Initialize paging subsystem
  *
@@ -112,27 +115,19 @@ int page_init();
  *
  * @param viraddr
  * @param phyaddr
- * @param pages
- * @param flags
+ * @param npages
+ * @param bits
  * @return
  */
-int page_map(size_t viraddr, size_t phyaddr, size_t pages, size_t flags);
+int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits);
 
 /** @brief Unmap a continious region of pages
  *
  * @param viraddr
- * @param pages
+ * @param npages
  * @return
  */
-int page_unmap(size_t viraddr, size_t pages);
-
-/**  @brief Copy a single page frame
- *
- * @param dest
- * @param src
- * @return
- */
-int page_copy(size_t dest, size_t src);
+int page_unmap(size_t viraddr, size_t npages);
 
 /** @brief Copy a whole page map tree
  *
@@ -140,19 +135,12 @@ int page_copy(size_t dest, size_t src);
  * @param src
  * @return
  */
-int page_map_copy(page_entry_t *dest, page_entry_t *src);
+int page_map_copy(size_t *dest, size_t *src);
 
 /** @brief Free a whole page map tree
  *
  * @param map
  */
-int page_map_drop(page_entry_t *map);
-
-/** @brief Converts a virtual address to a physical
- *
- * @param viraddr Virtual address to convert
- * @return Physical address
- */
-size_t virt_to_phys(size_t viraddr);
+int page_map_drop(size_t *map);
 
 #endif

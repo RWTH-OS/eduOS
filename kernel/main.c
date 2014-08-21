@@ -100,12 +100,12 @@ static int eduos_init(void)
 	// initialize .bss section
 	memset((void*)&bss_start, 0x00, ((size_t) &bss_end - (size_t) &bss_start));
 
-	memory_init();
 	system_init();
 	irq_init();
 	timer_init();
 	koutput_init();
 	multitasking_init();
+	memory_init();
 
 	return 0;
 }
