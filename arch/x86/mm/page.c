@@ -228,8 +228,5 @@ int page_init()
 	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_PCD | PG_PRESENT | PG_RW);
 #endif
 
-	// flush TLB to apply new mappings
-	flush_tlb();
-
 	return 0;
 }
