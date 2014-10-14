@@ -43,6 +43,9 @@ extern "C" {
 /** @brief Initialize VGA output and clear the screen */
 void vga_init(void);
 
+/** @brief Clear the VGA screen */
+void vga_clear(void);
+
 /** @brief Simple string output on screen.
  *
  * If you want a new line you will have to "\\n".
