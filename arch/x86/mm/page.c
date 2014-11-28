@@ -147,10 +147,13 @@ void page_fault_handler(struct state *s)
 {
 	size_t viraddr = read_cr2();
 
-	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, address = %#lx\n",
-		s->int_no, s->cs, s->eip, viraddr);
-
-	outportb(0x20, 0x20); /** @todo: do we need this? */
+        kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
+		s->int_no, s->cs, s->eip, current_task->id, viraddr, s->error,
+		(s->error & 0x4) ? "user" : "supervisor",
+		(s->error & 0x10) ? "instruction" : "data",
+		(s->error & 0x2) ? "write" : ((s->error & 0x10) ? "fetch" : "read"),
+		(s->error & 0x1) ? "protection" : "not present",
+		(s->error & 0x8) ? "reserved bit" : "\b");
 
 	while(1) HALT;
 }
