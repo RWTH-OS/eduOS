@@ -58,12 +58,6 @@ static size_t* self[PAGE_LEVELS] = {
 	(size_t *) 0xFFFFF000
 };
 
-/** @todo: replace these offset by something meaningful */
-static size_t * other[PAGE_LEVELS] = {
-	(size_t *) 0xFF800000,
-	(size_t *) 0xFFFFE000
-};
-
 /* Addresses of child/parent tables */
 #define  CHILD(map, lvl, vpn)	&map[lvl-1][vpn<<PAGE_MAP_BITS]
 #define PARENT(map, lvl, vpn)	&map[lvl+1][vpn>>PAGE_MAP_BITS]
