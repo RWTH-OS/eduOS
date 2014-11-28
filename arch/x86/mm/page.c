@@ -58,6 +58,12 @@ static size_t* self[PAGE_LEVELS] = {
 	(size_t *) 0xFFFFF000
 };
 
+/** An other self-reference for page_map_copy() */
+static size_t * other[PAGE_LEVELS] = {
+	(size_t *) 0xFF800000,
+	(size_t *) 0xFFFFE000
+};
+
 /* Addresses of child/parent tables */
 #define  CHILD(map, lvl, vpn)	&map[lvl-1][vpn<<PAGE_MAP_BITS]
 #define PARENT(map, lvl, vpn)	&map[lvl+1][vpn>>PAGE_MAP_BITS]
@@ -184,9 +190,8 @@ int page_map_copy(size_t dest)
 				if (BUILTIN_EXPECT(phyaddr, 0))
 					return -ENOMEM;
 
-
-		                 new[lvl][vpn]  = phyaddr;
-				new[lvl][vpn] |= self[lvl][vpn] & ~PAGE_MASK;
+		                other[lvl][vpn]  = phyaddr;
+				other[lvl][vpn] |= self[lvl][vpn] & ~PAGE_MASK;
 
 				memcpy(CHILD(other, lvl, vpn), CHILD(self, lvl, vpn), PAGE_SIZE);
 

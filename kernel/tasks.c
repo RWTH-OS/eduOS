@@ -34,14 +34,17 @@
 #include <eduos/spinlock.h>
 #include <eduos/errno.h>
 #include <eduos/syscall.h>
+#include <eduos/memory.h>
+
+#include <asm/page.h>
 
 /** @brief Array of task structures (aka PCB)
  *
  * A task's id will be its position in this array.
  */
 static task_t task_table[MAX_TASKS] = { \
-		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, NULL, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}, \
-		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, NULL, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}};
+		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}, \
+		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}};
 
 static spinlock_irqsave_t table_lock = SPINLOCK_IRQSAVE_INIT;
 
@@ -117,6 +120,8 @@ static void NORETURN do_exit(int arg)
 	task_t* curr_task = current_task;
 
 	kprintf("Terminate task: %u, return value %d\n", curr_task->id, arg);
+
+        page_map_drop();
 
 	curr_task->status = TASK_FINISHED;
 	reschedule();
@@ -194,13 +199,17 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 			task_table[i].last_stack_pointer = NULL;
 			task_table[i].stack = create_stack(i);
 			task_table[i].prio = prio;
-			task_table[i].page_map = get_pages(1);
-			/** @todo: Check if get_pages(1) was successful */
 
 			spinlock_irqsave_init(&task_table[i].page_lock);
 			atomic_int32_set(&task_table[i].user_usage, 0);
 
-			//page_map_copy(&task_table[i]);
+                        /* Allocated new PGD or PML4 and copy page table */
+                        size_t map = get_pages(1);
+			if (BUILTIN_EXPECT(map, 0))
+			        goto out;
+
+			page_map_copy(map);
+                        task_table[i].page_map = map;
 
 			if (id)
 				*id = i;
@@ -226,6 +235,7 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 		}
 	}
 
+out:
 	spinlock_irqsave_unlock(&table_lock);
 
 	return ret;
