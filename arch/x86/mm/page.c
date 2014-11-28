@@ -175,7 +175,6 @@ int page_unmap(size_t viraddr, size_t npages)
 	return 0;
 }
 
-/* @todo: complete
 int page_map_drop()
 {
 	void traverse(int lvl, long vpn) {
@@ -246,7 +245,7 @@ int page_map_copy(size_t dest)
 	spinlock_unlock(&kslock);
 
 	return 0;
-}*/
+}
 
 void page_fault_handler(struct state *s)
 {

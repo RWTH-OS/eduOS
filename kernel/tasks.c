@@ -40,8 +40,8 @@
  * A task's id will be its position in this array.
  */
 static task_t task_table[MAX_TASKS] = { \
-		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, NULL, NULL}, \
-		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, NULL, NULL}};
+		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, NULL, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}, \
+		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, NULL, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}};
 
 static spinlock_irqsave_t table_lock = SPINLOCK_IRQSAVE_INIT;
 
@@ -53,7 +53,7 @@ extern const void boot_stack;
 /** @brief helper function for the assembly code to determine the current task
  * @return Pointer to the task_t structure of current task
  */
-task_t* get_current_task(void) 
+task_t* get_current_task(void)
 {
 	return current_task;
 }
@@ -161,6 +161,8 @@ void NORETURN abort(void) {
 
 /** @brief Create a task with a specific entry point
  *
+ * @todo Dont aquire table_lock for the whole task creation.
+ *
  * @param id Pointer to a tid_t struct were the id shall be set
  * @param ep Pointer to the function the task shall start with
  * @param arg Arguments list
@@ -192,6 +194,13 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 			task_table[i].last_stack_pointer = NULL;
 			task_table[i].stack = create_stack(i);
 			task_table[i].prio = prio;
+			task_table[i].page_map = get_pages(1);
+			/** @todo: Check if get_pages(1) was successful */
+
+			spinlock_irqsave_init(&task_table[i].page_lock);
+			atomic_int32_set(&task_table[i].user_usage, 0);
+
+			//page_map_copy(&task_table[i]);
 
 			if (id)
 				*id = i;
