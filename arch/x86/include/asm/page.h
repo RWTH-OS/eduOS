@@ -88,6 +88,8 @@
 /// This page or table is used during the boot process
 #define PG_BOOT			(1 << 9)
 
+/// This page is reserved for copying
+#define PAGE_TMP		(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
 
 /** @brief Converts a virtual address to a physical
  *

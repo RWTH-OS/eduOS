@@ -63,9 +63,6 @@ static size_t * other[PAGE_LEVELS] = {
 #define  CHILD(map, lvl, vpn)	&map[lvl-1][vpn<<PAGE_MAP_BITS]
 #define PARENT(map, lvl, vpn)	&map[lvl+1][vpn>>PAGE_MAP_BITS]
 
-/** This page is reserved for copying */
-#define PAGE_TMP			(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
-
 /** @todo Does't handle huge pages for now
  *  @todo This will cause a pagefaut if addr isn't mapped! */
 size_t page_virt_to_phys(size_t addr)
@@ -139,7 +136,7 @@ int page_unmap(size_t viraddr, size_t npages)
 	spinlock_lock(&kslock);
 
 	for (vpn=start; vpn<end; vpn++)
-			self[0][vpn] = 0;
+		self[0][vpn] = 0;
 
 	spinlock_unlock(&kslock);
 
