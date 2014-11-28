@@ -24,6 +24,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/**
+ * This is a 32/64 bit portable paging implementation for the x86 architecture
+ * using self-referenced page tables.
+ * See http://www.noteblok.net/2014/06/14/bachelor/ for a detailed description.
+ */
 
 #include <eduos/stdio.h>
 #include <eduos/memory.h>
@@ -53,21 +58,10 @@ static size_t* self[PAGE_LEVELS] = {
 	(size_t *) 0xFFFFF000
 };
 
-/** @todo: replace these offset by something meaningful */
-static size_t * other[PAGE_LEVELS] = {
-	(size_t *) 0xFF800000,
-	(size_t *) 0xFFFFE000
-};
-
-/** Addresses of child/parent tables */
+/* Addresses of child/parent tables */
 #define  CHILD(map, lvl, vpn)	&map[lvl-1][vpn<<PAGE_MAP_BITS]
 #define PARENT(map, lvl, vpn)	&map[lvl+1][vpn>>PAGE_MAP_BITS]
 
-/** This page is reserved for copying */
-#define PAGE_TMP			(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
-
-/** @todo Does't handle huge pages for now
- *  @todo This will cause a pagefaut if addr isn't mapped! */
 size_t page_virt_to_phys(size_t addr)
 {
 	size_t vpn   = addr >> PAGE_BITS;	// virtual page number
@@ -84,7 +78,7 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 	long vpn = viraddr >> PAGE_BITS;
 	long first[PAGE_LEVELS], last[PAGE_LEVELS];
 
-	// calculate index boundaries for page map traversal
+	/* Calculate index boundaries for page map traversal */
 	for (lvl=0; lvl<PAGE_LEVELS; lvl++) {
 		first[lvl] = (vpn         ) >> (lvl * PAGE_MAP_BITS);
 		last[lvl]  = (vpn+npages-1) >> (lvl * PAGE_MAP_BITS);
@@ -92,41 +86,12 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 
 	spinlock_lock(&kslock);
 
-	/* We start now iterating through the entries
-	 * beginning at the root table (PGD) */
+	/* Start iterating through the entries
+	 * beginning at the root table (PGD or PML4) */
 	for (lvl=PAGE_LEVELS-1; lvl>=0; lvl--) {
 		for (vpn=first[lvl]; vpn<=last[lvl]; vpn++) {
 			if (lvl) { /* PML4, PDPT, PGD */
-				if (self[lvl][vpn] & PG_PRESENT) {
-					/* There already an existing table which only allows
-					 * kernel accesses. We need to copy the table to create
-					 * private copy for the user space process */
-					if (!(self[lvl][vpn] & PG_USER) && (bits & PG_USER)) {
-						size_t phyaddr = get_pages(1);
-						if (BUILTIN_EXPECT(!phyaddr, 0)) {
-							spinlock_unlock(&kslock);
-							return -ENOMEM;
-						}
-
-						atomic_int32_inc(&current_task->user_usage);
-
-						/* Copy old table contents to new one.
-						 * We temporarily use page zero (PAGE_TMP) for this
-						 * by mapping the new table to this address. */
-						page_map(PAGE_TMP, phyaddr, 1, PG_RW | PG_PRESENT);
-						memcpy((void *) PAGE_TMP, CHILD(self, lvl, vpn), PAGE_SIZE);
-
-						/* Update table by replacing address and altering flags */
-						self[lvl][vpn] &= ~(PAGE_MASK | PG_GLOBAL);
-						self[lvl][vpn] |= phyaddr | PG_USER;
-
-						/* We only need to flush the self-mapped table.
-						 * TLB entries mapped by this table remain valid
-						 * because we only made an identical copy. */
-						tlb_flush_one_page((size_t) CHILD(self, lvl, vpn));
-					}
-				}
-				else {
+				if (!(self[lvl][vpn] & PG_PRESENT)) {
 					/* There's no table available which covers the region.
 					 * Therefore we need to create a new empty table. */
 					size_t phyaddr = get_pages(1);
@@ -167,8 +132,10 @@ int page_unmap(size_t viraddr, size_t npages)
 
 	spinlock_lock(&kslock);
 
+        /* Start iterating through the entries.
+         * Only the PGT entries are removed. Tables remain allocated. */
 	for (vpn=start; vpn<end; vpn++)
-			self[0][vpn] = 0;
+		self[0][vpn] = 0;
 
 	spinlock_unlock(&kslock);
 
@@ -251,10 +218,13 @@ void page_fault_handler(struct state *s)
 {
 	size_t viraddr = read_cr2();
 
-	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, address = %#lx\n",
-		s->int_no, s->cs, s->eip, viraddr);
-
-	outportb(0x20, 0x20); /** @todo: do we need this? */
+        kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
+		s->int_no, s->cs, s->eip, current_task->id, viraddr, s->error,
+		(s->error & 0x4) ? "user" : "supervisor",
+		(s->error & 0x10) ? "instruction" : "data",
+		(s->error & 0x2) ? "write" : ((s->error & 0x10) ? "fetch" : "read"),
+		(s->error & 0x1) ? "protection" : "not present",
+		(s->error & 0x8) ? "reserved bit" : "\b");
 
 	while(1) HALT;
 }
@@ -264,21 +234,21 @@ int page_init()
 	size_t addr, npages;
 	int i;
 
-	// replace default pagefault handler
+	/* Replace default pagefault handler */
 	irq_uninstall_handler(14);
 	irq_install_handler(14, page_fault_handler);
 
-	// map kernel
+	/* Map kernel */
 	addr = (size_t) &kernel_start;
 	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
 	page_map(addr, addr, npages, PG_PRESENT | PG_RW | PG_GLOBAL);
 
 #ifdef CONFIG_VGA
-	// map video memory
+	/* Map video memory */
 	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_PRESENT | PG_RW | PG_PCD);
 #endif
 
-	// map multiboot information and modules
+	/* Map multiboot information and modules */
 	if (mb_info) {
 		addr = (size_t) mb_info & PAGE_MASK;
 		npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
@@ -298,7 +268,7 @@ int page_init()
 		}
 	}
 
-	// unmap all (identity mapped) pages with PG_BOOT flag in first PGT (boot_pgt)
+	/* Unmap bootstrap identity paging (see entry.asm, PG_BOOT) */
 	for (i=0; i<PAGE_MAP_ENTRIES; i++) {
 		if (self[0][i] & PG_BOOT) {
 			self[0][i] = 0;
