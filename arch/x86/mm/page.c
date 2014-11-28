@@ -97,36 +97,7 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 	for (lvl=PAGE_LEVELS-1; lvl>=0; lvl--) {
 		for (vpn=first[lvl]; vpn<=last[lvl]; vpn++) {
 			if (lvl) { /* PML4, PDPT, PGD */
-				if (self[lvl][vpn] & PG_PRESENT) {
-					/* There already an existing table which only allows
-					 * kernel accesses. We need to copy the table to create
-					 * private copy for the user space process */
-					if (!(self[lvl][vpn] & PG_USER) && (bits & PG_USER)) {
-						size_t phyaddr = get_pages(1);
-						if (BUILTIN_EXPECT(!phyaddr, 0)) {
-							spinlock_unlock(&kslock);
-							return -ENOMEM;
-						}
-
-						atomic_int32_inc(&current_task->user_usage);
-
-						/* Copy old table contents to new one.
-						 * We temporarily use page zero (PAGE_TMP) for this
-						 * by mapping the new table to this address. */
-						page_map(PAGE_TMP, phyaddr, 1, PG_RW | PG_PRESENT);
-						memcpy((void *) PAGE_TMP, CHILD(self, lvl, vpn), PAGE_SIZE);
-
-						/* Update table by replacing address and altering flags */
-						self[lvl][vpn] &= ~(PAGE_MASK | PG_GLOBAL);
-						self[lvl][vpn] |= phyaddr | PG_USER;
-
-						/* We only need to flush the self-mapped table.
-						 * TLB entries mapped by this table remain valid
-						 * because we only made an identical copy. */
-						tlb_flush_one_page((size_t) CHILD(self, lvl, vpn));
-					}
-				}
-				else {
+				if (!(self[lvl][vpn] & PG_PRESENT)) {
 					/* There's no table available which covers the region.
 					 * Therefore we need to create a new empty table. */
 					size_t phyaddr = get_pages(1);
@@ -174,79 +145,6 @@ int page_unmap(size_t viraddr, size_t npages)
 
 	return 0;
 }
-
-/* @todo: complete
-int page_map_drop()
-{
-	void traverse(int lvl, long vpn) {
-		kprintf("traverse(lvl=%d, vpn=%#lx)\n", lvl, vpn);
-
-		long stop;
-		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
-			if (self[lvl][vpn] & PG_PRESENT) {
-				if (self[lvl][vpn] & PG_BOOT)
-					continue;
-
-				// ost-order traversal
-				if (lvl > 1)
-					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
-
-				kprintf("%#lx, ", self[lvl][vpn] & PAGE_MASK);
-				//put_page(self[lvl][vpn] & PAGE_MASK);
-
-				atomic_int32_dec(&current_task->user_usage);
-			}
-		}
-	}
-
-	spinlock_irqsave_lock(&current_task->page_lock);
-
-	traverse(PAGE_LEVELS-1, 0);
-
-	spinlock_irqsave_unlock(&current_task->page_lock);
-
-	return 0;
-}
-
-int page_map_copy(size_t dest)
-{
-	int traverse(int lvl, long vpn) {
-		long stop;
-		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
-			if (self[lvl][vpn] & PG_PRESENT) {
-				size_t phyaddr = get_pages(1);
-				if (BUILTIN_EXPECT(phyaddr, 0))
-					return -ENOMEM;
-
-
-		                 new[lvl][vpn]  = phyaddr;
-				new[lvl][vpn] |= self[lvl][vpn] & ~PAGE_MASK;
-
-				memcpy(CHILD(other, lvl, vpn), CHILD(self, lvl, vpn), PAGE_SIZE);
-
-				// pre-order traversal
-				if (lvl)
-					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
-			}
-		}
-
-		return 0;
-	}
-
-	spinlock_lock(&kslock);
-
-	// create another temporary self-reference
-	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = dest | PG_PRESENT | PG_RW;
-
-	traverse(PAGE_LEVELS-1, 0);
-
-	// remove temporary self-reference
-	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = 0;
-
-	spinlock_unlock(&kslock);
-
-	return 0;
-}*/
 
 void page_fault_handler(struct state *s)
 {
