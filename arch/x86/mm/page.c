@@ -29,33 +29,49 @@
 #include <eduos/memory.h>
 #include <eduos/errno.h>
 #include <eduos/string.h>
+#include <eduos/spinlock.h>
 
 #include <asm/irq.h>
 #include <asm/page.h>
 #include <asm/io.h>
+#include <asm/multiboot.h>
 
 /* Note that linker symbols are not variables, they have no memory
  * allocated for maintaining a value, rather their address is their value. */
 extern const void kernel_start;
 extern const void kernel_end;
 
+/** Lock for kernel space page tables */
+static spinlock_t kslock = SPINLOCK_INIT;
+
 /** This PGD table is initialized in entry.asm */
 extern size_t boot_map[PAGE_MAP_ENTRIES];
 
 /** A self-reference enables direct access to all page tables */
 static size_t* self[PAGE_LEVELS] = {
-		(size_t *) PAGE_MAP_PGT, (size_t *) PAGE_MAP_PGD
+	(size_t *) 0xFFC00000,
+	(size_t *) 0xFFFFF000
 };
 
-#define self_child(lvl, vpn)	&self[lvl-1][vpn<<PAGE_MAP_BITS]
-#define self_parent(lvl, vpn)	&self[lvl+1][vpn>>PAGE_MAP_BITS]
+/** @todo: replace these offset by something meaningful */
+static size_t * other[PAGE_LEVELS] = {
+	(size_t *) 0xFF800000,
+	(size_t *) 0xFFFFE000
+};
 
-/** @todo Does't handle huge pages for now 
+/** Addresses of child/parent tables */
+#define  CHILD(map, lvl, vpn)	&map[lvl-1][vpn<<PAGE_MAP_BITS]
+#define PARENT(map, lvl, vpn)	&map[lvl+1][vpn>>PAGE_MAP_BITS]
+
+/** This page is reserved for copying */
+#define PAGE_TMP			(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
+
+/** @todo Does't handle huge pages for now
  *  @todo This will cause a pagefaut if addr isn't mapped! */
 size_t page_virt_to_phys(size_t addr)
 {
 	size_t vpn   = addr >> PAGE_BITS;	// virtual page number
-	size_t entry = self[0][vpn];		// page table entry 
+	size_t entry = self[0][vpn];		// page table entry
 	size_t off   = addr  & ~PAGE_MASK;	// offset within page
 	size_t phy   = entry &  PAGE_MASK;	// physical page frame number
 
@@ -66,59 +82,70 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 {
 	int lvl;
 	long vpn = viraddr >> PAGE_BITS;
-	long first[PAGE_LEVELS], last[PAGE_LEVELS];	// index boundaries for self-mapping
+	long first[PAGE_LEVELS], last[PAGE_LEVELS];
 
+	// calculate index boundaries for page map traversal
 	for (lvl=0; lvl<PAGE_LEVELS; lvl++) {
 		first[lvl] = (vpn         ) >> (lvl * PAGE_MAP_BITS);
-		last[lvl]  = (vpn + npages) >> (lvl * PAGE_MAP_BITS);
+		last[lvl]  = (vpn+npages-1) >> (lvl * PAGE_MAP_BITS);
 	}
+
+	spinlock_lock(&kslock);
 
 	/* We start now iterating through the entries
 	 * beginning at the root table (PGD) */
 	for (lvl=PAGE_LEVELS-1; lvl>=0; lvl--) {
 		for (vpn=first[lvl]; vpn<=last[lvl]; vpn++) {
-			if (lvl) { /* PML4, PDPT, PGD */	
+			if (lvl) { /* PML4, PDPT, PGD */
 				if (self[lvl][vpn] & PG_PRESENT) {
 					/* There already an existing table which only allows
 					 * kernel accesses. We need to copy the table to create
 					 * private copy for the user space process */
 					if (!(self[lvl][vpn] & PG_USER) && (bits & PG_USER)) {
 						size_t phyaddr = get_pages(1);
-						if (BUILTIN_EXPECT(!phyaddr, 0))
+						if (BUILTIN_EXPECT(!phyaddr, 0)) {
+							spinlock_unlock(&kslock);
 							return -ENOMEM;
+						}
+
+						atomic_int32_inc(&current_task->user_usage);
 
 						/* Copy old table contents to new one.
-						 * We temporarily use page zero for this
+						 * We temporarily use page zero (PAGE_TMP) for this
 						 * by mapping the new table to this address. */
-						page_map(0, phyaddr, 1, PG_RW | PG_PRESENT);
-						memcpy(0, self_child(lvl, vpn), PAGE_SIZE);
+						page_map(PAGE_TMP, phyaddr, 1, PG_RW | PG_PRESENT);
+						memcpy((void *) PAGE_TMP, CHILD(self, lvl, vpn), PAGE_SIZE);
 
 						/* Update table by replacing address and altering flags */
 						self[lvl][vpn] &= ~(PAGE_MASK | PG_GLOBAL);
-						self[lvl][vpn] |=     phyaddr | PG_USER;
+						self[lvl][vpn] |= phyaddr | PG_USER;
 
 						/* We only need to flush the self-mapped table.
 						 * TLB entries mapped by this table remain valid
 						 * because we only made an identical copy. */
-						tlb_flush_one_page((size_t) self_child(lvl, vpn));
+						tlb_flush_one_page((size_t) CHILD(self, lvl, vpn));
 					}
 				}
 				else {
 					/* There's no table available which covers the region.
 					 * Therefore we need to create a new empty table. */
 					size_t phyaddr = get_pages(1);
-					if (BUILTIN_EXPECT(!phyaddr, 0))
+					if (BUILTIN_EXPECT(!phyaddr, 0)) {
+						spinlock_unlock(&kslock);
 						return -ENOMEM;
+					}
 
-					/* Reference the new table in the parent */
+					/* Reference the new table within its parent */
 					self[lvl][vpn] = phyaddr | bits;
 
 					/* Fill new table with zeros */
-					memset(self_child(lvl, vpn), 0, PAGE_SIZE);
+					memset(CHILD(self, lvl, vpn), 0, PAGE_SIZE);
 				}
 			}
 			else { /* PGT */
 				if (self[lvl][vpn] & PG_PRESENT)
+					/* There's already a page mapped at this address.
+					 * We have to flush a single TLB entry. */
 					tlb_flush_one_page(vpn << PAGE_BITS);
 
 				self[lvl][vpn] = phyaddr | bits;
@@ -127,77 +154,99 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 		}
 	}
 
+	spinlock_unlock(&kslock);
+
 	return 0;
 }
 
+/** Tables are freed by page_map_drop() */
 int page_unmap(size_t viraddr, size_t npages)
 {
-	int lvl;
-	long vpn = viraddr >> PAGE_BITS;
-	long first[PAGE_LEVELS], last[PAGE_LEVELS];	// index boundaries for self-mapping
+	long vpn, start = viraddr >> PAGE_BITS;
+	long end = start + npages;
 
-	for (lvl=0; lvl<PAGE_LEVELS; lvl++) {
-		first[lvl] = (vpn         ) >> (lvl * PAGE_MAP_BITS);
-		last[lvl]  = (vpn + npages) >> (lvl * PAGE_MAP_BITS);
-	}
+	spinlock_lock(&kslock);
 
-	/* We start now iterating through the entries
-	 * beginning at the root table (PGD) */
-	for (lvl=PAGE_LEVELS-1; lvl>=0; lvl--) {
-		for (vpn=first[lvl]; vpn<=last[lvl]; vpn++) {
-			if (lvl) { /* PML4, PDPT, PGD */	
+	for (vpn=start; vpn<end; vpn++)
+			self[0][vpn] = 0;
 
-			}
-			else { /* PGT */
-
-			}
-		}
-	}
+	spinlock_unlock(&kslock);
 
 	return 0;
 }
 
-int page_map_drop(size_t *map)
+/* @todo: complete
+int page_map_drop()
 {
-	int lvl;
-	long vpn;
+	void traverse(int lvl, long vpn) {
+		kprintf("traverse(lvl=%d, vpn=%#lx)\n", lvl, vpn);
 
-	/* We start now iterating through the entries
-	 * beginning at the root table (PGD) */
-	for (lvl=PAGE_LEVELS-1; lvl>=0; lvl--) {
-		for (vpn=0; vpn<PAGE_MAP_ENTRIES; vpn++) {
-			if (lvl) { /* PML4, PDPT, PGD */	
+		long stop;
+		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
+			if (self[lvl][vpn] & PG_PRESENT) {
+				if (self[lvl][vpn] & PG_BOOT)
+					continue;
 
-			}
-			else { /* PGT */
+				// ost-order traversal
+				if (lvl > 1)
+					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
 
+				kprintf("%#lx, ", self[lvl][vpn] & PAGE_MASK);
+				//put_page(self[lvl][vpn] & PAGE_MASK);
+
+				atomic_int32_dec(&current_task->user_usage);
 			}
 		}
 	}
 
+	spinlock_irqsave_lock(&current_task->page_lock);
+
+	traverse(PAGE_LEVELS-1, 0);
+
+	spinlock_irqsave_unlock(&current_task->page_lock);
+
 	return 0;
 }
 
-int page_map_copy(size_t *dest, size_t *src)
+int page_map_copy(size_t dest)
 {
-	int lvl;
-	long vpn;
+	int traverse(int lvl, long vpn) {
+		long stop;
+		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
+			if (self[lvl][vpn] & PG_PRESENT) {
+				size_t phyaddr = get_pages(1);
+				if (BUILTIN_EXPECT(phyaddr, 0))
+					return -ENOMEM;
 
-	/* We start now iterating through the entries
-	 * beginning at the root table (PGD) */
-	for (lvl=PAGE_LEVELS-1; lvl>=0; lvl--) {
-		for (vpn=0; vpn<PAGE_MAP_ENTRIES; vpn++) {
-			if (lvl) { /* PML4, PDPT, PGD */	
 
-			}
-			else { /* PGT */
+		                 new[lvl][vpn]  = phyaddr;
+				new[lvl][vpn] |= self[lvl][vpn] & ~PAGE_MASK;
 
+				memcpy(CHILD(other, lvl, vpn), CHILD(self, lvl, vpn), PAGE_SIZE);
+
+				// pre-order traversal
+				if (lvl)
+					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
 			}
 		}
+
+		return 0;
 	}
 
+	spinlock_lock(&kslock);
+
+	// create another temporary self-reference
+	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = dest | PG_PRESENT | PG_RW;
+
+	traverse(PAGE_LEVELS-1, 0);
+
+	// remove temporary self-reference
+	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = 0;
+
+	spinlock_unlock(&kslock);
+
 	return 0;
-}
+}*/
 
 void page_fault_handler(struct state *s)
 {
@@ -206,27 +255,57 @@ void page_fault_handler(struct state *s)
 	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, address = %#lx\n",
 		s->int_no, s->cs, s->eip, viraddr);
 
-	outportb(0x20, 0x20);
+	outportb(0x20, 0x20); /** @todo: do we need this? */
 
 	while(1) HALT;
 }
 
 int page_init()
 {
-	size_t npages;
+	size_t addr, npages;
+	int i;
 
 	// replace default pagefault handler
 	irq_uninstall_handler(14);
 	irq_install_handler(14, page_fault_handler);
 
 	// map kernel
+	addr = (size_t) &kernel_start;
 	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
-	page_map((size_t) &kernel_start, (size_t) &kernel_start, npages, PG_PRESENT | PG_RW | PG_GLOBAL);
+	page_map(addr, addr, npages, PG_PRESENT | PG_RW | PG_GLOBAL);
 
 #ifdef CONFIG_VGA
 	// map video memory
-	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_PCD | PG_PRESENT | PG_RW);
+	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_PRESENT | PG_RW | PG_PCD);
 #endif
+
+	// map multiboot information and modules
+	if (mb_info) {
+		addr = (size_t) mb_info & PAGE_MASK;
+		npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
+		page_map(addr, addr, npages, PG_PRESENT | PG_GLOBAL);
+
+		if (mb_info->flags & MULTIBOOT_INFO_MODS) {
+			addr = mb_info->mods_addr;
+			npages = PAGE_FLOOR(mb_info->mods_count*sizeof(multiboot_module_t)) >> PAGE_BITS;
+			page_map(addr, addr, npages, PG_PRESENT | PG_GLOBAL);
+
+			multiboot_module_t* mmodule = (multiboot_module_t*) ((size_t) mb_info->mods_addr);
+			for(i=0; i<mb_info->mods_count; i++) {
+				addr = mmodule[i].mod_start;
+				npages = PAGE_FLOOR(mmodule[i].mod_end - mmodule[i].mod_start) >> PAGE_BITS;
+				page_map(addr, addr, npages, PG_PRESENT | PG_USER | PG_GLOBAL);
+			}
+		}
+	}
+
+	// unmap all (identity mapped) pages with PG_BOOT flag in first PGT (boot_pgt)
+	for (i=0; i<PAGE_MAP_ENTRIES; i++) {
+		if (self[0][i] & PG_BOOT) {
+			self[0][i] = 0;
+			tlb_flush_one_page(i << PAGE_BITS);
+		}
+	}
 
 	return 0;
 }

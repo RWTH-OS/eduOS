@@ -39,7 +39,9 @@
 /// Page offset bits
 #define PAGE_BITS		12
 /// The size of a single page in bytes
-#define PAGE_SIZE		(1L << PAGE_BITS)
+#define PAGE_SIZE		( 1L << PAGE_BITS)
+/// Mask the page address without page map flags
+#define PAGE_MASK		(-1L << PAGE_BITS)
 
 /// Total operand width in bits
 #define BITS			32
@@ -50,19 +52,13 @@
 /// Page map bits
 #define PAGE_MAP_BITS		10
 /// Number of page map indirections
-#define PAGE_LEVELS	2
-/// Mask the page address without page map flags
-#define PAGE_MASK		0xFFFFF000
+#define PAGE_LEVELS		2
 
 /// Make address canonical
 #define CANONICAL(addr)		(addr) // only for 32 bit paging
 
 /// The number of entries in a page map table
-#define PAGE_MAP_ENTRIES	(1L << PAGE_MAP_BITS)
-
-// Base addresses of the self-mapped pagetables
-#define PAGE_MAP_PGD		0xFFFFF000
-#define PAGE_MAP_PGT		0xFFC00000
+#define PAGE_MAP_ENTRIES	       (1L << PAGE_MAP_BITS)
 
 /// Align to next page
 #define PAGE_FLOOR(addr)        (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
@@ -131,16 +127,13 @@ int page_unmap(size_t viraddr, size_t npages);
 
 /** @brief Copy a whole page map tree
  *
- * @param dest
- * @param src
- * @return
+ * @param dest Physical address of new page map
+ * @retval 0 Success. Everything went fine.
+ * @retval <0 Error. Something went wrong.
  */
-int page_map_copy(size_t *dest, size_t *src);
+int page_map_copy(size_t dest);
 
-/** @brief Free a whole page map tree
- *
- * @param map
- */
-int page_map_drop(size_t *map);
+/** @brief Free a whole page map tree */
+int page_map_drop();
 
 #endif

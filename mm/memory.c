@@ -160,6 +160,7 @@ int memory_init(void)
 	// mark all memory as used
 	memset(bitmap, 0xff, BITMAP_SIZE);
 
+	// parse multiboot information for available memory
 	if (mb_info) {
 		if (mb_info->flags & MULTIBOOT_INFO_MEM_MAP) {
 			multiboot_memory_map_t* mmap = (multiboot_memory_map_t*) ((size_t) mb_info->mmap_addr);
