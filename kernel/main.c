@@ -52,9 +52,9 @@ extern char __BUILD_DATE;
 extern char __BUILD_TIME;
 
 /* Page frame counters */
-atomic_int32_t total_pages;
-atomic_int32_t total_allocated_pages;
-atomic_int32_t total_available_pages;
+extern atomic_int32_t total_pages;
+extern atomic_int32_t total_allocated_pages;
+extern atomic_int32_t total_available_pages;
 
 static void userfoo(void* arg)
 {
