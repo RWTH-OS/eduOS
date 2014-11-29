@@ -22,6 +22,7 @@ STRIP_FOR_TARGET = $(CROSSCOMPREFIX)strip
 READELF_FOR_TARGET = $(CROSSCOMPREFIX)readelf
 NASM = nasm
 
+QEMU = qemu-system-i386
 NASMFLAGS = -felf32 -g -i$(TOPDIR)/include/eduos/
 INCLUDE = -I$(TOPDIR)/include -I$(TOPDIR)/arch/$(ARCH)/include
 # Compiler options for final code
@@ -62,10 +63,10 @@ veryclean: clean
 	@echo Very cleaned
 
 qemu: $(NAME).elf
-	qemu-system-i386 -monitor stdio -smp 2 -net nic,model=rtl8139 -net user,hostfwd=tcp::12345-:7 -net dump  -kernel $(NAME).elf
+	$(QEMU) -monitor stdio -smp 2 -net nic,model=rtl8139 -net user,hostfwd=tcp::12345-:7 -net dump  -kernel $(NAME).elf
 
 qemu-dbg: $(NAME).elf
-	qemu-system-i386 -monitor stdio -s -S -smp 2 -net nic,model=rtl8139 -net user,hostfwd=tcp::12345-:7 -net dump -kernel $(NAME).elf
+	$(QEMU) -monitor stdio -s -S -smp 2 -net nic,model=rtl8139 -net user,hostfwd=tcp::12345-:7 -net dump -kernel $(NAME).elf
 
 doc:
 	@doxygen
