@@ -41,6 +41,13 @@
 
 #include <eduos/stddef.h>
 
+/// Does the bootloader provide mem_* fields?
+#define MULTIBOOT_INFO_MEM		(1 << 0)
+/// Does the bootloader provide a list of modules?
+#define MULTIBOOT_INFO_MODS		(1 << 3)
+/// Does the bootloader provide a full memory map?
+#define MULTIBOOT_INFO_MEM_MAP		(1 << 6)
+
 typedef uint16_t multiboot_uint16_t;
 typedef uint32_t multiboot_uint32_t;
 typedef uint64_t multiboot_uint64_t;
@@ -143,6 +150,8 @@ struct multiboot_mod_list
 };
 typedef struct multiboot_mod_list multiboot_module_t;
 
-extern multiboot_info_t*       mb_info;
+/// Pointer to multiboot structure
+/// This pointer is declared at set by entry.asm
+extern multiboot_info_t* mb_info;
 
 #endif

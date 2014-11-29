@@ -1,4 +1,4 @@
-;
+
 ; Copyright (c) 2010, Stefan Lankes, RWTH Aachen University
 ; All rights reserved.
 ;
@@ -32,19 +32,20 @@
 %include "config.inc"
 
 [BITS 32]
+
 ; We use a special name to map this section at the begin of our kernel
-; =>  Multiboot needs its magic number at the begin of the kernel
+; =>  Multiboot expects its magic number at the beginning of the kernel.
 SECTION .mboot
 global start
 start:
     jmp stublet
 
-; This part MUST be 4byte aligned, so we solve that issue using 'ALIGN 4'
+; This part MUST be 4 byte aligned, so we solve that issue using 'ALIGN 4'.
 ALIGN 4
 mboot:
     ; Multiboot macros to make a few lines more readable later
-    MULTIBOOT_PAGE_ALIGN	equ 1<<0
-    MULTIBOOT_MEMORY_INFO	equ 1<<1
+    MULTIBOOT_PAGE_ALIGN	equ (1 << 0)
+    MULTIBOOT_MEMORY_INFO	equ (1 << 1)
     MULTIBOOT_HEADER_MAGIC	equ 0x1BADB002
     MULTIBOOT_HEADER_FLAGS	equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
     MULTIBOOT_CHECKSUM		equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
@@ -57,37 +58,43 @@ mboot:
 SECTION .text
 ALIGN 4
 stublet:
-; initialize stack pointer
+; Initialize stack pointer
     mov esp, boot_stack
     add esp, KERNEL_STACK_SIZE-16
-; initialize cpu features
+; Initialize CPU features
     call cpu_init
-; interpret multiboot information
-    extern multiboot_init
-    push ebx
-    call multiboot_init
-    add esp, 4
+; Interpret multiboot information
+    mov DWORD [mb_info], ebx
 
-; jump to the boot processors's C code
+; Jump to the boot processors's C code
     extern main
     call main
     jmp $
 
+; This will set up the x86 control registers:
+; Caching and the floating point unit are enabled
+; Bootstrap page tables are loaded and page size
+; extensions (huge pages) enabled.
 global cpu_init
 cpu_init:
-    mov eax, cr0
-; enable caching, disable paging and fpu emulation
-    and eax, 0x1ffffffb
-; ...and turn on FPU exceptions
-    or eax, 0x22
-    mov cr0, eax
-; clears the current pgd entry
-    xor eax, eax
+; Set CR3
+    mov eax, boot_pgd
     mov cr3, eax
-; at this stage, we disable the SSE support
-    mov eax, cr4
-    and eax, 0xfffbf9ff
+
+; Set CR4
     mov cr4, eax
+    and eax, ~(1 <<  9)	; disable SSE
+    or eax,   (1 <<  4)	; enable  PSE
+    mov cr4, eax
+
+; Set CR0
+    mov eax, cr0
+    and eax, ~(1 <<  2)	; disable FPU emulation
+    and eax, ~(1 << 30)	; enable  caching
+    or eax,   (1 << 31)	; enable  paging
+    or eax,   (1 <<  5)	; enable  FPU exceptions
+    mov cr0, eax
+
     ret
 
 ; This will set up our new segment registers. We need to do
@@ -108,12 +115,12 @@ gdt_flush:
 flush2:
     ret
 
-; The first 32 interrupt service routines (isr) entries correspond to exceptions. 
-; Some exceptions will push an error code onto the stack which is specific to 
+; The first 32 interrupt service routines (ISR) entries correspond to exceptions.
+; Some exceptions will push an error code onto the stack which is specific to
 ; the exception caused. To decrease the complexity, we handle this by pushing a
-; dummy error code of 0 onto the stack for any ISR that doesn't push an error 
-; code already. 
-; 
+; Dummy error code of 0 onto the stack for any ISR that doesn't push an error
+; code already.
+;
 ; ISRs are registered as "Interrupt Gate".
 ; Therefore, the interrupt flag (IF) is already cleared.
 
@@ -136,8 +143,8 @@ flush2:
         jmp common_stub
 %endmacro
 
-; create isr entries, where the number after the 
-; pseudo error code represents following interrupts
+; Create isr entries, where the number after the
+; pseudo error code represents following interrupts:
 ; 0: Divide By Zero Exception
 ; 1: Debug Exception
 ; 2: Non Maskable Interrupt Exception
@@ -189,18 +196,16 @@ isrstub_pseudo_error 9
         jmp common_stub
 %endmacro
 
-; create entries for the interrupts 0 to 23
+; Create entries for the interrupts 0 to 23
 %assign i 0
 %rep    24
     irqstub i
 %assign i i+1
 %endrep
 
-extern syscall_handler
+; Used to realize system calls.
+; By entering the handler, the interrupt flag is not cleared.
 global isrsyscall
-
-; used to realize system calls
-; by entering the handler, the interrupt flag is not cleared
 isrsyscall:
     cli
     push es
@@ -213,13 +218,14 @@ isrsyscall:
     push ebx
     push eax
 
-    ; set kernel data segmenets
+; Set kernel data segmenets
     mov ax, 0x10
     mov ds, ax
     mov es, ax
     mov eax, [esp]
     sti
 
+    extern syscall_handler
     call syscall_handler
 
     cli
@@ -241,12 +247,12 @@ extern irq_handler
 extern get_current_stack
 extern finish_task_switch
 
+; Create a pseudo interrupt on top of the stack.
+; Afterwards, we switch to the task with iret.
+; We already are in kernel space => no pushing of SS required.
 global switch_context
 ALIGN 4
 switch_context:
-    ; create on the stack a pseudo interrupt
-    ; afterwards, we switch to the task with iret
-    ; we already in kernel space => no pushing of SS required
     mov eax, [esp+4]            ; on the stack is already the address to store the old esp
     pushf                       ; push controll register
     push DWORD 0x8              ; CS
@@ -263,8 +269,6 @@ ALIGN 4
 rollback:
     ret
 
-extern set_kernel_stack
-
 ALIGN 4
 common_stub:
     pusha
@@ -274,8 +278,10 @@ common_stub:
     mov es, ax
     mov ds, ax
 
-    ; use the same handler for interrupts and exceptions
+; Use the same handler for interrupts and exceptions
     push esp
+
+    extern set_kernel_stack
     call irq_handler
     add esp, 4
 
@@ -287,15 +293,15 @@ common_switch:
     call get_current_stack     ; get new esp
     xchg eax, esp
 
-    ; set task switched flag
+; Set task switched flag
     mov eax, cr0
     or eax, 8
     mov cr0, eax
 
-    ; set esp0 in the task state segment
+; Set esp0 in the task state segment
     call set_kernel_stack
 
-    ; call cleanup code
+; Call cleanup code
     call finish_task_switch
 
 no_context_switch:
@@ -305,9 +311,34 @@ no_context_switch:
     add esp, 8
     iret
 
-global boot_stack
-ALIGN 4096
-boot_stack:
-TIMES (KERNEL_STACK_SIZE) DB 0xcd
+SECTION .data
 
+global mb_info:
+ALIGN 4
+mb_info:
+	DD 0
+
+ALIGN 4096
+global boot_stack
+boot_stack:
+	TIMES (KERNEL_STACK_SIZE) DB 0xcd
+
+; Bootstrap page tables are used during the initialization.
+; These tables do a simple identity paging and will
+; be replaced in page_init() by more fine-granular mappings.
+ALIGN 4096
+global boot_map
+boot_map:
+boot_pgd:
+	DD boot_pgt + 0x103	; PG_GLOBAL | PG_RW | PG_PRESENT
+	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
+	DD boot_pgd + 0x103 ; PG_GLOBAL | PG_RW | PG_PRESENT (self-reference)
+boot_pgt:
+	%assign i 0
+	%rep 1024		; PAGE_MAP_ENTRIES
+	DD i        | 0x203	; PG_BOOT | PG_RW | PG_PRESENT
+	%assign i i + 4096	; PAGE_SIZE
+	%endrep
+
+; add some hints to the ELF file
 SECTION .note.GNU-stack noalloc noexec nowrite progbits

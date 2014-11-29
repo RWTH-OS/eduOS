@@ -25,17 +25,24 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <eduos/stddef.h>
-#include <asm/multiboot.h>
-
-/* 
- * eduOS is able to use Multiboot (http://www.gnu.org/software/grub/manual/multiboot/),
- * which specifies an interface between a boot loader and a operating system
+/**
+ * @author Steffen Vogel
+ * @file include/memory.h
+ * @brief Memory related functions
+ *
+ * This file contains platform independent memory functions
  */
 
-multiboot_info_t*	mb_info __attribute__ ((section (".data"))) = NULL;
+#ifndef __MEMORY_H__
+#define __MEMORY_H__
 
-void multiboot_init(void* mb)
-{
-	mb_info = (multiboot_info_t*) mb;
-}
+/** @brief Initialize the memory subsystem */
+int memory_init();
+
+/** @brief Request physical page frames */
+size_t get_pages(size_t npages);
+
+/** @brief release physical page frames */
+int put_pages(size_t phyaddr, size_t npages);
+
+#endif

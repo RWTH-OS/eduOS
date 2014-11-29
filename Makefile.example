@@ -1,6 +1,7 @@
 TOPDIR = $(shell pwd)
 ARCH = x86
 NAME = eduos
+KERNDIRS = libkern kernel mm arch/$(ARCH)/kernel arch/$(ARCH)/mm
 KERNDIRS = libkern kernel mm arch/$(ARCH)/kernel
 SUBDIRS = $(KERNDIRS)
 
@@ -20,10 +21,19 @@ OBJCOPY_FOR_TARGET = $(CROSSCOMPREFIX)objcopy
 RANLIB_FOR_TARGET = $(CROSSCOMPREFIX)ranlib
 STRIP_FOR_TARGET = $(CROSSCOMPREFIX)strip
 READELF_FOR_TARGET = $(CROSSCOMPREFIX)readelf
+
 NASM = nasm
+GDB = gdb
+QEMU = qemu-system-i386
 
 QEMU = qemu-system-i386
 NASMFLAGS = -felf32 -g -i$(TOPDIR)/include/eduos/
+GDBFLAGS = -x debug.gdb
+QEMUFLAGS = -smp 2 -monitor stdio \
+	    -net nic,model=rtl8139 \
+	    -net user,hostfwd=tcp::12345-:7 \
+	    -serial tcp::12346,server,nowait
+
 INCLUDE = -I$(TOPDIR)/include -I$(TOPDIR)/arch/$(ARCH)/include
 # Compiler options for final code
 CFLAGS = -g -m32 -march=i586 -Wall -O2 -fno-builtin -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc $(INCLUDE) -fno-stack-protector
@@ -63,14 +73,15 @@ veryclean: clean
 	@echo Very cleaned
 
 qemu: $(NAME).elf
-	$(QEMU) -monitor stdio -smp 2 -net nic,model=rtl8139 -net user,hostfwd=tcp::12345-:7 -net dump  -kernel $(NAME).elf
+	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf
 
-qemu-dbg: $(NAME).elf
-	$(QEMU) -monitor stdio -s -S -smp 2 -net nic,model=rtl8139 -net user,hostfwd=tcp::12345-:7 -net dump -kernel $(NAME).elf
+debug: $(NAME).elf
+	$(TERM) -e $(GDB) $(GDBFLAGS) &
+	$(QEMU) $(QEMUFLAGS) -s -S -kernel $(NAME).elf
 
 doc:
-	@doxygen
 	@echo Create documentation...
+	@doxygen
 
 %.o : %.c
 	@echo [CC] $@
@@ -92,5 +103,5 @@ include/eduos/config.inc: include/eduos/config.h
 	$Q$(CC_FOR_TARGET) $(CFLAGS) -c -o $@ $<
 
 .PHONY: default all clean emu gdb newlib tools
- 
+
 include $(addsuffix /Makefile,$(SUBDIRS))

@@ -33,10 +33,14 @@
 #include <eduos/processor.h>
 #include <eduos/tasks.h>
 #include <eduos/syscall.h>
+#include <eduos/memory.h>
+
 #include <asm/irq.h>
 #include <asm/irqflags.h>
+#include <asm/atomic.h>
+#include <asm/page.h>
 
-/* 
+/*
  * Note that linker symbols are not variables, they have no memory allocated for
  * maintaining a value, rather their address is their value.
  */
@@ -46,6 +50,11 @@ extern const void bss_start;
 extern const void bss_end;
 extern char __BUILD_DATE;
 extern char __BUILD_TIME;
+
+/* Page frame counters */
+extern atomic_int32_t total_pages;
+extern atomic_int32_t total_allocated_pages;
+extern atomic_int32_t total_available_pages;
 
 static void userfoo(void* arg)
 {
@@ -96,6 +105,7 @@ static int eduos_init(void)
 	timer_init();
 	koutput_init();
 	multitasking_init();
+	memory_init();
 
 	return 0;
 }
@@ -104,16 +114,18 @@ int main(void)
 {
 	tid_t id1;
 	tid_t id2;
+
 	eduos_init();
-
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
-	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
-
 	irq_enable();
 	system_calibration();
 
+	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
+	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
 	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
-	
+	kprintf("Total memory: %lu KiB\n", atomic_int32_read(&total_pages) * PAGE_SIZE / 1024);
+	kprintf("Total memory available: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
+
+
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
 	create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
 
