@@ -34,14 +34,17 @@
 #include <eduos/spinlock.h>
 #include <eduos/errno.h>
 #include <eduos/syscall.h>
+#include <eduos/memory.h>
+
+#include <asm/page.h>
 
 /** @brief Array of task structures (aka PCB)
  *
  * A task's id will be its position in this array.
  */
 static task_t task_table[MAX_TASKS] = { \
-		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, NULL, NULL}, \
-		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, NULL, NULL}};
+		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}, \
+		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}};
 
 static spinlock_irqsave_t table_lock = SPINLOCK_IRQSAVE_INIT;
 
@@ -53,7 +56,7 @@ extern const void boot_stack;
 /** @brief helper function for the assembly code to determine the current task
  * @return Pointer to the task_t structure of current task
  */
-task_t* get_current_task(void) 
+task_t* get_current_task(void)
 {
 	return current_task;
 }
@@ -118,6 +121,8 @@ static void NORETURN do_exit(int arg)
 
 	kprintf("Terminate task: %u, return value %d\n", curr_task->id, arg);
 
+        page_map_drop();
+
 	curr_task->status = TASK_FINISHED;
 	reschedule();
 
@@ -161,6 +166,8 @@ void NORETURN abort(void) {
 
 /** @brief Create a task with a specific entry point
  *
+ * @todo Dont aquire table_lock for the whole task creation.
+ *
  * @param id Pointer to a tid_t struct were the id shall be set
  * @param ep Pointer to the function the task shall start with
  * @param arg Arguments list
@@ -193,6 +200,17 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 			task_table[i].stack = create_stack(i);
 			task_table[i].prio = prio;
 
+			spinlock_irqsave_init(&task_table[i].page_lock);
+			atomic_int32_set(&task_table[i].user_usage, 0);
+
+                        /* Allocated new PGD or PML4 and copy page table */
+                        size_t map = get_pages(1);
+			if (BUILTIN_EXPECT(map, 0))
+			        goto out;
+
+			page_map_copy(map);
+                        task_table[i].page_map = map;
+
 			if (id)
 				*id = i;
 
@@ -217,6 +235,7 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 		}
 	}
 
+out:
 	spinlock_irqsave_unlock(&table_lock);
 
 	return ret;

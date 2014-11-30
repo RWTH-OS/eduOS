@@ -39,7 +39,9 @@
 
 #include <eduos/stddef.h>
 #include <eduos/spinlock_types.h>
+
 #include <asm/tasks_types.h>
+#include <asm/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +75,12 @@ typedef struct task {
 	void*			stack;
 	/// Task priority
 	uint8_t			prio;
+	/// Physical address of root page table
+	size_t				page_map;
+	/// Lock for page tables
+	spinlock_irqsave_t	page_lock;
+	/// usage in number of pages (including page map tables)
+	atomic_int32_t		user_usage;
 	/// next task in the queue
 	struct task*		next;
 	/// previous task in the queue

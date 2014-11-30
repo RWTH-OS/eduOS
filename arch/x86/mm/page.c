@@ -58,6 +58,12 @@ static size_t* self[PAGE_LEVELS] = {
 	(size_t *) 0xFFFFF000
 };
 
+/** An other self-reference for page_map_copy() */
+static size_t * other[PAGE_LEVELS] = {
+	(size_t *) 0xFF800000,
+	(size_t *) 0xFFFFE000
+};
+
 /* Addresses of child/parent tables */
 #define  CHILD(map, lvl, vpn)	&map[lvl-1][vpn<<PAGE_MAP_BITS]
 #define PARENT(map, lvl, vpn)	&map[lvl+1][vpn>>PAGE_MAP_BITS]
@@ -136,6 +142,77 @@ int page_unmap(size_t viraddr, size_t npages)
          * Only the PGT entries are removed. Tables remain allocated. */
 	for (vpn=start; vpn<end; vpn++)
 		self[0][vpn] = 0;
+
+	spinlock_unlock(&kslock);
+
+	return 0;
+}
+
+int page_map_drop()
+{
+	void traverse(int lvl, long vpn) {
+		kprintf("traverse(lvl=%d, vpn=%#lx)\n", lvl, vpn);
+
+		long stop;
+		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
+			if (self[lvl][vpn] & PG_PRESENT) {
+				if (self[lvl][vpn] & PG_BOOT)
+					continue;
+
+				// ost-order traversal
+				if (lvl > 1)
+					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
+
+				kprintf("%#lx, ", self[lvl][vpn] & PAGE_MASK);
+				//put_page(self[lvl][vpn] & PAGE_MASK);
+
+				atomic_int32_dec(&current_task->user_usage);
+			}
+		}
+	}
+
+	spinlock_irqsave_lock(&current_task->page_lock);
+
+	traverse(PAGE_LEVELS-1, 0);
+
+	spinlock_irqsave_unlock(&current_task->page_lock);
+
+	return 0;
+}
+
+int page_map_copy(size_t dest)
+{
+	int traverse(int lvl, long vpn) {
+		long stop;
+		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
+			if (self[lvl][vpn] & PG_PRESENT) {
+				size_t phyaddr = get_pages(1);
+				if (BUILTIN_EXPECT(phyaddr, 0))
+					return -ENOMEM;
+
+		                other[lvl][vpn]  = phyaddr;
+				other[lvl][vpn] |= self[lvl][vpn] & ~PAGE_MASK;
+
+				memcpy(CHILD(other, lvl, vpn), CHILD(self, lvl, vpn), PAGE_SIZE);
+
+				// pre-order traversal
+				if (lvl)
+					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
+			}
+		}
+
+		return 0;
+	}
+
+	spinlock_lock(&kslock);
+
+	// create another temporary self-reference
+	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = dest | PG_PRESENT | PG_RW;
+
+	traverse(PAGE_LEVELS-1, 0);
+
+	// remove temporary self-reference
+	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = 0;
 
 	spinlock_unlock(&kslock);
 
