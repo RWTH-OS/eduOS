@@ -2,7 +2,6 @@ TOPDIR = $(shell pwd)
 ARCH = x86
 NAME = eduos
 KERNDIRS = libkern kernel mm arch/$(ARCH)/kernel arch/$(ARCH)/mm
-KERNDIRS = libkern kernel mm arch/$(ARCH)/kernel
 SUBDIRS = $(KERNDIRS)
 
 # Set your own cross compiler tool chain prefix here
@@ -23,12 +22,10 @@ STRIP_FOR_TARGET = $(CROSSCOMPREFIX)strip
 READELF_FOR_TARGET = $(CROSSCOMPREFIX)readelf
 
 NASM = nasm
-GDB = gdb
-QEMU = qemu-system-i386
-
-QEMU = qemu-system-i386
 NASMFLAGS = -felf32 -g -i$(TOPDIR)/include/eduos/
+GDB = gdb
 GDBFLAGS = -x debug.gdb
+QEMU = qemu-system-i386
 QEMUFLAGS = -smp 2 -monitor stdio \
 	    -net nic,model=rtl8139 \
 	    -net user,hostfwd=tcp::12345-:7 \
