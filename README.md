@@ -83,6 +83,11 @@ Overview of all branches
 
    Add support of user-level tasks with an small interface for basic system calls
 
+5. stage5 - Enabling paging
+
+   Add support of paging. All tasks share the same page directory.
+   => User-level triggers a page fault.
+
 Usefull Links
 -------------
 0. http://www.gnu.org/software/grub/manual/multiboot/
