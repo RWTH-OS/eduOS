@@ -1,3 +1,4 @@
+TERN = xterm
 TOPDIR = $(shell pwd)
 ARCH = x86
 NAME = eduos
@@ -23,7 +24,7 @@ READELF_FOR_TARGET = $(CROSSCOMPREFIX)readelf
 
 NASM = nasm
 NASMFLAGS = -felf32 -g -i$(TOPDIR)/include/eduos/
-GDB = gdb
+GDB = $(CROSSCOMPREFIX)gdb
 GDBFLAGS = -x debug.gdb
 QEMU = qemu-system-i386
 QEMUFLAGS = -smp 2 -monitor stdio \
