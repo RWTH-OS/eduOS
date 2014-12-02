@@ -205,7 +205,7 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 
                         /* Allocated new PGD or PML4 and copy page table */
                         size_t map = get_pages(1);
-			if (BUILTIN_EXPECT(map, 0))
+			if (BUILTIN_EXPECT(!map, 0))
 			        goto out;
 
 			page_map_copy(map);
