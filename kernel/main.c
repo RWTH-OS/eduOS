@@ -127,7 +127,7 @@ int main(void)
 
 
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
+	//create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
 
 	while(1) { 
 		HALT;

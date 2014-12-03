@@ -76,7 +76,7 @@ typedef struct task {
 	/// Task priority
 	uint8_t			prio;
 	/// Physical address of root page table
-	size_t				page_map;
+	size_t			page_map;
 	/// Lock for page tables
 	spinlock_irqsave_t	page_lock;
 	/// usage in number of pages (including page map tables)

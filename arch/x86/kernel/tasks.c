@@ -36,6 +36,9 @@ size_t* get_current_stack(void)
 {
 	task_t* curr_task = current_task;
 
+	// use new page table
+	write_cr3(curr_task->page_map);
+
 	return curr_task->last_stack_pointer;
 }
 
