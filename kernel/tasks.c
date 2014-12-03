@@ -75,6 +75,7 @@ int multitasking_init(void)
 
 	task_table[0].prio = IDLE_PRIO;
 	task_table[0].stack = (void*) &boot_stack;
+	task_table[0].page_map = read_cr3();
 
 	// register idle task
 	register_task();
