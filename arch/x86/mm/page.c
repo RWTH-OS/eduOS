@@ -104,9 +104,12 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 					size_t phyaddr = get_pages(1);
 					if (BUILTIN_EXPECT(!phyaddr, 0))
 						goto out;
+					
+					if (bits & PG_USER)
+						atomic_int32_inc(&current_task->user_usage);
 
 					/* Reference the new table within its parent */
-					self[lvl][vpn] = phyaddr | bits;
+					self[lvl][vpn] = phyaddr | bits | PG_PRESENT;
 
 					/* Fill new table with zeros */
 					memset(&self[lvl-1][vpn<<PAGE_MAP_BITS], 0, PAGE_SIZE);
@@ -118,7 +121,7 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 					 * We have to flush a single TLB entry. */
 					tlb_flush_one_page(vpn << PAGE_BITS);
 
-				self[lvl][vpn] = phyaddr | bits;
+				self[lvl][vpn] = phyaddr | bits | PG_PRESENT;
 				phyaddr += PAGE_SIZE;
 			}
 		}
@@ -158,12 +161,13 @@ int page_map_drop()
 	void traverse(int lvl, long vpn) {
 		long stop;
 		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
-			if (self[lvl][vpn] & PG_PRESENT && self[lvl][vpn] & PG_USER) {
+			if ((self[lvl][vpn] & PG_PRESENT) && (self[lvl][vpn] & PG_USER)) {
 				/* Post-order traversal */
 				if (lvl)
 					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
 
 				put_pages(self[lvl][vpn] & PAGE_MASK, 1);
+				atomic_int32_dec(&current_task->user_usage);
 			}
 		}
 	}
@@ -177,7 +181,7 @@ int page_map_drop()
 	return 0;
 }
 
-int page_map_copy(size_t dest)
+int page_map_copy(task_t *dest)
 {
 	int traverse(int lvl, long vpn) {
 		long stop;
@@ -187,12 +191,14 @@ int page_map_copy(size_t dest)
 					size_t phyaddr = get_pages(1);
 					if (BUILTIN_EXPECT(!phyaddr, 0))
 						return -ENOMEM;
+					
+					atomic_int32_inc(&dest->user_usage);
 
 					other[lvl][vpn] = phyaddr | (self[lvl][vpn] & ~PAGE_MASK);
 					if (lvl) /* PML4, PDPT, PGD */
 						traverse(lvl-1, vpn<<PAGE_MAP_BITS); /* Pre-order traversal */
 					else { /* PGT */
-						page_map(PAGE_TMP, phyaddr, 1, PG_PRESENT | PG_RW);
+						page_map(PAGE_TMP, phyaddr, 1, PG_RW);
 						memcpy((void*) PAGE_TMP, (void*) (vpn<<PAGE_BITS), PAGE_SIZE);
 					}
 				}
@@ -208,11 +214,11 @@ int page_map_copy(size_t dest)
 	}
 
 	spinlock_irqsave_lock(&current_task->page_lock);
-	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = dest | PG_PRESENT | PG_SELF | PG_RW;
+	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = dest->page_map | PG_PRESENT | PG_SELF | PG_RW;
 
 	int ret = traverse(PAGE_LEVELS-1, 0);
 
-	other[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-1] = dest | PG_PRESENT | PG_SELF | PG_RW;
+	other[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-1] = dest->page_map | PG_PRESENT | PG_SELF | PG_RW;
 	self [PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = 0;
 	spinlock_irqsave_unlock(&current_task->page_lock);
 	
@@ -248,29 +254,29 @@ int page_init()
 	/* Map kernel */
 	addr = (size_t) &kernel_start;
 	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
-	page_map(addr, addr, npages, PG_PRESENT | PG_RW | /* PG_USER | */ PG_GLOBAL);
+	page_map(addr, addr, npages, PG_RW | /* PG_USER | */ PG_GLOBAL);
 
 #ifdef CONFIG_VGA
 	/* Map video memory */
-	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_PRESENT | PG_RW | PG_PCD);
+	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_RW | PG_PCD);
 #endif
 
 	/* Map multiboot information and modules */
 	if (mb_info) {
 		addr = (size_t) mb_info & PAGE_MASK;
 		npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
-		page_map(addr, addr, npages, PG_PRESENT | PG_GLOBAL);
+		page_map(addr, addr, npages, PG_GLOBAL);
 
 		if (mb_info->flags & MULTIBOOT_INFO_MODS) {
 			addr = mb_info->mods_addr;
 			npages = PAGE_FLOOR(mb_info->mods_count*sizeof(multiboot_module_t)) >> PAGE_BITS;
-			page_map(addr, addr, npages, PG_PRESENT | PG_GLOBAL);
+			page_map(addr, addr, npages, PG_GLOBAL);
 
 			multiboot_module_t* mmodule = (multiboot_module_t*) ((size_t) mb_info->mods_addr);
 			for(i=0; i<mb_info->mods_count; i++) {
 				addr = mmodule[i].mod_start;
 				npages = PAGE_FLOOR(mmodule[i].mod_end - mmodule[i].mod_start) >> PAGE_BITS;
-				page_map(addr, addr, npages, PG_PRESENT | PG_USER | PG_GLOBAL);
+				page_map(addr, addr, npages, PG_USER | PG_GLOBAL);
 			}
 		}
 	}

@@ -33,6 +33,8 @@
  * This file contains the several functions to manage the page tables
  */
 
+#include <eduos/tasks_types.h>
+
 #ifndef __PAGE_H__
 #define __PAGE_H__
 
@@ -135,7 +137,7 @@ int page_unmap(size_t viraddr, size_t npages);
  * @retval 0 Success. Everything went fine.
  * @retval <0 Error. Something went wrong.
  */
-int page_map_copy(size_t dest);
+int page_map_copy(task_t *dest);
 
 /** @brief Free a whole page map tree */
 int page_map_drop();
