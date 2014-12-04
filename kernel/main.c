@@ -58,15 +58,14 @@ extern atomic_int32_t total_available_pages;
 
 static void userfoo(void* arg)
 {
-	char str[256];
 
-	ksnprintf(str, 256, "hello from %s\n", (char*) arg);
 	SYSCALL1(__NR_write, "hello from userfoo\n");
+	SYSCALL1(__NR_exit, 0);
 
-	//kprintf("hello from %s\n", (char*) arg);
+	while(1) ;
 }
 
-static char ustack[KERNEL_STACK_SIZE];
+static char ustack[KERNEL_STACK_SIZE]  __attribute__ ((aligned (PAGE_SIZE)));
 
 static int wrapper(void* arg)
 {
@@ -76,7 +75,24 @@ static int wrapper(void* arg)
 	*stack-- = (size_t) arg;
 	*stack = (size_t) leave_user_task; // put exit function as caller on the stack
 
+#if 0
+	// this triggers a page fault because a user task is not able to access the kernel space
 	return jump_to_user_code((uint32_t) userfoo, (uint32_t) stack);
+#else
+	// dirty hack, map userfoo to the user space
+	size_t phys = page_virt_to_phys(((size_t) userfoo) & PAGE_MASK);
+	size_t vuserfoo = 0x40000000; 
+	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_RW | PG_PCD | PG_USER);
+	vuserfoo += (size_t)userfoo & 0xFFF;
+
+	// dirty hack, map ustack to the user space
+	phys = page_virt_to_phys((size_t) ustack);
+	size_t vstack = 0x80000000;
+	page_map(vstack, phys, KERNEL_STACK_SIZE >> PAGE_BITS, PG_PRESENT | PG_RW | PG_PCD | PG_USER);
+	vstack = (vstack + KERNEL_STACK_SIZE - 16 - sizeof(size_t));
+
+	return jump_to_user_code(vuserfoo, vstack);
+#endif
 }
 
 static int foo(void* arg)
@@ -127,7 +143,7 @@ int main(void)
 
 
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	//create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
+	create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
 
 	while(1) { 
 		HALT;
