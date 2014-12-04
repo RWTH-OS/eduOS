@@ -85,8 +85,10 @@
 #define PG_PAT			PG_PSE
 /// Global TLB entry (Pentium Pro and later)
 #define PG_GLOBAL		(1 << 8)
-/// This page or table is used during the boot process
-#define PG_BOOT			(1 << 9)
+/// This table is a self-reference and should skipped by page_map_copy()
+#define PG_SELF			(1 << 9)
+/// This page is used for bootstrapping the paging code.
+#define PG_BOOT			PG_SELF
 
 /// This page is reserved for copying
 #define PAGE_TMP		(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
