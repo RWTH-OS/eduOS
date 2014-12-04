@@ -28,6 +28,8 @@
  * This is a 32/64 bit portable paging implementation for the x86 architecture
  * using self-referenced page tables.
  * See http://www.noteblok.net/2014/06/14/bachelor/ for a detailed description.
+ * 
+ * @author Steffen Vogel <steffen.vogel@rwth-aachen.de>
  */
 
 #include <eduos/stdio.h>
@@ -38,7 +40,6 @@
 
 #include <asm/irq.h>
 #include <asm/page.h>
-#include <asm/io.h>
 #include <asm/multiboot.h>
 
 /* Note that linker symbols are not variables, they have no memory
@@ -63,10 +64,6 @@ static size_t * other[PAGE_LEVELS] = {
 	(size_t *) 0xFF800000,
 	(size_t *) 0xFFFFE000
 };
-
-/* Addresses of child/parent tables */
-#define  CHILD(map, lvl, vpn)	&map[lvl-1][vpn<<PAGE_MAP_BITS]
-#define PARENT(map, lvl, vpn)	&map[lvl+1][vpn>>PAGE_MAP_BITS]
 
 size_t page_virt_to_phys(size_t addr)
 {
@@ -110,7 +107,7 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 					self[lvl][vpn] = phyaddr | bits;
 
 					/* Fill new table with zeros */
-					memset(CHILD(self, lvl, vpn), 0, PAGE_SIZE);
+					memset(&self[lvl-1][vpn<<PAGE_MAP_BITS], 0, PAGE_SIZE);
 				}
 			}
 			else { /* PGT */
@@ -176,7 +173,7 @@ int page_map_drop()
 	traverse(PAGE_LEVELS-1, 0);
 
 	spinlock_irqsave_unlock(&current_task->page_lock);
-
+	
 	return 0;
 }
 
@@ -223,7 +220,7 @@ void page_fault_handler(struct state *s)
 {
 	size_t viraddr = read_cr2();
 
-        kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
+	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
 		s->int_no, s->cs, s->eip, current_task->id, viraddr, s->error,
 		(s->error & 0x4) ? "user" : "supervisor",
 		(s->error & 0x10) ? "instruction" : "data",
@@ -246,7 +243,7 @@ int page_init()
 	/* Map kernel */
 	addr = (size_t) &kernel_start;
 	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
-	page_map(addr, addr, npages, PG_PRESENT | PG_RW | PG_GLOBAL);
+	page_map(addr, addr, npages, PG_PRESENT | PG_RW | /* PG_USER | */ PG_GLOBAL);
 
 #ifdef CONFIG_VGA
 	/* Map video memory */
@@ -274,12 +271,12 @@ int page_init()
 	}
 
 	/* Unmap bootstrap identity paging (see entry.asm, PG_BOOT) */
-	for (i=0; i<PAGE_MAP_ENTRIES; i++) {
-		if (self[0][i] & PG_BOOT) {
+	for (i=0; i<PAGE_MAP_ENTRIES; i++)
+		if (self[0][i] & PG_BOOT)
 			self[0][i] = 0;
-			tlb_flush_one_page(i << PAGE_BITS);
-		}
-	}
+
+	/* Flush TLB to adopt changes above */
+	flush_tlb();
 
 	return 0;
 }

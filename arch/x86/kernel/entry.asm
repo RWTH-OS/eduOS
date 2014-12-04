@@ -153,10 +153,10 @@ flush2:
 ; 5: Out of Bounds Exception
 ; 6: Invalid Opcode Exception
 ; 7: Coprocessor Not Available Exception
-%assign i 0 
+%assign i 0
 %rep    8
     isrstub_pseudo_error i
-%assign i i+1 
+%assign i i+1
 %endrep
 
 ; 8: Double Fault Exception (With Error Code!)
@@ -336,7 +336,7 @@ boot_pgd:
 boot_pgt:
 	%assign i 0
 	%rep 1024		; PAGE_MAP_ENTRIES
-	DD i        | 0x203	; PG_BOOT | PG_RW | PG_PRESENT
+	DD i        | 0x203	; PG_PRESENT | PG_BOOT | PG_RW
 	%assign i i + 4096	; PAGE_SIZE
 	%endrep
 
