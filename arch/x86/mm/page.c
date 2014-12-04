@@ -77,7 +77,7 @@ size_t page_virt_to_phys(size_t addr)
 
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 {
-	int lvl;
+	int lvl, ret = -ENOMEM;
 	long vpn = viraddr >> PAGE_BITS;
 	long first[PAGE_LEVELS], last[PAGE_LEVELS];
 
@@ -87,7 +87,11 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 		last[lvl]  = (vpn+npages-1) >> (lvl * PAGE_MAP_BITS);
 	}
 
-	spinlock_lock(&kslock);
+	/** @todo: might not be sufficient! */
+	if (bits & PG_USER)
+		spinlock_irqsave_lock(&current_task->page_lock);
+	else
+		spinlock_lock(&kslock);
 
 	/* Start iterating through the entries
 	 * beginning at the root table (PGD or PML4) */
@@ -98,10 +102,8 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 					/* There's no table available which covers the region.
 					 * Therefore we need to create a new empty table. */
 					size_t phyaddr = get_pages(1);
-					if (BUILTIN_EXPECT(!phyaddr, 0)) {
-						spinlock_unlock(&kslock);
-						return -ENOMEM;
-					}
+					if (BUILTIN_EXPECT(!phyaddr, 0))
+						goto out;
 
 					/* Reference the new table within its parent */
 					self[lvl][vpn] = phyaddr | bits;
@@ -122,24 +124,30 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 		}
 	}
 
-	spinlock_unlock(&kslock);
+out:
+	if (bits & PG_USER)
+		spinlock_irqsave_unlock(&current_task->page_lock);
+	else
+		spinlock_unlock(&kslock);
 
-	return 0;
+	return ret;
 }
 
 /** Tables are freed by page_map_drop() */
 int page_unmap(size_t viraddr, size_t npages)
 {
-	long vpn, start = viraddr >> PAGE_BITS;
-	long end = start + npages;
-
+	/* We aquire both locks for kernel and task tables
+	 * as we dont know to which the region belongs. */
+	spinlock_irqsave_lock(&current_task->page_lock);
 	spinlock_lock(&kslock);
 
-        /* Start iterating through the entries.
-         * Only the PGT entries are removed. Tables remain allocated. */
-	for (vpn=start; vpn<end; vpn++)
+	/* Start iterating through the entries.
+	 * Only the PGT entries are removed. Tables remain allocated. */
+	size_t vpn, start = viraddr>>PAGE_BITS;
+	for (vpn=start; vpn<start+npages; vpn++)
 		self[0][vpn] = 0;
 
+	spinlock_irqsave_unlock(&current_task->page_lock);
 	spinlock_unlock(&kslock);
 
 	return 0;
