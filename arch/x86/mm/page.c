@@ -104,6 +104,9 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 					size_t phyaddr = get_pages(1);
 					if (BUILTIN_EXPECT(!phyaddr, 0))
 						goto out;
+					
+					if (bits & PG_USER)
+						atomic_int32_inc(&current_task->user_usage);
 
 					/* Reference the new table within its parent */
 					self[lvl][vpn] = phyaddr | bits | PG_PRESENT;
@@ -158,12 +161,13 @@ int page_map_drop()
 	void traverse(int lvl, long vpn) {
 		long stop;
 		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
-			if (self[lvl][vpn] & PG_PRESENT && self[lvl][vpn] & PG_USER) {
+			if ((self[lvl][vpn] & PG_PRESENT) && (self[lvl][vpn] & PG_USER)) {
 				/* Post-order traversal */
 				if (lvl)
 					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
 
 				put_pages(self[lvl][vpn] & PAGE_MASK, 1);
+				atomic_int32_dec(&current_task->user_usage);
 			}
 		}
 	}
@@ -177,7 +181,7 @@ int page_map_drop()
 	return 0;
 }
 
-int page_map_copy(size_t dest)
+int page_map_copy(task_t *dest)
 {
 	int traverse(int lvl, long vpn) {
 		long stop;
@@ -187,6 +191,8 @@ int page_map_copy(size_t dest)
 					size_t phyaddr = get_pages(1);
 					if (BUILTIN_EXPECT(!phyaddr, 0))
 						return -ENOMEM;
+					
+					atomic_int32_inc(&dest->user_usage);
 
 					other[lvl][vpn] = phyaddr | (self[lvl][vpn] & ~PAGE_MASK);
 					if (lvl) /* PML4, PDPT, PGD */

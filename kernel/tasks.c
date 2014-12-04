@@ -122,7 +122,7 @@ static void NORETURN do_exit(int arg)
 
 	kprintf("Terminate task: %u, return value %d\n", curr_task->id, arg);
 
-        page_map_drop();
+	page_map_drop();
 
 	curr_task->status = TASK_FINISHED;
 	reschedule();
@@ -204,13 +204,13 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 			spinlock_irqsave_init(&task_table[i].page_lock);
 			atomic_int32_set(&task_table[i].user_usage, 0);
 
-                        /* Allocated new PGD or PML4 and copy page table */
-                        size_t map = get_pages(1);
-			if (BUILTIN_EXPECT(!map, 0))
-			        goto out;
+			/* Allocated new PGD or PML4 and copy page table */
+			task_table[i].page_map = get_pages(1);
+			if (BUILTIN_EXPECT(!task_table[i].page_map, 0))
+				goto out;
 
-			page_map_copy(map);
-                        task_table[i].page_map = map;
+			/* Copy page tables & user frames of current task to new one */
+			page_map_copy(&task_table[i]);
 
 			if (id)
 				*id = i;
