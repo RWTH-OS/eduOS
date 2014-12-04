@@ -90,6 +90,7 @@ inline static void page_clear_mark(size_t i)
 size_t get_pages(size_t npages)
 {
 	size_t cnt, off;
+	static size_t alloc_start = (size_t) -1;
 
 	if (BUILTIN_EXPECT(!npages, 0))
 		return 0;
@@ -98,12 +99,17 @@ size_t get_pages(size_t npages)
 
 	spinlock_lock(&bitmap_lock);
 
+	if (alloc_start == (size_t)-1)
+		 alloc_start = ((size_t) &kernel_end >> PAGE_BITS);
 	off = 1;
 	while (off <= BITMAP_SIZE*8 - npages) {
 		for (cnt=0; cnt<npages; cnt++) {
-			if (page_marked(off+cnt))
+			if (page_marked(((off+alloc_start)%(BITMAP_SIZE*8 - npages))+cnt))
 				goto next;
 		}
+
+		off = (off+alloc_start) % (BITMAP_SIZE*8 - npages);
+		alloc_start = off+npages;
 
 		for (cnt=0; cnt<npages; cnt++) {
 			page_set_mark(off+cnt);
