@@ -156,22 +156,14 @@ int page_unmap(size_t viraddr, size_t npages)
 int page_map_drop()
 {
 	void traverse(int lvl, long vpn) {
-		kprintf("traverse(lvl=%d, vpn=%#lx)\n", lvl, vpn);
-
 		long stop;
 		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
-			if (self[lvl][vpn] & PG_PRESENT) {
-				if (self[lvl][vpn] & PG_BOOT)
-					continue;
-
-				// ost-order traversal
-				if (lvl > 1)
+			if (self[lvl][vpn] & PG_PRESENT && self[lvl][vpn] & PG_USER) {
+				/* Post-order traversal */
+				if (lvl)
 					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
 
-				kprintf("%#lx, ", self[lvl][vpn] & PAGE_MASK);
-				//put_page(self[lvl][vpn] & PAGE_MASK);
-
-				atomic_int32_dec(&current_task->user_usage);
+				put_pages(self[lvl][vpn] & PAGE_MASK, 1);
 			}
 		}
 	}
@@ -191,37 +183,42 @@ int page_map_copy(size_t dest)
 		long stop;
 		for (stop=vpn+PAGE_MAP_ENTRIES; vpn<stop; vpn++) {
 			if (self[lvl][vpn] & PG_PRESENT) {
-				size_t phyaddr = get_pages(1);
-				if (BUILTIN_EXPECT(phyaddr, 0))
-					return -ENOMEM;
+				if (self[lvl][vpn] & PG_USER) {
+					size_t phyaddr = get_pages(1);
+					if (BUILTIN_EXPECT(!phyaddr, 0))
+						return -ENOMEM;
 
-		                other[lvl][vpn]  = phyaddr;
-				other[lvl][vpn] |= self[lvl][vpn] & ~PAGE_MASK;
-
-				memcpy(CHILD(other, lvl, vpn), CHILD(self, lvl, vpn), PAGE_SIZE);
-
-				// pre-order traversal
-				if (lvl)
-					traverse(lvl-1, vpn<<PAGE_MAP_BITS);
+					other[lvl][vpn] = phyaddr | (self[lvl][vpn] & ~PAGE_MASK);
+					if (lvl) /* PML4, PDPT, PGD */
+						traverse(lvl-1, vpn<<PAGE_MAP_BITS); /* Pre-order traversal */
+					else { /* PGT */
+						page_map(PAGE_TMP, phyaddr, 1, PG_PRESENT | PG_RW);
+						memcpy((void*) PAGE_TMP, (void*) (vpn<<PAGE_BITS), PAGE_SIZE);
+					}
+				}
+				else if (self[lvl][vpn] & PG_SELF)
+					other[lvl][vpn] = 0;
+				else
+					other[lvl][vpn] = self[lvl][vpn];
 			}
+			else
+				other[lvl][vpn] = 0;
 		}
-
 		return 0;
 	}
 
-	spinlock_lock(&kslock);
+	spinlock_irqsave_lock(&current_task->page_lock);
+	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = dest | PG_PRESENT | PG_SELF | PG_RW;
 
-	// create another temporary self-reference
-	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = dest | PG_PRESENT | PG_RW;
+	int ret = traverse(PAGE_LEVELS-1, 0);
 
-	traverse(PAGE_LEVELS-1, 0);
+	other[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-1] = dest | PG_PRESENT | PG_SELF | PG_RW;
+	self [PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = 0;
+	spinlock_irqsave_unlock(&current_task->page_lock);
+	
+	flush_tlb(); /* Flush TLB entries of 'other' self-reference */
 
-	// remove temporary self-reference
-	self[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = 0;
-
-	spinlock_unlock(&kslock);
-
-	return 0;
+	return ret;
 }
 
 void page_fault_handler(struct state *s)
