@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010, Stefan Lankes, RWTH Aachen University
+ *               2014, Steffen Vogel, RWTH Aachen University
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,9 +25,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /**
  * This is a 32/64 bit portable paging implementation for the x86 architecture
- * using self-referenced page tables.
+ * using self-referenced page tablesi.
  * See http://www.noteblok.net/2014/06/14/bachelor/ for a detailed description.
  * 
  * @author Steffen Vogel <steffen.vogel@rwth-aachen.de>

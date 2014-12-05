@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010, Stefan Lankes, RWTH Aachen University
+ *               2014, Steffen Vogel, RWTH Aachen University
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
