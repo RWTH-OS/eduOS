@@ -85,8 +85,8 @@ Overview of all branches
 
 5. stage5 - Enabling paging
 
-   Add support of paging. All tasks share the same page directory.
-   => User-level triggers a page fault.
+   Add support of paging. See http://www.noteblok.net/2014/06/14/bachelor
+   for a detailed description.
 
 Usefull Links
 -------------
@@ -95,3 +95,4 @@ Usefull Links
 2. http://www.jamesmolloy.co.uk/tutorial_html/index.html
 3. http://techblog.lankes.org/tutorials/
 4. http://www.os.rwth-aachen.de
+5. http://www.noteblok.net/2014/06/14/bachelor
