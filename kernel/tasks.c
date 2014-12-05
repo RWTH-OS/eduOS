@@ -124,13 +124,13 @@ static void NORETURN do_exit(int arg)
 
 	page_map_drop();
 
-	curr_task->status = TASK_FINISHED;
-	reschedule();
-
 	// decrease the number of active tasks
 	spinlock_irqsave_lock(&readyqueues.lock);
 	readyqueues.nr_tasks--;
 	spinlock_irqsave_unlock(&readyqueues.lock);
+
+	curr_task->status = TASK_FINISHED;
+	reschedule();
 
 	kprintf("Kernel panic: scheduler found no valid task\n");
 	while(1) {
