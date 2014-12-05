@@ -56,7 +56,7 @@ extern atomic_int32_t total_pages;
 extern atomic_int32_t total_allocated_pages;
 extern atomic_int32_t total_available_pages;
 
-static void userfoo(void* arg)
+static void NORETURN userfoo(void* arg)
 {
 
 	SYSCALL1(__NR_write, "hello from userfoo\n");
@@ -73,7 +73,7 @@ static int wrapper(void* arg)
 
 	memset(ustack, 0xCD, KERNEL_STACK_SIZE);
 	*stack-- = (size_t) arg;
-	*stack = (size_t) leave_user_task; // put exit function as caller on the stack
+	*stack = (size_t) NULL; // put exit function as caller on the stack
 
 #if 0
 	// this triggers a page fault because a user task is not able to access the kernel space
