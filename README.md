@@ -88,6 +88,9 @@ Overview of all branches
    Add support of paging. See http://www.noteblok.net/2014/06/14/bachelor
    for a detailed description.
 
+6. stage6 - Add UART support
+   Add basic support of a serial device
+
 Usefull Links
 -------------
 0. http://www.gnu.org/software/grub/manual/multiboot/

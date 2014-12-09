@@ -29,8 +29,7 @@ GDBFLAGS = -x debug.gdb
 QEMU = qemu-system-i386
 QEMUFLAGS = -smp 2 -monitor stdio \
 	    -net nic,model=rtl8139 \
-	    -net user,hostfwd=tcp::12345-:7 \
-	    -serial tcp::12346,server,nowait
+	    -net user,hostfwd=tcp::12345-:7
 
 INCLUDE = -I$(TOPDIR)/include -I$(TOPDIR)/arch/$(ARCH)/include
 # Compiler options for final code
@@ -72,6 +71,9 @@ veryclean: clean
 
 qemu: $(NAME).elf
 	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf
+
+uart: $(NAME).elf
+	$(QEMU) -chardev null,id=tS0 -device pci-serial,chardev=tS0 -serial tcp::4555,server $(QEMUFLAGS)  -kernel $(NAME).elf
 
 debug: $(NAME).elf
 	$(TERM) -e $(GDB) $(GDBFLAGS) &

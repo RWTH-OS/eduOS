@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Stefan Lankes, RWTH Aachen University
+ * Copyright (c) 2014, Stefan Lankes, RWTH Aachen University
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,47 +25,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <eduos/stdio.h>
-#include <eduos/string.h>
-#include <eduos/stdarg.h>
-#include <eduos/spinlock.h>
-#include <asm/uart.h>
-#include <asm/vga.h>
+/** 
+ * @author Stefan Lankes
+ * @file arch/x86/include/asm/uart.h
+ * @brief UART related code
+ */
 
-static spinlock_irqsave_t olock = SPINLOCK_IRQSAVE_INIT;
+#ifndef __ARCH_UART_H__
+#define __ARCH_UART_H__
 
-int koutput_init(void)
-{
-#ifdef CONFIG_UART
-	uart_init();
-#endif
-#ifdef CONFIG_VGA
-	vga_init();
+#include <eduos/stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-	return 0;
+/** @brief Initialize UART output
+ *
+ * @return Returns 0 on success
+ */
+int uart_init(void);
+
+/** @brief Simple string output on a serial device.
+ *
+ * If you want a new line you will have to "\\n".
+ *
+ * @return Length of output in bytes
+ */
+int uart_puts(const char *text);
+
+/** @brief Simple character output on a serial device.
+ *
+ * @return The original input character casted to int 
+ */
+int uart_putchar(unsigned char c);
+
+#ifdef __cplusplus
 }
-
-int kputchar(int c)
-{
-	spinlock_irqsave_lock(&olock);
-#ifdef CONFIG_UART
-	uart_putchar(c);
 #endif
-#ifdef CONFIG_VGA
-	vga_putchar(c);
+
 #endif
-	spinlock_irqsave_unlock(&olock);
-
-	return 1;
-}
-
-int kputs(const char *str)
-{
-	int i;
-
-	for(i=0; str[i] != '\0'; i++)
-		kputchar((int) str[i]);
-
-	return i;
-}

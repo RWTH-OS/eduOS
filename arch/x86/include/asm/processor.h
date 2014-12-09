@@ -38,6 +38,9 @@
 
 #include <eduos/stddef.h>
 #include <asm/gdt.h>
+#ifdef CONFIG_PCI
+#include <asm/pci.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -206,6 +209,9 @@ static inline size_t lsb(size_t i)
 inline static int system_init(void)
 {
 	gdt_install();
+#ifdef CONFIG_PCI
+	pci_init();
+#endif
 
 	return 0;
 }
