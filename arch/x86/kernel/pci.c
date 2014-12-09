@@ -81,8 +81,7 @@ static uint32_t pci_conf_read(uint32_t bus, uint32_t slot, uint32_t off)
 {
 	uint32_t data = -1;
 
-	outportl(PCI_CONF_ADDR_REG,
-	      (0x80000000 | (bus << 16) | (slot << 11) | off));
+	outportl(PCI_CONF_ADDR_REG, (0x80000000 | (bus << 16) | (slot << 11) | off));
 	data = inportl(PCI_CONF_DATA_REG);
 
 	if ((data == 0xffffffff) && (slot < 0x10)) {
