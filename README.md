@@ -89,6 +89,7 @@ Overview of all branches
    for a detailed description.
 
 6. stage6 - Add UART support
+
    Add basic support of a serial device
 
 Usefull Links
