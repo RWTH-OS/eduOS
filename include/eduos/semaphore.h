@@ -35,6 +35,7 @@
 #define __SEMAPHORE_H__
 
 #include <eduos/string.h>
+#include <eduos/tasks.h>
 #include <eduos/semaphore_types.h>
 #include <eduos/spinlock.h>
 #include <eduos/errno.h>
