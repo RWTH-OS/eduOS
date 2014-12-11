@@ -60,6 +60,12 @@ int uart_puts(const char *text);
  */
 int uart_putchar(unsigned char c);
 
+/** @brief Start thread to handle inputs on the serial device
+ *
+ * @return error code of create_kernel_thread
+ */
+int uart_enable_input(void);
+
 #ifdef __cplusplus
 }
 #endif

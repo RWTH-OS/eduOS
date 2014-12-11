@@ -39,6 +39,7 @@
 #include <asm/irqflags.h>
 #include <asm/atomic.h>
 #include <asm/page.h>
+#include <asm/uart.h>
 
 /*
  * Note that linker symbols are not variables, they have no memory allocated for
@@ -122,6 +123,9 @@ static int eduos_init(void)
 	koutput_init();
 	multitasking_init();
 	memory_init();
+#ifdef CONFIG_UART
+	uart_enable_input();
+#endif
 
 	return 0;
 }

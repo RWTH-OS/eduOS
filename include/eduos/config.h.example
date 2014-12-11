@@ -41,6 +41,7 @@ extern "C" {
 #define KERNEL_STACK_SIZE	(8<<10) /* 8 KiB */
 #define BITMAP_SIZE		(128<<5) /* for 128 MiB of RAM */
 #define INT_SYSCALL		0x80
+#define MAILBOX_SIZE	32
 
 #define BYTE_ORDER		LITTLE_ENDIAN
 
