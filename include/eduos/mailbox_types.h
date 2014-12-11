@@ -28,7 +28,7 @@
 /**
  * @author Stefan Lankes
  * @file include/metalsvm/mailbox_types.h
- * @brief Message type structure definitions for various task return types
+ * @brief Mailbox system for inter-task communication
  */
 
 #ifndef __MAILBOX_TYPES_H__
