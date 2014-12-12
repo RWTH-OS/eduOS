@@ -83,10 +83,19 @@ static uint32_t	iobase = 0;
 static tid_t	id;
 static mailbox_uint8_t input_queue;
 
+#define MEMMAPIO
+#if 1
+#define READ_FROM_UART(x)	inportb(iobase + x)
+#define WRITE_TO_UART(x, y)	outportb(iobase + x, y)
+#else
+#define READ_FROM_UART(x)	inportb(iobase + x)
+#define WRITE_TO_UART(x, y)	outportb(iobase + x, y)
+#endif
+
 /* Get a single character on a serial device */
 static unsigned char uart_getchar(void)
 {
-	return inportb(iobase + UART_RX);
+	return READ_FROM_UART(UART_RX);
 }
 
 /* Puts a single character on a serial device */
@@ -95,7 +104,7 @@ int uart_putchar(unsigned char c)
 	if (!iobase)
 		return 0;
 
-	outportb(iobase + UART_TX, c);
+	WRITE_TO_UART(UART_TX, c);
 
 	return (int) c;
 }
@@ -117,7 +126,7 @@ int uart_puts(const char *text)
 /* Handles all UART's interrupt */
 static void uart_handler(struct state *s)
 {
-	unsigned char c = inportb(iobase + UART_IIR);
+	unsigned char c = READ_FROM_UART(UART_IIR);
 
 	while (!(c & UART_IIR_NO_INT)) {
 		if (c & UART_IIR_RDI) {
@@ -126,7 +135,7 @@ static void uart_handler(struct state *s)
 			mailbox_uint8_post(&input_queue, c);
 		}
 
-		c = inportb(iobase + UART_IIR);
+		c = READ_FROM_UART(UART_IIR);
 	}
 }
 
@@ -165,7 +174,7 @@ static void uart_config(void)
 	 * clear RX and TX FIFO
 	 * set irq trigger to 8 bytes
 	 */
-	outportb(iobase + UART_FCR, UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT | UART_FCR_TRIGGER_1);
+	WRITE_TO_UART(UART_FCR, UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT | UART_FCR_TRIGGER_1);
 
 	/*
 	 * 8bit word length
@@ -174,19 +183,19 @@ static void uart_config(void)
 	 * set DLAB=1
 	 */
 	char lcr = UART_LCR_WLEN8 | UART_LCR_DLAB;
-	outportb(iobase + UART_LCR, lcr);
+	WRITE_TO_UART(UART_LCR, lcr);
 
 	/*
 	 * set baudrate to 115200 (on qemu)
 	 */
-	outportb(iobase + UART_DLL, 0x01);
-	outportb(iobase + UART_DLM, 0x00);
+	WRITE_TO_UART(UART_DLL, 0x01);
+	WRITE_TO_UART(UART_DLM, 0x00);
 
 	/* set DLAB=0 */
-	outportb(iobase + UART_LCR, lcr & (~UART_LCR_DLAB));
+	WRITE_TO_UART(UART_LCR, lcr & (~UART_LCR_DLAB));
 
 	/* enable interrupt */
-	outportb(iobase + UART_IER, UART_IER_RDI | UART_IER_RLSI | UART_IER_THRI);
+	WRITE_TO_UART(UART_IER, UART_IER_RDI | UART_IER_RLSI | UART_IER_THRI);
 }
 
 int uart_init(void)
