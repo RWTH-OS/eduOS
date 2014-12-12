@@ -1,4 +1,4 @@
-TERN = xterm
+TERM = xterm
 TOPDIR = $(shell pwd)
 ARCH = x86
 NAME = eduos
