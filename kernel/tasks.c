@@ -397,7 +397,7 @@ get_task_out:
 	spinlock_irqsave_unlock(&readyqueues.lock);
 
 	if (current_task != orig_task) {
-		kprintf("schedule from %u to %u with prio %u\n", orig_task->id, current_task->id, (uint32_t)current_task->prio);
+		//kprintf("schedule from %u to %u with prio %u\n", orig_task->id, current_task->id, (uint32_t)current_task->prio);
 
 		return (size_t**) &(orig_task->last_stack_pointer);
 	}
