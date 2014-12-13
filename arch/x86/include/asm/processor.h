@@ -46,6 +46,65 @@
 extern "C" {
 #endif
 
+// feature list 1
+#define CPU_FEATURE_FPU         (1 << 0)
+#define CPU_FEATURE_MSR         (1 << 5)
+#define CPU_FEATURE_APIC        (1 << 9)
+#define CPU_FEATURE_MMX         (1 << 23)
+#define CPU_FEATURE_FXSR        (1 << 24)
+#define CPU_FEATURE_SSE         (1 << 25)
+#define CPU_FEATURE_SSE2        (1 << 26)
+
+// feature list 2
+#define CPU_FEATURE_X2APIC      (1 << 21)
+#define CPU_FEATURE_AVX         (1 << 28)
+#define CPU_FEATURE_HYPERVISOR  (1 << 31)
+
+typedef struct {
+	uint32_t feature1, feature2;
+} cpu_info_t;
+
+extern cpu_info_t cpu_info;
+
+// determine the cpu features
+int cpu_detection(void);
+
+inline static uint32_t has_fpu(void) {
+	return (cpu_info.feature1 & CPU_FEATURE_FPU);
+}
+
+inline static uint32_t has_msr(void) {
+	return (cpu_info.feature1 & CPU_FEATURE_MSR);
+}
+
+inline static uint32_t has_apic(void) {
+	return (cpu_info.feature1 & CPU_FEATURE_APIC);
+}
+
+inline static uint32_t has_fxsr(void) {
+	return (cpu_info.feature1 & CPU_FEATURE_FXSR);
+}
+
+inline static uint32_t has_sse(void) {
+	return (cpu_info.feature1 & CPU_FEATURE_SSE);
+}
+
+inline static uint32_t has_sse2(void) {
+	return (cpu_info.feature1 & CPU_FEATURE_SSE2);
+}
+
+inline static uint32_t has_x2apic(void) {
+	return (cpu_info.feature2 & CPU_FEATURE_X2APIC);
+}
+
+inline static uint32_t has_avx(void) {
+	return (cpu_info.feature2 & CPU_FEATURE_AVX);
+}
+
+inline static uint32_t on_hypervisor(void) {
+	return (cpu_info.feature2 & CPU_FEATURE_HYPERVISOR);
+}
+
 /** @brief Read out time stamp counter
  *
  * The rdtsc asm command puts a 64 bit time stamp value
@@ -60,13 +119,52 @@ inline static uint64_t rdtsc(void)
 	return x;
 }
 
-/** @brief Read cr3 register
- * @return cr3's value
+/** @brief Read MSR
+ *
+ * The asm instruction rdmsr which stands for "Read from model specific register"
+ * is used here.
+ *
+ * @param msr The parameter which rdmsr assumes in ECX
+ * @return The value rdmsr put into EDX:EAX
  */
-static inline size_t read_cr3(void) {
+inline static uint64_t rdmsr(uint32_t msr) {
+	uint32_t low, high;
+
+	asm volatile ("rdmsr" : "=a" (low), "=d" (high) : "c" (msr));
+
+	return ((uint64_t)high << 32) | low;
+}
+
+/** @brief Write a value to a  Machine-Specific Registers (MSR)
+ *
+ * The asm instruction wrmsr which stands for "Write to model specific register"
+ * is used here.
+ *
+ * @param msr The MSR identifier
+ * @param value Value, which will be store in the MSR
+ */
+inline static void wrmsr(uint32_t msr, uint64_t value)
+{
+	uint32_t low = value & 0xFFFFFFFF;
+	uint32_t high = value >> 32;
+
+	asm volatile("wrmsr" :: "a"(low), "c"(msr), "d"(high));
+}
+
+/** @brief Read cr0 register
+ * @return cr0's value
+ */
+static inline size_t read_cr0(void) {
 	size_t val;
-	asm volatile("mov %%cr3, %0" : "=r"(val));
+	asm volatile("mov %%cr0, %0" : "=r"(val));
 	return val;
+}
+
+/** @brief Write a value into cr0 register
+ * @param val The value you want to write into cr0
+ */
+static inline void write_cr0(size_t val) {
+	asm volatile("mov %0, %%cr0" : : "r"(val));
 }
 
 /** @brief Read cr2 register
@@ -85,11 +183,36 @@ static inline void write_cr2(size_t val) {
 	asm volatile("mov %0, %%cr2" : : "r"(val));
 }
 
+/** @brief Read cr3 register
+ * @return cr3's value
+ */
+static inline size_t read_cr3(void) {
+        size_t val;
+        asm volatile("mov %%cr3, %0" : "=r"(val));
+        return val;
+}
+
 /** @brief Write a value into cr3 register
  * @param val The value you want to write into cr3
  */
 static inline void write_cr3(size_t val) {
 	asm volatile("mov %0, %%cr3" : : "r"(val));
+}
+
+/** @brief Read cr4 register
+ * @return cr4's value
+ */
+static inline size_t read_cr4(void) {
+	size_t val;
+	asm volatile("mov %%cr4, %0" : "=r"(val));
+	return val;
+}
+
+/** @brief Write a value into cr4 register
+ * @param val The value you want to write into cr4
+ */
+static inline void write_cr4(size_t val) {
+	asm volatile("mov %0, %%cr4" : : "r"(val));
 }
 
 /** @brief Flush cache
@@ -130,12 +253,30 @@ inline static void invalid_cache(void) {
 	asm volatile ("invd");
 }
 
+/* Force strict CPU ordering */
+typedef void (*func_memory_barrier)(void);
+
 /// Force strict CPU ordering, serializes load and store operations.
-inline static void mb(void) { asm volatile("mfence" ::: "memory"); }
+extern func_memory_barrier mb;
 /// Force strict CPU ordering, serializes load operations.
-inline static void rmb(void) { asm volatile("lfence" ::: "memory"); }
+extern func_memory_barrier rmb;
 /// Force strict CPU ordering, serializes store operations.
-inline static void wmb(void) { asm volatile("sfence" ::: "memory"); }
+extern func_memory_barrier wmb;
+
+/** @brief Read out CPU ID
+ *
+ * The cpuid asm-instruction does fill some information into registers and
+ * this function fills those register values into the given uint32_t vars.\n
+ *
+ * @param code Input parameter for the cpuid instruction. Take a look into the intel manual.
+ * @param a EAX value will be stores here
+ * @param b EBX value will be stores here
+ * @param c ECX value will be stores here
+ * @param d EDX value will be stores here
+ */
+inline static void cpuid(uint32_t code, uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* d) {
+	asm volatile ("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "0"(code), "2"(*c));
+}
 
 /** @brief Read EFLAGS
  *
@@ -209,6 +350,7 @@ static inline size_t lsb(size_t i)
 inline static int system_init(void)
 {
 	gdt_install();
+	cpu_detection();
 #ifdef CONFIG_PCI
 	pci_init();
 #endif
