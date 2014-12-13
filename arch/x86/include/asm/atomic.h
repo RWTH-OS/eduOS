@@ -122,8 +122,8 @@ inline static int32_t atomic_int32_sub(atomic_int32_t *d, int32_t i)
  *
  * @param d The atomic_int32_t var you want to increment
  */
-inline static void atomic_int32_inc(atomic_int32_t* d) {
-	asm volatile(LOCK "incl %0" : "+m" (d->counter));
+inline static int32_t atomic_int32_inc(atomic_int32_t* d) {
+	return atomic_int32_add(d, 1);
 }
 
 /** @brief Atomic decrement by one
@@ -132,8 +132,8 @@ inline static void atomic_int32_inc(atomic_int32_t* d) {
  *
  * @param d The atomic_int32_t var you want to decrement
  */
-inline static void atomic_int32_dec(atomic_int32_t* d) {
-	asm volatile(LOCK "decl %0" : "+m" (d->counter));
+inline static int32_t atomic_int32_dec(atomic_int32_t* d) {
+	return atomic_int32_add(d, -1);
 }
 
 /** @brief Read out an atomic_int32_t var
