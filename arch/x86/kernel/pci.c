@@ -98,7 +98,7 @@ static uint32_t pci_conf_read(uint32_t bus, uint32_t slot, uint32_t off)
 	return data;
 }
 
-static inline uint32_t pci_what_irq(uint32_t bus, uint32_t slot)
+static inline uint8_t pci_what_irq(uint32_t bus, uint32_t slot)
 {
 	return pci_conf_read(bus, slot, PCI_CFIT) & 0xFF;
 }
@@ -106,6 +106,11 @@ static inline uint32_t pci_what_irq(uint32_t bus, uint32_t slot)
 static inline uint32_t pci_what_iobase(uint32_t bus, uint32_t slot, uint32_t nr)
 {
 	return pci_conf_read(bus, slot, PCI_CBIO + nr*4) & 0xFFFFFFFC;
+}
+
+static inline uint32_t pci_what_type(uint32_t bus, uint32_t slot, uint32_t nr)
+{
+	return pci_conf_read(bus, slot, PCI_CBIO + nr*4) & 0x1;
 }
 
 static inline uint32_t pci_what_size(uint32_t bus, uint32_t slot, uint32_t nr)
@@ -151,8 +156,11 @@ int pci_get_device_info(uint32_t vendor_id, uint32_t device_id, pci_info_t* info
 			if (adapters[bus][slot] != -1) {
 				if (((adapters[bus][slot] & 0xffff) == vendor_id) && 
 				   (((adapters[bus][slot] & 0xffff0000) >> 16) == device_id)) {
+						info->slot = slot;
+						info->bus = bus;
 					for(i=0; i<6; i++) {
 						info->base[i] = pci_what_iobase(bus, slot, i);
+						info->type[i] = pci_what_type(bus, slot, i);
 						info->size[i] = (info->base[i]) ? pci_what_size(bus, slot, i) : 0;	
 					}
 					info->irq = pci_what_irq(bus, slot);
