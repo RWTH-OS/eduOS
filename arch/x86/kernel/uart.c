@@ -149,7 +149,7 @@ static void uart_handler(struct state *s)
 	}
 }
 
-/* thread entry point => enable all incoming messages */
+/* thread entry point => handles all incoming messages */
 static int uart_thread(void* arg)
 {
 	unsigned char c = 0;
