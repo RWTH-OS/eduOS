@@ -29,16 +29,30 @@
 #include <eduos/string.h>
 #include <eduos/stdarg.h>
 #include <eduos/spinlock.h>
-#include <asm/uart.h>
+#include <asm/atomic.h>
+#include <asm/processor.h>
+#ifdef CONFIG_VGA
 #include <asm/vga.h>
+#endif
+#ifdef CONFIG_UART
+#include <asm/uart.h>
+#endif
 
+#define NO_EARLY_PRINT		0x00
+#define VGA_EARLY_PRINT		0x01
+#define UART_EARLY_PRINT	0x02
+
+#ifdef CONFIG_VGA
+static uint32_t early_print = VGA_EARLY_PRINT;
+#else
+static uint32_t early_print = NO_EARLY_PRINT;
+#endif
 static spinlock_irqsave_t olock = SPINLOCK_IRQSAVE_INIT;
+static atomic_int32_t kmsg_counter = ATOMIC_INIT(0);
+static unsigned char kmessages[KMSG_SIZE] __attribute__ ((section(".kmsg"))) = {[0 ... KMSG_SIZE-1] = 0x00};
 
 int koutput_init(void)
 {
-#ifdef CONFIG_UART
-	uart_init();
-#endif
 #ifdef CONFIG_VGA
 	vga_init();
 #endif
@@ -48,24 +62,67 @@ int koutput_init(void)
 
 int kputchar(int c)
 {
-	spinlock_irqsave_lock(&olock);
-#ifdef CONFIG_UART
-	uart_putchar(c);
-#endif
+	int pos;
+
+	if (early_print != NO_EARLY_PRINT)
+		spinlock_irqsave_lock(&olock);
+
+	pos = atomic_int32_inc(&kmsg_counter);
+	kmessages[pos % KMSG_SIZE] = (unsigned char) c;
+
 #ifdef CONFIG_VGA
-	vga_putchar(c);
+	if (early_print & VGA_EARLY_PRINT)
+		vga_putchar(c);
 #endif
-	spinlock_irqsave_unlock(&olock);
+#ifdef CONFIG_UART
+	if (early_print & UART_EARLY_PRINT)
+		uart_putchar(c);
+#endif
+
+	if (early_print != NO_EARLY_PRINT)
+		spinlock_irqsave_unlock(&olock);
 
 	return 1;
 }
 
 int kputs(const char *str)
 {
-	int i;
+	int pos, i, len = strlen(str);
 
-	for(i=0; str[i] != '\0'; i++)
-		kputchar((int) str[i]);
+	if (early_print != NO_EARLY_PRINT)
+		spinlock_irqsave_lock(&olock);
 
-	return i;
+	for(i=0; i<len; i++) {
+		pos = atomic_int32_inc(&kmsg_counter);
+		kmessages[pos % KMSG_SIZE] = str[i];
+#ifdef CONFIG_VGA
+		if (early_print & VGA_EARLY_PRINT)
+			vga_putchar(str[i]);
+#endif
+#ifdef CONFIG_UART
+		if (early_print & UART_EARLY_PRINT)
+			uart_putchar(str[i]);
+#endif
+	}
+
+	if (early_print != NO_EARLY_PRINT)
+		spinlock_irqsave_unlock(&olock);
+
+	return len;
+}
+
+int koutput_add_uart(void)
+{
+#ifdef CONFIG_UART
+	uint32_t i;
+
+	early_print |= UART_EARLY_PRINT;
+
+	for(i=0; i<atomic_int32_read(&kmsg_counter); i++)
+		uart_putchar(kmessages[i % KMSG_SIZE]);
+
+	return 0;
+#else
+	return -EINVAL;
+#endif
 }

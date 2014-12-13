@@ -77,6 +77,11 @@ int ksnprintf(char *str, size_t size, const char *format, ...);
  */
 int kvprintf(char const *fmt, void (*func) (int, void *), void *arg, int radix, va_list ap);
 
+/**
+ * Add UART device to dump kernel messages
+ */
+int koutput_add_uart(void);
+
 #ifdef __cplusplus
 }
 #endif

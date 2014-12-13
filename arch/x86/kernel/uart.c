@@ -29,6 +29,7 @@
 #include <eduos/string.h>
 #include <eduos/mailbox.h>
 #include <asm/io.h>
+#include <asm/page.h>
 #include <asm/uart.h>
 #include <asm/irq.h>
 #include <asm/irqflags.h>
@@ -79,23 +80,32 @@
 #define UART_LCR_STOP		0x04 /* Stop bits: 0=1 bit, 1=2 bits */
 #define UART_LCR_WLEN8		0x03 /* Wordlength: 8 bits */
 
+static uint8_t	mmio = 0;
 static uint32_t	iobase = 0;
 static tid_t	id;
 static mailbox_uint8_t input_queue;
 
-#define MEMMAPIO
-#if 1
-#define READ_FROM_UART(x)	inportb(iobase + x)
-#define WRITE_TO_UART(x, y)	outportb(iobase + x, y)
-#else
-#define READ_FROM_UART(x)	inportb(iobase + x)
-#define WRITE_TO_UART(x, y)	outportb(iobase + x, y)
-#endif
+static inline unsigned char read_from_uart(uint32_t off)
+{
+	if (mmio)
+		return *((volatile unsigned char*) (iobase + off));
+	else
+		return inportb(iobase + off);
+}
+
+static void write_to_uart(uint32_t off, unsigned char c)
+{
+	if (mmio)
+		*((volatile unsigned char*) (iobase + off)) = c;
+	else
+		outportb(iobase + off, c);
+}
+
 
 /* Get a single character on a serial device */
 static unsigned char uart_getchar(void)
 {
-	return READ_FROM_UART(UART_RX);
+	return read_from_uart(UART_RX);
 }
 
 /* Puts a single character on a serial device */
@@ -104,7 +114,7 @@ int uart_putchar(unsigned char c)
 	if (!iobase)
 		return 0;
 
-	WRITE_TO_UART(UART_TX, c);
+	write_to_uart(UART_TX, c);
 
 	return (int) c;
 }
@@ -126,7 +136,7 @@ int uart_puts(const char *text)
 /* Handles all UART's interrupt */
 static void uart_handler(struct state *s)
 {
-	unsigned char c = READ_FROM_UART(UART_IIR);
+	unsigned char c = read_from_uart(UART_IIR);
 
 	while (!(c & UART_IIR_NO_INT)) {
 		if (c & UART_IIR_RDI) {
@@ -135,7 +145,7 @@ static void uart_handler(struct state *s)
 			mailbox_uint8_post(&input_queue, c);
 		}
 
-		c = READ_FROM_UART(UART_IIR);
+		c = read_from_uart(UART_IIR);
 	}
 }
 
@@ -153,18 +163,6 @@ static int uart_thread(void* arg)
 	return 0;
 }
 
-int uart_enable_input(void)
-{
-	int err = create_kernel_task(&id, uart_thread, NULL, HIGH_PRIO);
-
-	if (BUILTIN_EXPECT(err, 0))
-		kprintf("Failed to create task (uart): %d\n", err);
-	else
-		kputs("Create task to handle incoming messages (uart)\n");
-
-	return err;
-}
-
 static void uart_config(void)
 {
 	mailbox_uint8_init(&input_queue);
@@ -174,7 +172,7 @@ static void uart_config(void)
 	 * clear RX and TX FIFO
 	 * set irq trigger to 8 bytes
 	 */
-	WRITE_TO_UART(UART_FCR, UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT | UART_FCR_TRIGGER_1);
+	write_to_uart(UART_FCR, UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT | UART_FCR_TRIGGER_1);
 
 	/*
 	 * 8bit word length
@@ -183,19 +181,25 @@ static void uart_config(void)
 	 * set DLAB=1
 	 */
 	char lcr = UART_LCR_WLEN8 | UART_LCR_DLAB;
-	WRITE_TO_UART(UART_LCR, lcr);
+	write_to_uart(UART_LCR, lcr);
 
 	/*
 	 * set baudrate to 115200 (on qemu)
 	 */
-	WRITE_TO_UART(UART_DLL, 0x01);
-	WRITE_TO_UART(UART_DLM, 0x00);
+	write_to_uart(UART_DLL, 0x01);
+	write_to_uart(UART_DLM, 0x00);
 
 	/* set DLAB=0 */
-	WRITE_TO_UART(UART_LCR, lcr & (~UART_LCR_DLAB));
+	write_to_uart(UART_LCR, lcr & (~UART_LCR_DLAB));
 
 	/* enable interrupt */
-	WRITE_TO_UART(UART_IER, UART_IER_RDI | UART_IER_RLSI | UART_IER_THRI);
+	write_to_uart(UART_IER, UART_IER_RDI | UART_IER_RLSI | UART_IER_THRI);
+
+	int err = create_kernel_task(&id, uart_thread, NULL, HIGH_PRIO);
+	if (BUILTIN_EXPECT(err, 0))
+		kprintf("Failed to create task for the uart device: %d\n", err);
+
+	koutput_add_uart();
 }
 
 int uart_init(void)
@@ -213,12 +217,25 @@ int uart_init(void)
 	return -1;
 
 Lsuccess:
-	// we use COM1
-	iobase = 0x03f8;
-	irq_install_handler(32+4, uart_handler);
+	if (pci_info.type[0]) {
+		// we use COM1
+		mmio = 0;
+		iobase = 0x3F8;
+		irq_install_handler(32+4, uart_handler);
+	} else {
+		mmio = 1;
+		iobase = pci_info.base[0];
+		irq_install_handler(32+pci_info.irq, uart_handler);
+		page_map(iobase & PAGE_MASK, iobase & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
+	}
 
 	// configure uart
 	uart_config();
+#else
+	// we use COM1
+	mmio = 0;
+	iobase = 0x3F8;
+	irq_install_handler(32+4, uart_handler);
 #endif
 
 	return 0;
