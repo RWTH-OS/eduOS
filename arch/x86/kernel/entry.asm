@@ -196,6 +196,51 @@ isrstub_pseudo_error 9
         jmp common_stub
 %endmacro
 
+global apic_timer
+apic_timer:
+	; apic timer  is registered as "Interrupt Gate"
+	; Therefore, the interrupt flag (IF) is already cleared.
+	; cli
+	push byte 0 ; pseudo error code
+	push byte 123
+	jmp common_stub
+
+global apic_lint0
+apic_lint0:
+	; lint0 is registered as "Interrupt Gate"
+	; Therefore, the interrupt flag (IF) is already cleared.
+	; cli
+	push byte 0 ; pseudo error code
+	push byte 124
+	jmp common_stub
+
+global apic_lint1
+apic_lint1:
+	; lint1 is registered as "Interrupt Gate"
+	; Therefore, the interrupt flag (IF) is already cleared.
+	; cli
+	push byte 0 ; pseudo error code
+	push byte 125
+	jmp common_stub
+
+global apic_error
+apic_error:
+	; LVT error interrupt is registered as "Interrupt Gate"
+	; Therefore, the interrupt flag (IF) is already cleared.
+	; cli
+	push byte 0 ; pseudo error code
+	push byte 126
+	jmp common_stub
+
+global apic_svr
+apic_svr:
+	; SVR is registered as "Interrupt Gate"
+	; Therefore, the interrupt flag (IF) is already cleared.
+	; cli
+	push byte 0 ; pseudo error code
+	push byte 127
+	jmp common_stub
+
 ; Create entries for the interrupts 0 to 23
 %assign i 0
 %rep    24

@@ -38,6 +38,7 @@
 
 #include <eduos/stddef.h>
 #include <asm/gdt.h>
+#include <asm/apic.h>
 #ifdef CONFIG_PCI
 #include <asm/pci.h>
 #endif
@@ -351,6 +352,7 @@ inline static int system_init(void)
 {
 	gdt_install();
 	cpu_detection();
+	apic_init();
 #ifdef CONFIG_PCI
 	pci_init();
 #endif
@@ -387,6 +389,7 @@ void udelay(uint32_t usecs);
 inline static int system_calibration(void)
 {
 	detect_cpu_frequency();
+	apic_calibration();
 
 	return 0;
 }

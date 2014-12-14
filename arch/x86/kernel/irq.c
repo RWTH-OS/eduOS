@@ -70,6 +70,11 @@ extern void irq20(void);
 extern void irq21(void);
 extern void irq22(void);
 extern void irq23(void);
+extern void apic_timer(void);
+extern void apic_lint0(void);
+extern void apic_lint1(void);
+extern void apic_error(void);
+extern void apic_svr(void);
 
 #define MAX_HANDLERS	256
 
@@ -188,6 +193,18 @@ static int irq_install(void)
 	idt_set_gate(55, (size_t)irq23, KERNEL_CODE_SELECTOR,
 		IDT_FLAG_PRESENT|IDT_FLAG_RING0|IDT_FLAG_32BIT|IDT_FLAG_INTTRAP);
 
+	// add APIC interrupt handler
+	idt_set_gate(123, (size_t)apic_timer, KERNEL_CODE_SELECTOR,
+		IDT_FLAG_PRESENT|IDT_FLAG_RING0|IDT_FLAG_32BIT|IDT_FLAG_INTTRAP);
+	idt_set_gate(124, (size_t)apic_lint0, KERNEL_CODE_SELECTOR,
+		IDT_FLAG_PRESENT|IDT_FLAG_RING0|IDT_FLAG_32BIT|IDT_FLAG_INTTRAP);
+	idt_set_gate(125, (size_t)apic_lint1, KERNEL_CODE_SELECTOR,
+		IDT_FLAG_PRESENT|IDT_FLAG_RING0|IDT_FLAG_32BIT|IDT_FLAG_INTTRAP);
+	idt_set_gate(126, (size_t)apic_error, KERNEL_CODE_SELECTOR,
+		IDT_FLAG_PRESENT|IDT_FLAG_RING0|IDT_FLAG_32BIT|IDT_FLAG_INTTRAP);
+	idt_set_gate(127, (size_t)apic_svr, KERNEL_CODE_SELECTOR,
+		IDT_FLAG_PRESENT|IDT_FLAG_RING0|IDT_FLAG_32BIT|IDT_FLAG_INTTRAP);
+
 	return 0;
 }
 
@@ -231,6 +248,15 @@ size_t** irq_handler(struct state *s)
 			handler(s);
 	} else kprintf("Invalid interrupt number %d\n", s->int_no);
 
+	/*
+	 * If the IDT entry that was invoked was greater-than-or-equal to 48,
+	 * then we use the APIC
+	 */
+	if (apic_is_enabled() || s->int_no >= 123) {
+		apic_eoi();
+		goto leave_handler;
+	}
+
 	/* 
 	 * If the IDT entry that was invoked was greater-than-or-equal to 40 
 	 * and lower than 48 (meaning IRQ8 - 15), then we need to 
@@ -245,8 +271,9 @@ size_t** irq_handler(struct state *s)
 	 */
 	outportb(0x20, 0x20);
 
+leave_handler:
 	// timer interrupt?
-	if (s->int_no == 32)
+	if ((s->int_no == 32) || (s->int_no == 123))
 		return scheduler(); // switch to a new task
 	else if ((s->int_no >= 32) && (get_highest_priority() > current_task->prio))
 		return scheduler();
