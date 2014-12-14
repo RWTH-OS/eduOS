@@ -256,11 +256,11 @@ int page_init()
 	/* Map kernel */
 	addr = (size_t) &kernel_start;
 	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
-	page_map(addr, addr, npages, PG_RW | /* PG_USER | */ PG_GLOBAL);
+	page_map(addr, addr, npages, PG_RW | PG_GLOBAL);
 
 #ifdef CONFIG_VGA
 	/* Map video memory */
-	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_RW | PG_PCD);
+	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_RW | PG_PCD | PG_GLOBAL);
 #endif
 
 	/* Map multiboot information and modules */
