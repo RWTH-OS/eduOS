@@ -88,7 +88,7 @@ static mailbox_uint8_t input_queue;
 static inline unsigned char read_from_uart(uint32_t off)
 {
 	if (mmio)
-		return *((volatile unsigned char*) (iobase + off));
+		return *((const volatile unsigned char*) (iobase + off));
 	else
 		return inportb(iobase + off);
 }
@@ -184,10 +184,11 @@ static void uart_config(void)
 	write_to_uart(UART_LCR, lcr);
 
 	/*
-	 * set baudrate to 115200 (on qemu)
+	 * set baudrate to 115200
 	 */
-	write_to_uart(UART_DLL, 0x01);
-	write_to_uart(UART_DLM, 0x00);
+	uint32_t divisor = 1843200 / 115200;
+	write_to_uart(UART_DLL, divisor & 0xff);
+	write_to_uart(UART_DLM, (divisor >> 8) & 0xff);
 
 	/* set DLAB=0 */
 	write_to_uart(UART_LCR, lcr & (~UART_LCR_DLAB));
@@ -206,6 +207,7 @@ int uart_init(void)
 {
 #ifdef CONFIG_PCI
 	pci_info_t pci_info;
+	uint32_t bar = 0;
 
 	// Searching for Intel's UART device
 	if (pci_get_device_info(0x8086, 0x0936, &pci_info) == 0)
@@ -220,19 +222,25 @@ Lsuccess:
 	if (pci_info.type[0]) {
 		// we use COM1
 		mmio = 0;
+		//iobase = pci_info.base[bar];
+		//irq_install_handler(32+pci_info.irq, uart_handler);
 		iobase = 0x3F8;
 		irq_install_handler(32+4, uart_handler);
+
+		kprintf("UART uses io address 0x%x\n", iobase);
 	} else {
 		mmio = 1;
-		iobase = pci_info.base[0];
-		irq_install_handler(32+pci_info.irq, uart_handler);
+		iobase = 0x9010b000; //pci_info.base[0];
+		//irq_install_handler(32+pci_info.irq, uart_handler);
 		page_map(iobase & PAGE_MASK, iobase & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
+
+		kprintf("UART uses mmio address 0x%x\n", iobase);
 	}
 
 	// configure uart
 	uart_config();
 #else
-	// we use COM1
+	// per default we use COM1...
 	mmio = 0;
 	iobase = 0x3F8;
 	irq_install_handler(32+4, uart_handler);
