@@ -1,4 +1,4 @@
-TERN = xterm
+TERM = xterm
 TOPDIR = $(shell pwd)
 ARCH = x86
 NAME = eduos
@@ -30,12 +30,17 @@ QEMU = qemu-system-i386
 QEMUFLAGS = -smp 2 -monitor stdio \
 	    -net nic,model=rtl8139 \
 	    -net user,hostfwd=tcp::12345-:7
+QEMUDEBUGFLAGS = -monitor none -daemonize \
+	    -net nic,model=rtl8139 \
+	    -net user,hostfwd=tcp::12345-:7
+QEMUSERIALFLAGS = -device pci-serial,chardev=tS0 \
+		-chardev socket,host=localhost,port=4555,server,id=tS0
 
 INCLUDE = -I$(TOPDIR)/include -I$(TOPDIR)/arch/$(ARCH)/include
 # Compiler options for final code
 CFLAGS = -g -m32 -march=i586 -Wall -O2 -fno-builtin -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc $(INCLUDE) -fno-stack-protector
 # Compiler options for debugging
-#CFLAGS = -g -O -m32 -march=i586 -Wall -fno-builtin -DWITH_FRAME_POINTER -nostdinc $(INCLUDE) -fno-stack-protector
+debug debug-eclipse : CFLAGS = -g -O0 -m32 -march=i586 -Wall -fno-builtin -DWITH_FRAME_POINTER -nostdinc $(INCLUDE) -fno-stack-protector
 AR = ar
 ARFLAGS = rsv
 RM = rm -rf
@@ -58,8 +63,8 @@ $(NAME).elf:
 	$Q$(LD_FOR_TARGET) $(LDFLAGS) -o $(NAME).elf $^
 	@echo [OBJCOPY] $(NAME).sym
 	$Q$(OBJCOPY_FOR_TARGET) $(KEEP_DEBUG) $(NAME).elf $(NAME).sym
-	@echo [OBJCOPY] $(NAME).elf
-	$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $(NAME).elf
+	#@echo [OBJCOPY] $(NAME).elf
+	#$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $(NAME).elf
 
 clean:
 	$Q$(RM) $(NAME).elf $(NAME).sym *~
@@ -73,11 +78,15 @@ qemu: $(NAME).elf
 	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf
 
 uart: $(NAME).elf
-	$(QEMU) -chardev socket,id=tS0,port=4555,host=localhost,server -device pci-serial,chardev=tS0 $(QEMUFLAGS)  -kernel $(NAME).elf
+	$(QEMU) $(QEMUFLAGS) $(QEMUSERIALFLAGS) -kernel $(NAME).elf
 
 debug: $(NAME).elf
 	$(TERM) -e $(GDB) $(GDBFLAGS) &
-	$(QEMU) $(QEMUFLAGS) -s -S -kernel $(NAME).elf
+	$(QEMU) $(QEMUDEBUGFLAGS) -s -S -kernel $(NAME).elf
+
+debug-eclipse: clean $(NAME).elf
+	killall $(QEMU) &
+	( ( $(QEMU) $(QEMUDEBUGFLAGS) $(QEMUSERIALFLAGS) -s -S -kernel $(NAME).elf & ) & )
 
 doc:
 	@echo Create documentation...
