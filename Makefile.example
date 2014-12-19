@@ -73,7 +73,7 @@ qemu: $(NAME).elf
 	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf
 
 uart: $(NAME).elf
-	$(QEMU) -chardev null,id=tS0 -device pci-serial,chardev=tS0 -serial tcp::4555,server $(QEMUFLAGS)  -kernel $(NAME).elf
+	$(QEMU) -chardev socket,id=tS0,port=4555,host=localhost,server -device pci-serial,chardev=tS0 $(QEMUFLAGS)  -kernel $(NAME).elf
 
 debug: $(NAME).elf
 	$(TERM) -e $(GDB) $(GDBFLAGS) &
