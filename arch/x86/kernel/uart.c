@@ -32,7 +32,6 @@
 #include <asm/page.h>
 #include <asm/uart.h>
 #include <asm/irq.h>
-#include <asm/irqflags.h>
 #ifdef CONFIG_PCI
 #include <asm/pci.h>
 #endif
@@ -97,32 +96,22 @@ static mailbox_uint8_t input_queue;
 
 static inline unsigned char read_from_uart(uint32_t off)
 {
-	uint8_t c, flag;
-
-	flag = irq_nested_disable();
+	uint8_t c;
 
 	if (mmio)
 		c = *((const volatile unsigned char*) (iobase + off));
 	else
 		c = inportb(iobase + off);
 
-	irq_nested_enable(flag);
-
 	return c;
 }
 
 static void write_to_uart(uint32_t off, unsigned char c)
 {
-	uint8_t flag;
-
-	flag = irq_nested_disable();
-
 	if (mmio)
 		*((volatile unsigned char*) (iobase + off)) = c;
 	else
 		outportb(iobase + off, c);
-
-	irq_nested_enable(flag);
 }
 
 
