@@ -129,6 +129,7 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 		}
 	}
 
+	ret = 0;
 out:
 	if (bits & PG_USER)
 		spinlock_irqsave_unlock(&current_task->page_lock);
@@ -155,6 +156,7 @@ int page_unmap(size_t viraddr, size_t npages)
 	spinlock_irqsave_unlock(&current_task->page_lock);
 	spinlock_unlock(&kslock);
 
+	/* This can't fail because we don't make checks here */
 	return 0;
 }
 
@@ -179,7 +181,8 @@ int page_map_drop()
 	traverse(PAGE_LEVELS-1, 0);
 
 	spinlock_irqsave_unlock(&current_task->page_lock);
-	
+
+	/* This can't fail because we don't make checks here */
 	return 0;
 }
 
@@ -223,8 +226,9 @@ int page_map_copy(task_t *dest)
 	other[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-1] = dest->page_map | PG_PRESENT | PG_SELF | PG_RW;
 	self [PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = 0;
 	spinlock_irqsave_unlock(&current_task->page_lock);
-	
-	flush_tlb(); /* Flush TLB entries of 'other' self-reference */
+
+	/* Flush TLB entries of 'other' self-reference */
+	flush_tlb();
 
 	return ret;
 }
