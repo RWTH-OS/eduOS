@@ -163,7 +163,6 @@ static void uart_handler(struct state *s)
 	unsigned char c = read_from_uart(UART_IIR);
 
 	while (!(c & UART_IIR_NO_INT)) {
-		kprintf("c = 0x%x\n", c);
 		if (c & UART_IIR_RDI) {
 			c = uart_getchar();
 
@@ -252,20 +251,14 @@ int uart_init(void)
 	return -1;
 
 Lsuccess:
+	iobase = pci_info.base[bar];
+	irq_install_handler(32+pci_info.irq, uart_handler);
 	if (pci_info.type[0]) {
 		mmio = 0;
-		iobase = pci_info.base[bar];
-		irq_install_handler(32+pci_info.irq, uart_handler);
-		//iobase = 0x3F8;
-		//irq_install_handler(32+4, uart_handler);
-
 		kprintf("UART uses io address 0x%x\n", iobase);
 	} else {
 		mmio = 1;
-		iobase = 0x9010b000; //pci_info.base[0];
-		irq_install_handler(32+pci_info.irq, uart_handler);
 		page_map(iobase & PAGE_MASK, iobase & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
-
 		kprintf("UART uses mmio address 0x%x\n", iobase);
 	}
 
