@@ -42,11 +42,10 @@ extern "C" {
 #endif
 
 typedef struct {
-	uint32_t slot, bus;
+	uint8_t slot, bus, irq;
 	uint32_t base[6];
 	uint32_t size[6];
 	uint8_t  type[6];
-	uint8_t irq;
 } pci_info_t;
 
 /** @brief Initialize the PCI environment
@@ -68,11 +67,13 @@ int pci_init(void);
  */
 int pci_get_device_info(uint32_t vendor_id, uint32_t device_id, pci_info_t* info);
 
+#ifdef WITH_PCI_NAMES
 /** @brief Print information of existing pci adapters
  *
  * @return 0 in any case
  */
 int print_pci_adapters(void);
+#endif
 
 #ifdef __cplusplus
 }
