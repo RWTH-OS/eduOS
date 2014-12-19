@@ -33,6 +33,8 @@ QEMUFLAGS = -smp 2 -monitor stdio \
 QEMUDEBUGFLAGS = -monitor none -daemonize \
 	    -net nic,model=rtl8139 \
 	    -net user,hostfwd=tcp::12345-:7
+QEMUSERIALFLAGS = -device pci-serial,chardev=tS0 \
+		-chardev socket,host=localhost,port=4555,server,id=tS0
 
 INCLUDE = -I$(TOPDIR)/include -I$(TOPDIR)/arch/$(ARCH)/include
 # Compiler options for final code
@@ -76,15 +78,15 @@ qemu: $(NAME).elf
 	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf
 
 uart: $(NAME).elf
-	$(QEMU) -chardev null,id=tS0 -device pci-serial,chardev=tS0 -serial tcp::4555,server $(QEMUFLAGS)  -kernel $(NAME).elf
+	$(QEMU) $(QEMUFLAGS) $(QEMUSERIALFLAGS) -kernel $(NAME).elf
 
 debug: $(NAME).elf
 	$(TERM) -e $(GDB) $(GDBFLAGS) &
 	$(QEMU) $(QEMUDEBUGFLAGS) -s -S -kernel $(NAME).elf
 
-debug-eclipse: $(NAME).elf
+debug-eclipse: clean $(NAME).elf
 	killall $(QEMU) &
-	( ( $(QEMU) $(QEMUDEBUGFLAGS) -s -S -kernel $(NAME).elf & ) & )
+	( ( $(QEMU) $(QEMUDEBUGFLAGS) $(QEMUSERIALFLAGS) -s -S -kernel $(NAME).elf & ) & )
 
 doc:
 	@echo Create documentation...
