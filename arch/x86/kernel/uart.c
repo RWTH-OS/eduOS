@@ -45,10 +45,14 @@
  */
 
 #define UART_RX			0	/* In:  Receive buffer */
+#define UART_IIR		2   /* In:  Interrupt ID Register */
 #define UART_TX			0	/* Out: Transmit buffer */
 #define UART_IER		1	/* Out: Interrupt Enable Register */
 #define UART_FCR		2	/* Out: FIFO Control Register */
-#define UART_IIR        2   /* In:  Interrupt ID Register */
+#define UART_MCR		4	/* Out: Modem Control Register */
+#define UART_DLL		0	/* Out: Divisor Latch Low */
+#define UART_DLM		1	/* Out: Divisor Latch High */
+#define UART_LCR		3	/* Out: Line Control Register */
 
 #define UART_IER_MSI	0x08	/* Enable Modem status interrupt */
 #define UART_IER_RLSI	0x04	/* Enable receiver line status interrupt */
@@ -68,10 +72,6 @@
 #define UART_FCR_TRIGGER_MASK	0xC0 /* Mask for the FIFO trigger range */
 #define UART_FCR_TRIGGER_1		0x00 /* Mask for trigger set at 1 */
 
-#define UART_DLL			0 /* Out: Divisor Latch Low */
-#define UART_DLM			1 /* Out: Divisor Latch High */
-#define UART_LCR			3 /* Out: Line Control Register */
-
 #define UART_LCR_DLAB		0x80 /* Divisor latch access bit */
 #define UART_LCR_SBC		0x40 /* Set break control */
 #define UART_LCR_SPAR		0x20 /* Stick parity (?) */
@@ -80,6 +80,16 @@
 #define UART_LCR_STOP		0x04 /* Stop bits: 0=1 bit, 1=2 bits */
 #define UART_LCR_WLEN8		0x03 /* Wordlength: 8 bits */
 
+#define UART_MCR_CLKSEL		0x80 /* Divide clock by 4 (TI16C752, EFR[4]=1) */
+#define UART_MCR_TCRTLR		0x40 /* Access TCR/TLR (TI16C752, EFR[4]=1) */
+#define UART_MCR_XONANY		0x20 /* Enable Xon Any (TI16C752, EFR[4]=1) */
+#define UART_MCR_AFE		0x20 /* Enable auto-RTS/CTS (TI16C550C/TI16C750) */
+#define UART_MCR_LOOP		0x10 /* Enable loopback test mode */
+#define UART_MCR_OUT2		0x08 /* Out2 complement */
+#define UART_MCR_OUT1		0x04 /* Out1 complement */
+#define UART_MCR_RTS		0x02 /* RTS complement */
+#define UART_MCR_DTR		0x01 /* DTR complement */
+
 static uint8_t	mmio = 0;
 static uint32_t	iobase = 0;
 static tid_t	id;
@@ -87,18 +97,32 @@ static mailbox_uint8_t input_queue;
 
 static inline unsigned char read_from_uart(uint32_t off)
 {
+	uint8_t c, flag;
+
+	flag = irq_nested_disable();
+
 	if (mmio)
-		return *((const volatile unsigned char*) (iobase + off));
+		c = *((const volatile unsigned char*) (iobase + off));
 	else
-		return inportb(iobase + off);
+		c = inportb(iobase + off);
+
+	irq_nested_enable(flag);
+
+	return c;
 }
 
 static void write_to_uart(uint32_t off, unsigned char c)
 {
+	uint8_t flag;
+
+	flag = irq_nested_disable();
+
 	if (mmio)
 		*((volatile unsigned char*) (iobase + off)) = c;
 	else
 		outportb(iobase + off, c);
+
+	irq_nested_enable(flag);
 }
 
 
@@ -139,6 +163,7 @@ static void uart_handler(struct state *s)
 	unsigned char c = read_from_uart(UART_IIR);
 
 	while (!(c & UART_IIR_NO_INT)) {
+		kprintf("c = 0x%x\n", c);
 		if (c & UART_IIR_RDI) {
 			c = uart_getchar();
 
@@ -174,13 +199,21 @@ static void uart_config(void)
 	 */
 	write_to_uart(UART_FCR, UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT | UART_FCR_TRIGGER_1);
 
+	/* disable interrupts */
+	write_to_uart(UART_IER, 0);
+
+	/* DTR + RTS */
+	write_to_uart(UART_MCR, UART_MCR_DTR|UART_MCR_RTS);
+
 	/*
 	 * 8bit word length
 	 * 1 stop bit
 	 * no partity
 	 * set DLAB=1
 	 */
-	char lcr = UART_LCR_WLEN8 | UART_LCR_DLAB;
+	char lcr = UART_LCR_WLEN8;
+	write_to_uart(UART_LCR, lcr);
+	lcr = read_from_uart(UART_LCR) | UART_LCR_DLAB;
 	write_to_uart(UART_LCR, lcr);
 
 	/*
@@ -194,7 +227,7 @@ static void uart_config(void)
 	write_to_uart(UART_LCR, lcr & (~UART_LCR_DLAB));
 
 	/* enable interrupt */
-	write_to_uart(UART_IER, UART_IER_RDI | UART_IER_RLSI | UART_IER_THRI);
+	write_to_uart(UART_IER, UART_IER_RDI /*| UART_IER_RLSI | UART_IER_THRI*/);
 
 	int err = create_kernel_task(&id, uart_thread, NULL, HIGH_PRIO);
 	if (BUILTIN_EXPECT(err, 0))
@@ -220,18 +253,17 @@ int uart_init(void)
 
 Lsuccess:
 	if (pci_info.type[0]) {
-		// we use COM1
 		mmio = 0;
-		//iobase = pci_info.base[bar];
-		//irq_install_handler(32+pci_info.irq, uart_handler);
-		iobase = 0x3F8;
-		irq_install_handler(32+4, uart_handler);
+		iobase = pci_info.base[bar];
+		irq_install_handler(32+pci_info.irq, uart_handler);
+		//iobase = 0x3F8;
+		//irq_install_handler(32+4, uart_handler);
 
 		kprintf("UART uses io address 0x%x\n", iobase);
 	} else {
 		mmio = 1;
 		iobase = 0x9010b000; //pci_info.base[0];
-		//irq_install_handler(32+pci_info.irq, uart_handler);
+		irq_install_handler(32+pci_info.irq, uart_handler);
 		page_map(iobase & PAGE_MASK, iobase & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
 
 		kprintf("UART uses mmio address 0x%x\n", iobase);
