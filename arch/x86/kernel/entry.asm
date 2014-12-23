@@ -55,7 +55,6 @@ mboot:
     dd MULTIBOOT_HEADER_FLAGS
     dd MULTIBOOT_CHECKSUM
     dd 0, 0, 0, 0, 0 ; address fields
-    dd 1, 0, 0, 0    ; graphics fields => we use text mode
 
 SECTION .text
 ALIGN 4
