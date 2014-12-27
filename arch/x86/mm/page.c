@@ -260,7 +260,7 @@ int page_init()
 	/* Map kernel */
 	addr = (size_t) &kernel_start;
 	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
-	page_map(addr, addr, npages, PG_RW | /* PG_USER | */ PG_GLOBAL);
+	page_map(addr, addr, npages, PG_RW | PG_GLOBAL);
 
 #ifdef CONFIG_VGA
 	/* Map video memory */
@@ -282,7 +282,7 @@ int page_init()
 			for(i=0; i<mb_info->mods_count; i++) {
 				addr = mmodule[i].mod_start;
 				npages = PAGE_FLOOR(mmodule[i].mod_end - mmodule[i].mod_start) >> PAGE_BITS;
-				page_map(addr, addr, npages, PG_USER | PG_GLOBAL);
+				page_map(addr, addr, npages, PG_GLOBAL);
 			}
 		}
 	}
