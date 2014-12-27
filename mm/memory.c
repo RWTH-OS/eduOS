@@ -169,28 +169,36 @@ int memory_init(void)
 	// parse multiboot information for available memory
 	if (mb_info) {
 		if (mb_info->flags & MULTIBOOT_INFO_MEM_MAP) {
+			size_t end_addr;
 			multiboot_memory_map_t* mmap = (multiboot_memory_map_t*) ((size_t) mb_info->mmap_addr);
 			multiboot_memory_map_t* mmap_end = (void*) ((size_t) mb_info->mmap_addr + mb_info->mmap_length);
 
 			// mark available memory as free
 			while (mmap < mmap_end) {
 				if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
-					for (addr=mmap->addr; addr < mmap->addr + mmap->len; addr += PAGE_SIZE) {
+					/* set the available memory as "unused" */
+					addr = mmap->addr;
+					end_addr = addr + mmap->len;
+
+					while ((addr < end_addr) && (addr < (BITMAP_SIZE*8*PAGE_SIZE))) {
 						page_clear_mark(addr >> PAGE_BITS);
+						addr += PAGE_SIZE;
 						atomic_int32_inc(&total_pages);
 						atomic_int32_inc(&total_available_pages);
 					}
 				}
 				mmap++;
 			}
-		}
-		else if (mb_info->flags & MULTIBOOT_INFO_MEM) {
+		} else if (mb_info->flags & MULTIBOOT_INFO_MEM) {
 			size_t page;
 			size_t pages_lower = mb_info->mem_lower >> 2; /* KiB to page number */
 			size_t pages_upper = mb_info->mem_upper >> 2;
 
 			for (page=0; page<pages_lower; page++)
 				page_clear_mark(page);
+
+			if (pages_upper > BITMAP_SIZE*8-256)
+				pages_upper = BITMAP_SIZE*8-256;
 
 			for (page=0; page<pages_upper; page++)
 				page_clear_mark(page + 256); /* 1 MiB == 256 pages offset */
