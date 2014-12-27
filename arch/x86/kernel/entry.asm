@@ -82,9 +82,9 @@ cpu_init:
     mov cr3, eax
 
 ; Set CR4
-    mov cr4, eax
-    and eax, ~(1 <<  9)	; disable SSE
-    or eax,   (1 <<  4)	; enable  PSE
+    mov eax, cr4
+    and eax, 0xfffbf9ff	; disable SSE
+    or eax,  (1 <<  4)	; enable  PSE
     mov cr4, eax
 
 ; Set CR0
