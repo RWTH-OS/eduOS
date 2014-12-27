@@ -181,13 +181,15 @@ int memory_init(void)
 					end_addr = addr + mmap->len;
 
 					while ((addr < end_addr) && (addr < (BITMAP_SIZE*8*PAGE_SIZE))) {
-						page_clear_mark(addr >> PAGE_BITS);
+						if (page_marked(addr >> PAGE_BITS)) {
+							page_clear_mark(addr >> PAGE_BITS);
+							atomic_int32_inc(&total_pages);
+							atomic_int32_inc(&total_available_pages);
+						}
 						addr += PAGE_SIZE;
-						atomic_int32_inc(&total_pages);
-						atomic_int32_inc(&total_available_pages);
 					}
 				}
-				mmap++;
+				mmap = (multiboot_memory_map_t*) ((size_t) mmap + sizeof(uint32_t) + mmap->size);
 			}
 		} else if (mb_info->flags & MULTIBOOT_INFO_MEM) {
 			size_t page;
