@@ -48,7 +48,7 @@ extern "C" {
 
 #define CONFIG_VGA
 #define CONFIG_PCI
-#define CONFIG_UART
+//#define CONFIG_UART
 
 #define BUILTIN_EXPECT(exp, b) 	__builtin_expect((exp), (b))
 //#define BUILTIN_EXPECT(exp, b)	(exp)
