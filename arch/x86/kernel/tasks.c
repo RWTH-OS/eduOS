@@ -80,7 +80,7 @@ int create_default_frame(task_t* task, entry_point_t ep, void* arg)
 	stptr->esp = (size_t)stack + state_size;
 
 	stptr->eip = (size_t)ep;
-	stptr->eflags = 0x1202;
+	stptr->eflags = 0x1002;
 
 	/* Set the task's stack pointer entry to the stack we have crafted right now. */
 	task->last_stack_pointer = (size_t*)stack;
