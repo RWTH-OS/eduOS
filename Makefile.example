@@ -63,8 +63,8 @@ $(NAME).elf:
 	$Q$(LD_FOR_TARGET) $(LDFLAGS) -o $(NAME).elf $^
 	@echo [OBJCOPY] $(NAME).sym
 	$Q$(OBJCOPY_FOR_TARGET) $(KEEP_DEBUG) $(NAME).elf $(NAME).sym
-	#@echo [OBJCOPY] $(NAME).elf
-	#$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $(NAME).elf
+	@echo [OBJCOPY] $(NAME).elf
+	$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $(NAME).elf
 
 clean:
 	$Q$(RM) $(NAME).elf $(NAME).sym *~
