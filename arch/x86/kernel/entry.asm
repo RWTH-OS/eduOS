@@ -46,6 +46,7 @@ mboot:
     dd MULTIBOOT_HEADER_MAGIC
     dd MULTIBOOT_HEADER_FLAGS
     dd MULTIBOOT_CHECKSUM
+    dd 0, 0, 0, 0, 0 ; address fields
 
 SECTION .text
 ALIGN 4
