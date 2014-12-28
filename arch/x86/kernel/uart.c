@@ -25,9 +25,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <eduos/stdlib.h>
 #include <eduos/stdio.h>
 #include <eduos/string.h>
 #include <eduos/mailbox.h>
+#include <eduos/ctype.h>
 #include <asm/io.h>
 #include <asm/page.h>
 #include <asm/uart.h>
@@ -198,10 +200,8 @@ static int uart_thread(void* arg)
 	return 0;
 }
 
-static void uart_config(void)
+static int uart_config(uint8_t early)
 {
-	mailbox_uint8_init(&input_queue);
-
 	/*
 	 * enable FIFOs
 	 * clear RX and TX FIFO
@@ -236,14 +236,45 @@ static void uart_config(void)
 	/* set DLAB=0 */
 	write_to_uart(UART_LCR, lcr & (~UART_LCR_DLAB));
 
-	/* enable interrupt */
-	write_to_uart(UART_IER, UART_IER_RDI | UART_IER_RLSI | UART_IER_THRI);
+	if (!early) {
+		mailbox_uint8_init(&input_queue);
 
-	int err = create_kernel_task(&id, uart_thread, NULL, HIGH_PRIO);
-	if (BUILTIN_EXPECT(err, 0))
-		kprintf("Failed to create task for the uart device: %d\n", err);
+		/* enable interrupt */
+		write_to_uart(UART_IER, UART_IER_RDI | UART_IER_RLSI | UART_IER_THRI);
 
-	koutput_add_uart();
+		int err = create_kernel_task(&id, uart_thread, NULL, HIGH_PRIO);
+		if (BUILTIN_EXPECT(err, 0))
+			kprintf("Failed to create task for the uart device: %d\n", err);
+
+		koutput_add_uart();
+	}
+
+	return 0;
+}
+
+int uart_early_init(char* cmdline)
+{
+	if (BUILTIN_EXPECT(!cmdline, 0))
+		return -EINVAL;
+
+	char* str = strstr(cmdline, "uart=");
+	if (!str)
+		return -EINVAL;
+
+	if (strncmp(str, "uart=io:", 8) == 0) {
+		iobase = strtol(str+8, (char **)NULL, 16);
+		if (!iobase)
+			return -EINVAL;
+		mmio = 0;
+	} else if (strncmp(str, "uart=mmio:", 10) == 0) {
+		iobase = strtol(str+10, (char **)NULL, 16);
+		if (!iobase)
+			return -EINVAL;
+		mmio = 1;
+	}
+
+	// configure uart
+	return uart_config(1);
 }
 
 int uart_init(void)
@@ -253,16 +284,16 @@ int uart_init(void)
 	uint32_t bar = 0;
 
 	// Searching for Intel's UART device
-	if (pci_get_device_info(0x8086, 0x0936, &pci_info) == 0)
+	if (pci_get_device_info(0x8086, 0x0936, iobase, &pci_info) == 0)
 		goto Lsuccess;
  	// Searching for Qemu's UART device
-	if (pci_get_device_info(0x1b36, 0x0002, &pci_info) == 0)
+	if (pci_get_device_info(0x1b36, 0x0002, iobase, &pci_info) == 0)
 		goto Lsuccess;
 	// Searching for Qemu's 2x UART device (pci-serial-2x)
-	if (pci_get_device_info(0x1b36, 0x0003, &pci_info) == 0)
+	if (pci_get_device_info(0x1b36, 0x0003, iobase, &pci_info) == 0)
 		goto Lsuccess;
 	// Searching for Qemu's 4x UART device (pci-serial-4x)
-	if (pci_get_device_info(0x1b36, 0x0003, &pci_info) == 0)
+	if (pci_get_device_info(0x1b36, 0x0003, iobase, &pci_info) == 0)
 		goto Lsuccess;
 
 	return -1;
@@ -275,20 +306,27 @@ Lsuccess:
 		kprintf("UART uses io address 0x%x\n", iobase);
 	} else {
 		mmio = 1;
-		page_map(iobase & PAGE_MASK, iobase & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
+		page_map(iobase & PAGE_MASK, iobase & PAGE_MASK, 1, PG_GLOBAL | PG_ACCESSED | PG_DIRTY | PG_RW | PG_PCD);
 		kprintf("UART uses mmio address 0x%x\n", iobase);
 	}
-#else
-	// per default we use COM1...
-	mmio = 0;
-	iobase = 0x3F8;
-	irq_install_handler(32+4, uart_handler);
-#endif
 
 	// configure uart
-	uart_config();
+	return uart_config(0);
+#else
+	// per default we use COM1...
+	if (!iobase)
+		iobase = 0x3F8;
+	mmio = 0;
+	if ((iobase == 0x3F8) || (iobase == 0x3E8))
+		irq_install_handler(32+4, uart_handler);
+	else if ((iobase == 0x2F8) || (iobase == 0x2E8))
+		irq_install_handler(32+3, uart_handler);
+	else
+		return -EINVAL;
 
-	return 0;
+	// configure uart
+	return uart_config(0);
+#endif
 }
 
 #endif

@@ -78,7 +78,7 @@ qemu: $(NAME).elf
 	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf
 
 uart: $(NAME).elf
-	$(QEMU) $(QEMUFLAGS) $(QEMUSERIALFLAGS) -kernel $(NAME).elf
+	$(QEMU) $(QEMUFLAGS) $(QEMUSERIALFLAGS) -kernel $(NAME).elf -append uart=io:0xc110
 
 debug: $(NAME).elf
 	$(TERM) -e $(GDB) $(GDBFLAGS) &
