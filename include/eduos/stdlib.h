@@ -38,7 +38,7 @@
 #define __STDLIB_H__
 
 #include <eduos/config.h>
-#include <asm/stddef.h>
+#include <eduos/stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +49,29 @@ extern "C" {
  * @return start address of the new stack
  */
 void* create_stack(tid_t id);
+
+/** @brief String to long
+ *
+ * @return Long value of the parsed numerical string
+ */
+long strtol(const char* str, char** endptr, int base);
+
+/** @brief String to unsigned long
+ *
+ * @return Unsigned long value of the parsed numerical string
+ */
+unsigned long strtoul(const char* nptr, char** endptr, int base);
+
+/** @brief ASCII to integer
+ *
+ * Convenience function using strtol().
+ *
+ * @return Integer value of the parsed numerical string
+ */
+static inline int atoi(const char *str)
+{
+	return (int)strtol(str, (char **)NULL, 10);
+}
 
 #ifdef __cplusplus
 }

@@ -31,6 +31,7 @@
 #include <eduos/spinlock.h>
 #include <asm/atomic.h>
 #include <asm/processor.h>
+#include <asm/multiboot.h>
 #ifdef CONFIG_VGA
 #include <asm/vga.h>
 #endif
@@ -55,6 +56,11 @@ int koutput_init(void)
 {
 #ifdef CONFIG_VGA
 	vga_init();
+#endif
+#ifdef CONFIG_UART
+	if (mb_info && (mb_info->flags & MULTIBOOT_INFO_CMDLINE))
+		if (!uart_early_init((char*) mb_info->cmdline))
+			early_print |= UART_EARLY_PRINT;
 #endif
 
 	return 0;
@@ -114,12 +120,14 @@ int kputs(const char *str)
 int koutput_add_uart(void)
 {
 #ifdef CONFIG_UART
-	uint32_t i;
+	if (!(early_print & UART_EARLY_PRINT)) {
+		uint32_t i;
 
-	early_print |= UART_EARLY_PRINT;
+		early_print |= UART_EARLY_PRINT;
 
-	for(i=0; i<atomic_int32_read(&kmsg_counter); i++)
-		uart_putchar(kmessages[i % KMSG_SIZE]);
+		for(i=0; i<atomic_int32_read(&kmsg_counter); i++)
+			uart_putchar(kmessages[i % KMSG_SIZE]);
+	}
 
 	return 0;
 #else
