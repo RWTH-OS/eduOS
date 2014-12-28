@@ -77,10 +77,8 @@ stublet:
 global cpu_init
 cpu_init:
     mov eax, cr0
-; enable caching, disable paging and fpu emulation
-    and eax, 0x1ffffffb
-; ...and turn on FPU exceptions
-    or eax, 0x22
+; enable caching and disable paging
+    and eax, 0x1fffffff
     mov cr0, eax
 ; clears the current pgd entry
     xor eax, eax
