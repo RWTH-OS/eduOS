@@ -89,10 +89,8 @@ cpu_init:
 
 ; Set CR0
     mov eax, cr0
-    and eax, ~(1 <<  2)	; disable FPU emulation
     and eax, ~(1 << 30)	; enable  caching
     or eax,   (1 << 31)	; enable  paging
-    or eax,   (1 <<  5)	; enable  FPU exceptions
     mov cr0, eax
 
     ret
