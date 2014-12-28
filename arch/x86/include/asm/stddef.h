@@ -88,7 +88,7 @@ struct state {
 	/// EAX register
 	uint32_t eax;		/* pushed by 'pusha' */
 
-	// state of the controll register
+	/// state of the status register
 	uint32_t eflags;
 	/// state of instruction pointer
 	uint32_t eip;
