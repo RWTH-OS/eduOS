@@ -52,7 +52,7 @@ SECTION .text
 ALIGN 4
 stublet:
 ; initialize stack pointer.
-    mov esp, default_stack_pointer
+    mov esp, default_stack_pointer - 16 ; => stack is 16byte aligned
 ; initialize cpu features
     call cpu_init
 ; interpret multiboot information
@@ -69,10 +69,8 @@ stublet:
 global cpu_init
 cpu_init:
     mov eax, cr0
-; enable caching, disable paging and fpu emulation
-    and eax, 0x1ffffffb
-; ...and turn on FPU exceptions
-    or eax, 0x22
+; enable caching and disable paging
+    and eax, 0x1fffffff
     mov cr0, eax
 ; clears the current pgd entry
     xor eax, eax
@@ -109,6 +107,7 @@ switch_context:
 ; downwards, so we declare the size of the data before declaring
 ; the identifier 'default_stack_pointer'
 SECTION .data
+ALIGN 4096
     resb 8192               ; This reserves 8KBytes of memory here
 global default_stack_pointer
 default_stack_pointer:
