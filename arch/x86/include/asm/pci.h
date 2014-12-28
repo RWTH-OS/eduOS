@@ -60,12 +60,13 @@ int pci_init(void);
  * @param vendor_id The device's vendor ID
  * @param device_id the device's ID
  * @param info Pointer to the record pci_info_t where among other the IObase address will be stored
+ * @param base Search for the preferred IO address. Zero, if any address is useful
  *
  * @return 
  * - 0 on success
  * - -EINVAL on failure
  */
-int pci_get_device_info(uint32_t vendor_id, uint32_t device_id, pci_info_t* info);
+int pci_get_device_info(uint32_t vendor_id, uint32_t device_id, uint32_t base, pci_info_t* info);
 
 #ifdef WITH_PCI_NAMES
 /** @brief Print information of existing pci adapters
