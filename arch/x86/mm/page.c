@@ -53,7 +53,7 @@ extern const void kernel_end;
 static spinlock_t kslock = SPINLOCK_INIT;
 
 /** This PGD table is initialized in entry.asm */
-extern size_t boot_map[PAGE_MAP_ENTRIES];
+extern size_t* boot_map;
 
 /** A self-reference enables direct access to all page tables */
 static size_t* self[PAGE_LEVELS] = {
@@ -75,6 +75,16 @@ size_t page_virt_to_phys(size_t addr)
 	size_t phy   = entry &  PAGE_MASK;	// physical page frame number
 
 	return phy | off;
+}
+
+int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits)
+{
+	if (BUILTIN_EXPECT(viraddr >= PAGE_MAP_ENTRIES*PAGE_SIZE, 0))
+		return -EINVAL;
+
+	boot_map[PAGE_MAP_ENTRIES + (viraddr >> PAGE_BITS)] = phyaddr | bits | PG_PRESENT;
+
+	return 0;
 }
 
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
@@ -160,7 +170,7 @@ int page_unmap(size_t viraddr, size_t npages)
 	return 0;
 }
 
-int page_map_drop()
+int page_map_drop(void)
 {
 	void traverse(int lvl, long vpn) {
 		long stop;
@@ -248,7 +258,7 @@ void page_fault_handler(struct state *s)
 	while(1) HALT;
 }
 
-int page_init()
+int page_init(void)
 {
 	size_t addr, npages;
 	int i;

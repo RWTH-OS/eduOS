@@ -112,9 +112,18 @@ size_t page_virt_to_phys(size_t vir);
  * Before calling page_init(), the bootstrap tables contain a simple identity
  * paging. Which is replaced by more specific mappings.
  */
-int page_init();
+int page_init(void);
 
-/** @brief Map a continious region of pages
+/** @brief Map one page into the boot page table
+ *
+ * @param viraddr
+ * @param phyaddr
+ * @param bits
+ * @return
+ */
+int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits);
+
+/** @brief Map a continuous region of pages
  *
  * @param viraddr
  * @param phyaddr
@@ -124,7 +133,7 @@ int page_init();
  */
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits);
 
-/** @brief Unmap a continious region of pages
+/** @brief Unmap a continuous region of pages
  *
  * @param viraddr
  * @param npages
@@ -141,6 +150,6 @@ int page_unmap(size_t viraddr, size_t npages);
 int page_map_copy(task_t *dest);
 
 /** @brief Free a whole page map tree */
-int page_map_drop();
+int page_map_drop(void);
 
 #endif
