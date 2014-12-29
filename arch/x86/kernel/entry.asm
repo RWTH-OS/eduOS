@@ -329,14 +329,14 @@ ALIGN 4096
 global boot_map
 boot_map:
 boot_pgd:
-	DD boot_pgt + 0x107	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
-	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
-	DD boot_pgd + 0x303     ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
+	DD boot_pgt + 0x107 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	times 1022 DD 0     ; PAGE_MAP_ENTRIES - 2
+	DD boot_pgd + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
 	%assign i 0
-	%rep 1024		; PAGE_MAP_ENTRIES
-	DD i        + 0x203	; PG_PRESENT | PG_BOOT | PG_RW
-	%assign i i + 4096	; PAGE_SIZE
+	%rep 1024           ; PAGE_MAP_ENTRIES
+	DD i        + 0x203 ; PG_PRESENT | PG_BOOT | PG_RW
+	%assign i i + 4096  ; PAGE_SIZE
 	%endrep
 
 ; add some hints to the ELF file
