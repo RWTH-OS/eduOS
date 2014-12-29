@@ -2,7 +2,7 @@ TERM = xterm
 TOPDIR = $(shell pwd)
 ARCH = x86
 NAME = eduos
-KERNDIRS = libkern kernel mm arch/$(ARCH)/kernel arch/$(ARCH)/mm
+KERNDIRS = libkern kernel mm fs arch/$(ARCH)/kernel arch/$(ARCH)/mm
 SUBDIRS = $(KERNDIRS)
 
 # Set your own cross compiler tool chain prefix here
