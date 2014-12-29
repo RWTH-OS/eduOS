@@ -33,7 +33,7 @@
  */
 
 /* 
- * The code has been taken from FreeBSD (sys/libkern/strtoul.c) and is therefore 
+ * The code has been taken from FreeBSD (sys/libkern/strtoul.c) and is consequently
  * BSD-licensed. Unnecessary functions have been removed and all typedefs required 
  * have been added.
  */
