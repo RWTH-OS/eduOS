@@ -21,6 +21,10 @@ It is derived from following tutorials and software distributions.
    Co. or Unix System Laboratories, Inc. and are reproduced herein with
    the permission of UNIX System Laboratories, Inc.
 
+2. JamesM's kernel development tutorials
+   The first version of eduOS's virtual filesystem and its initial
+   ramdiks is is derived from JamesM's kernel development tutorials.
+   (http://www.jamesmolloy.co.uk/tutorial_html/index.html)
 
 Requirements of eduOS
 ---------------------
@@ -91,6 +95,10 @@ Overview of all branches
 6. stage6 - Add UART support
 
    Add basic support of a serial device
+
+7. stage7 - A simple file system
+
+   Add a virtual filesystem and a prototype of a initial ramdiks
 
 Usefull Links
 -------------
