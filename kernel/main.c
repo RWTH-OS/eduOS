@@ -126,6 +126,7 @@ static int eduos_init(void)
 #ifdef CONFIG_UART
 	uart_init();
 #endif
+	initrd_init();
 
 	return 0;
 }
