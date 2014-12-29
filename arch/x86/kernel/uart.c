@@ -30,6 +30,7 @@
 #include <eduos/string.h>
 #include <eduos/mailbox.h>
 #include <eduos/ctype.h>
+#include <asm/page.h>
 #include <asm/io.h>
 #include <asm/page.h>
 #include <asm/uart.h>
@@ -252,6 +253,8 @@ static int uart_config(uint8_t early)
 	return 0;
 }
 
+extern const void kernel_start;
+
 int uart_early_init(char* cmdline)
 {
 	if (BUILTIN_EXPECT(!cmdline, 0))
@@ -270,6 +273,21 @@ int uart_early_init(char* cmdline)
 		iobase = strtol(str+10, (char **)NULL, 16);
 		if (!iobase)
 			return -EINVAL;
+		if (iobase >= PAGE_MAP_ENTRIES*PAGE_SIZE) {
+			/* at this point we use the boot page table
+			 * => IO address is not mapped
+			 * => dirty hack, map device before the kernel
+			 */
+			int err;
+			size_t newaddr = ((size_t) &kernel_start - PAGE_SIZE);
+
+			err = page_map_bootmap(newaddr & PAGE_MASK, iobase & PAGE_MASK, PG_GLOBAL | PG_ACCESSED | PG_DIRTY | PG_RW | PG_PCD);
+			if (BUILTIN_EXPECT(err, 0)) {
+				iobase = 0;
+				return err;
+			}
+			iobase = newaddr;
+		}
 		mmio = 1;
 	}
 

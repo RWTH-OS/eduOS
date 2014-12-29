@@ -120,14 +120,7 @@ int kputs(const char *str)
 int koutput_add_uart(void)
 {
 #ifdef CONFIG_UART
-	if (!(early_print & UART_EARLY_PRINT)) {
-		uint32_t i;
-
-		early_print |= UART_EARLY_PRINT;
-
-		for(i=0; i<atomic_int32_read(&kmsg_counter); i++)
-			uart_putchar(kmessages[i % KMSG_SIZE]);
-	}
+	early_print |= UART_EARLY_PRINT;
 
 	return 0;
 #else
