@@ -47,7 +47,11 @@
  * for which the 'presence' bit is cleared (0) will generate an
  * "Unhandled Interrupt" exception 
  */
+#ifdef CONFIG_X86_64
+static idt_entry_t idt[256] = {[0 ... 255] = {0, 0, 0, 0, 0, 0, 0}};
+#else
 static idt_entry_t idt[256] = {[0 ... 255] = {0, 0, 0, 0, 0}};
+#endif
 static idt_ptr_t idtp;
 
 void configure_idt_entry(idt_entry_t *dest_entry, size_t base, 
