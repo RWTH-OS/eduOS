@@ -36,7 +36,7 @@
 #include <asm/tss.h>
 #include <asm/page.h>
 
-gdt_ptr_t			gp;
+gdt_ptr_t				gp;
 static tss_t			task_state_segment __attribute__ ((aligned (PAGE_SIZE)));
 // currently, our kernel has full access to the ioports
 static gdt_entry_t		gdt[GDT_ENTRIES] = {[0 ... GDT_ENTRIES-1] = {0, 0, 0, 0, 0, 0}};
@@ -52,7 +52,7 @@ void set_kernel_stack(void)
 	task_t* curr_task = current_task;
 
 #ifdef CONFIG_X86_32
-	task_state_segment.esp0 = (size_t) curr_task->stack + KERNEL_STACK_SIZE - 16;
+	task_state_segment.esp0 = (size_t) curr_task->stack + KERNEL_STACK_SIZE - 16; // => stack is 16byte aligned
 #else
 	task_state_segment.rsp0 = (size_t) curr_task->stack + KERNEL_STACK_SIZE - 16; // => stack is 16byte aligned
 #endif
