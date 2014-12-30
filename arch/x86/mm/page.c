@@ -55,17 +55,35 @@ static spinlock_t kslock = SPINLOCK_INIT;
 /** This PGD table is initialized in entry.asm */
 extern size_t* boot_map;
 
+#ifdef CONFIG_X86_32
 /** A self-reference enables direct access to all page tables */
-static size_t* self[PAGE_LEVELS] = {
+static size_t * const self[PAGE_LEVELS] = {
 	(size_t *) 0xFFC00000,
 	(size_t *) 0xFFFFF000
 };
 
 /** An other self-reference for page_map_copy() */
-static size_t * other[PAGE_LEVELS] = {
+static size_t * const other[PAGE_LEVELS] = {
 	(size_t *) 0xFF800000,
 	(size_t *) 0xFFFFE000
 };
+#elif defined(CONFIG_X86_64)
+/** A self-reference enables direct access to all page tables */
+static size_t* const self[PAGE_LEVELS] = {
+	(size_t *) 0xFFFFFF8000000000,
+	(size_t *) 0xFFFFFFFFC0000000,
+	(size_t *) 0xFFFFFFFFFFE00000,
+	(size_t *) 0xFFFFFFFFFFFFF000
+};
+
+/** An other self-reference for page_map_copy() */
+static size_t * const other[PAGE_LEVELS] = {
+	(size_t *) 0xFFFFFF0000000000,
+	(size_t *) 0xFFFFFFFF80000000,
+	(size_t *) 0xFFFFFFFFFFC00000,
+	(size_t *) 0xFFFFFFFFFFFFE000
+};
+#endif
 
 size_t page_virt_to_phys(size_t addr)
 {
