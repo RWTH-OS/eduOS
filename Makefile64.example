@@ -39,7 +39,7 @@ QEMUSERIALFLAGS = -device pci-serial,chardev=tS0 \
 
 INCLUDE = -I$(TOPDIR)/include -I$(TOPDIR)/arch/$(ARCH)/include
 # Compiler options for final code
-CFLAGS = -g -m64 -Wall -O2 -fno-builtin -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc $(INCLUDE) -fno-stack-protector
+CFLAGS = -g -m64 -Wall -O2 -fstrength-reduce -fomit-frame-pointer -finline-functions -ffreestanding -mno-red-zone $(INCLUDE) -fno-stack-protector
 # Compiler options for debugging
 debug debug-eclipse : CFLAGS = -g -O0 -m64 -Wall -fno-builtin -DWITH_FRAME_POINTER -nostdinc $(INCLUDE) -fno-stack-protector
 AR = ar
@@ -48,6 +48,8 @@ RM = rm -rf
 LDFLAGS = -T link$(BIT).ld -z max-page-size=4096 --defsym __BUILD_DATE=$(shell date +'%Y%m%d') --defsym __BUILD_TIME=$(shell date +'%H%M%S')
 STRIP_DEBUG = --strip-debug
 KEEP_DEBUG = --only-keep-debug
+OUTPUT_FORMAT = -O elf32-i386
+
 
 # Prettify output
 V = 0
@@ -65,7 +67,7 @@ $(NAME).elf:
 	@echo [OBJCOPY] $(NAME).sym
 	$Q$(OBJCOPY_FOR_TARGET) $(KEEP_DEBUG) $(NAME).elf $(NAME).sym
 	@echo [OBJCOPY] $(NAME).elf
-	$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $(NAME).elf
+	$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $(OUTPUT_FORMAT) $(NAME).elf
 
 clean:
 	$Q$(RM) $(NAME).elf $(NAME).sym *~
