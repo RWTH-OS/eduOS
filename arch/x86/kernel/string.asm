@@ -12,9 +12,13 @@
 
 %ifdef CONFIG_X86_32
 [BITS 32]
+%else
+[BITS 64]
+%endif
 SECTION .text
 global strcpy
 strcpy:
+%ifdef CONFIG_X86_32
    push ebp
    mov ebp, esp
    push edi
@@ -22,21 +26,29 @@ strcpy:
 
    mov esi, [ebp+12]
    mov edi, [ebp+8]
+%else
+   push rdi
+%endif
 
 L1:
    lodsb
    stosb
    test al, al
    jne L1
-   
+
+%ifdef CONFIG_X86_32
    mov eax, [ebp+8]
    pop esi
    pop edi
    pop ebp
+%else
+   pop rax
+%endif
    ret
 
 global strncpy
 strncpy:
+%ifdef CONFIG_X86_32
    push ebp
    mov ebp, esp
    push edi
@@ -48,45 +60,13 @@ strncpy:
 
 L2:
    dec ecx
-   js L3
-   lodsb
-   stosb
-   test al, al
-   jne L1
-   rep
-   stosb
-
-L3:
-   mov eax, [ebp+8]
-   pop esi
-   pop edi
-   pop ebp
-   ret
-
 %else
-
-[BITS 64]
-SECTION .text
-global strcpy
-strcpy:
-   push rdi
-
-L1:
-   lodsb
-   stosb
-   test al, al
-   jne
-
-   pop rax
-   ret
-
-global strncpy
-strncpy:
    push rdi
    mov rcx, rdx
 
 L2:
    dec rcx
+%endif
    js L3
    lodsb
    stosb
@@ -96,9 +76,14 @@ L2:
    stosb
 
 L3:
+%ifdef CONFIG_X86_32
+   mov eax, [ebp+8]
+   pop esi
+   pop edi
+   pop ebp
+%else
    pop rax
-   ret
-
 %endif
+   ret
 
 SECTION .note.GNU-stack noalloc noexec nowrite progbits
