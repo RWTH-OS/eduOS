@@ -51,7 +51,11 @@ void set_kernel_stack(void)
 {
 	task_t* curr_task = current_task;
 
-	task_state_segment.esp0 = (size_t) curr_task->stack + KERNEL_STACK_SIZE-16;
+#ifdef CONFIG_X86_32
+	task_state_segment.esp0 = (size_t) curr_task->stack + KERNEL_STACK_SIZE - 16;
+#else
+	task_state_segment.rsp0 = (size_t) curr_task->stack + KERNEL_STACK_SIZE - 16; // => stack is 16byte aligned
+#endif
 }
 
 /* Setup a descriptor in the Global Descriptor Table */
@@ -91,8 +95,15 @@ void gdt_install(void)
 
 	memset(&task_state_segment, 0x00, sizeof(tss_t));
 
+#ifdef CONFIG_X86_32
 	mode = GDT_FLAG_32_BIT;
 	limit = 0xFFFFFFFF;
+#elif defined(CONFIG_X86_64)
+	mode = GDT_FLAG_64_BIT;
+	limit = 0;
+#else
+#error invalid mode
+#endif
 
 	/* Setup the GDT pointer and limit */
 	gp.limit = (sizeof(gdt_entry_t) * GDT_ENTRIES) - 1;
@@ -133,6 +144,7 @@ void gdt_install(void)
 		GDT_FLAG_RING3 | GDT_FLAG_SEGMENT | GDT_FLAG_DATASEG | GDT_FLAG_PRESENT,
 		GDT_FLAG_4K_GRAN | mode);
 
+#ifdef CONFIG_X86_32
 	/* set default values */
 	task_state_segment.eflags = 0x1202;
 	task_state_segment.ss0 = 0x10;			// data segment
@@ -141,6 +153,11 @@ void gdt_install(void)
 	task_state_segment.ss = task_state_segment.ds = task_state_segment.es = task_state_segment.fs = task_state_segment.gs = 0x13;
 	gdt_set_gate(5, (unsigned long) (&task_state_segment), sizeof(tss_t)-1,
 			GDT_FLAG_PRESENT | GDT_FLAG_TSS | GDT_FLAG_RING0, mode);
+#elif defined(CONFIG_X86_64)
+	task_state_segment.rsp0 = 0xDEADBEEF;       // invalid pseudo address
+	gdt_set_gate(5, (unsigned long) (&task_state_segment), sizeof(tss_t)-1,
+			GDT_FLAG_PRESENT | GDT_FLAG_TSS | GDT_FLAG_RING0, mode);
+#endif
 
 	/* Flush out the old GDT and install the new changes! */
 	gdt_flush();

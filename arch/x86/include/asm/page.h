@@ -52,10 +52,17 @@
 #define VIRT_BITS		BITS
 /// Physical address width (we dont support PAE)
 #define PHYS_BITS		BITS
+#ifdef CONFIG_X86_32
 /// Page map bits
 #define PAGE_MAP_BITS		10
 /// Number of page map indirections
 #define PAGE_LEVELS		2
+#elif defined(CONFIG_X86_64)
+/// Page map bits
+#define PAGE_MAP_BITS	9
+/// Number of page map indirections
+#define PAGE_LEVELS		4
+#endif
 
 /// Make address canonical
 #define CANONICAL(addr)		(addr) // only for 32 bit paging

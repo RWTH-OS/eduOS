@@ -246,7 +246,7 @@ int page_map_copy(task_t *dest)
 void page_fault_handler(struct state *s)
 {
 	size_t viraddr = read_cr2();
-
+#ifdef CONFIG_X86_32
 	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
 		s->int_no, s->cs, s->eip, current_task->id, viraddr, s->error,
 		(s->error & 0x4) ? "user" : "supervisor",
@@ -254,6 +254,15 @@ void page_fault_handler(struct state *s)
 		(s->error & 0x2) ? "write" : ((s->error & 0x10) ? "fetch" : "read"),
 		(s->error & 0x1) ? "protection" : "not present",
 		(s->error & 0x8) ? "reserved bit" : "\b");
+#elif defined(CONFIG_X86_64)
+	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
+		s->int_no, s->cs, s->rip, current_task->id, viraddr, s->error,
+		(s->error & 0x4) ? "user" : "supervisor",
+		(s->error & 0x10) ? "instruction" : "data",
+		(s->error & 0x2) ? "write" : ((s->error & 0x10) ? "fetch" : "read"),
+		(s->error & 0x1) ? "protection" : "not present",
+		(s->error & 0x8) ? "reserved bit" : "\b");
+#endif
 
 	while(1) HALT;
 }

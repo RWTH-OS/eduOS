@@ -1,6 +1,7 @@
 TERM = xterm
 TOPDIR = $(shell pwd)
 ARCH = x86
+BIT = 32
 NAME = eduos
 KERNDIRS = libkern kernel mm arch/$(ARCH)/kernel arch/$(ARCH)/mm
 SUBDIRS = $(KERNDIRS)
@@ -44,7 +45,7 @@ debug debug-eclipse : CFLAGS = -g -O0 -m32 -march=i586 -Wall -fno-builtin -DWITH
 AR = ar
 ARFLAGS = rsv
 RM = rm -rf
-LDFLAGS = -T link.ld -z max-page-size=4096 --defsym __BUILD_DATE=$(shell date +'%Y%m%d') --defsym __BUILD_TIME=$(shell date +'%H%M%S')
+LDFLAGS = -T link$(BIT).ld -z max-page-size=4096 --defsym __BUILD_DATE=$(shell date +'%Y%m%d') --defsym __BUILD_TIME=$(shell date +'%H%M%S')
 STRIP_DEBUG = --strip-debug
 KEEP_DEBUG = --only-keep-debug
 
@@ -102,6 +103,7 @@ include/eduos/config.inc: include/eduos/config.h
 	@echo "; This file is generated automatically from the config.h file." > include/eduos/config.inc
 	@echo "; Before editing this, you should consider editing config.h." >> include/eduos/config.inc
 	@awk '/^#define KERNEL_STACK_SIZE/{ print "%define KERNEL_STACK_SIZE", $$3 }' include/eduos/config.h >> include/eduos/config.inc
+	@echo "%define CONFIG_X86_$(BIT)" >> include/eduos/config.inc
 
 %.o : %.asm include/eduos/config.inc
 	@echo [ASM] $@

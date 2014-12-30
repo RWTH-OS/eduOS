@@ -43,6 +43,7 @@ extern "C" {
 /** @brief The tast state segment structure
  */
 typedef struct {
+#ifdef CONFIG_X86_32
 	uint16_t	backlink, __blh;
 	uint32_t	esp0;
 	uint16_t	ss0, __ss0h;
@@ -63,6 +64,22 @@ typedef struct {
 	uint16_t	gs, __gsh;
 	uint16_t	ldt, __ldth;
 	uint16_t	trace, bitmap;
+#elif defined(CONFIG_X86_64)
+	uint16_t	res0, res1;		// reserved entries
+	uint64_t	rsp0;
+	uint64_t	rsp1;
+	uint64_t	rsp2;
+	uint32_t	res2, res3;		// reserved entries
+	uint64_t	ist_rsp1;
+	uint64_t	ist_rsp2;
+	uint64_t	ist_rsp3;
+	uint64_t	ist_rsp4;
+	uint64_t	ist_rsp5;
+	uint64_t	ist_rsp6;
+	uint64_t	ist_rsp7;
+	uint32_t	res4, res5;		// reserved entries
+	uint16_t	res6, bitmap;
+#endif
 } __attribute__ ((packed)) tss_t;
 
 #ifdef __cplusplus
