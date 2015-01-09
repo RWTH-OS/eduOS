@@ -311,7 +311,7 @@ int uart_init(void)
 	if (pci_get_device_info(0x1b36, 0x0003, iobase, &pci_info) == 0)
 		goto Lsuccess;
 	// Searching for Qemu's 4x UART device (pci-serial-4x)
-	if (pci_get_device_info(0x1b36, 0x0003, iobase, &pci_info) == 0)
+	if (pci_get_device_info(0x1b36, 0x0004, iobase, &pci_info) == 0)
 		goto Lsuccess;
 
 	return -1;
