@@ -43,8 +43,8 @@
  * A task's id will be its position in this array.
  */
 static task_t task_table[MAX_TASKS] = { \
-		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}, \
-		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, ATOMIC_INIT(0), NULL, NULL}};
+		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, ATOMIC_INIT(0), NULL, NULL}, \
+		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, ATOMIC_INIT(0), NULL, NULL}};
 
 static spinlock_irqsave_t table_lock = SPINLOCK_IRQSAVE_INIT;
 

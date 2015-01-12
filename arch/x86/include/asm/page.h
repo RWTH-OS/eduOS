@@ -34,7 +34,8 @@
  * This file contains the several functions to manage the page tables
  */
 
-#include <eduos/tasks_types.h>
+#include <eduos/stddef.h>
+#include <eduos/stdlib.h>
 
 #ifndef __PAGE_H__
 #define __PAGE_H__
@@ -68,6 +69,9 @@
 /// Align to page
 #define PAGE_CEIL(addr)         ( (addr)                  & PAGE_MASK)
 
+/// Canonical address format
+#define CANONICAL(addr)			(addr)
+
 /// Page is present
 #define PG_PRESENT		(1 << 0)
 /// Page is read- and writable
@@ -90,11 +94,6 @@
 #define PG_GLOBAL		(1 << 8)
 /// This table is a self-reference and should skipped by page_map_copy()
 #define PG_SELF			(1 << 9)
-/// This page is used for bootstrapping the paging code.
-#define PG_BOOT			PG_SELF
-
-/// This page is reserved for copying
-#define PAGE_TMP		(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
 
 /** @brief Converts a virtual address to a physical
  *
@@ -103,7 +102,37 @@
  * @param addr Virtual address to convert
  * @return physical address
  */
-size_t page_virt_to_phys(size_t vir);
+size_t virt_to_phys(size_t vir);
+
+ /** @brief Unmap the physical memory at a specific virtual address
+  *
+  * All Page table entries within this range will be marked as not present
+  * and (in the case of userspace memory) the page usage of the task will be decremented.
+  *
+  * @param viraddr The range's virtual address
+  * @param npages The range's size in pages
+  *
+  * @return
+  * - 0 on success
+  * - -EINVAL (-22) on failure.
+  */
+ int unmap_region(size_t viraddr, uint32_t npages);
+
+ /** @brief Mapping a physical mem-region to a virtual address
+  *
+  * Maps a physical memory region to a specific virtual address.
+  * If the virtual address is zero, this functions allocates a valid virtual address on demand.
+  *
+  * @param viraddr Desired virtual address
+  * @param phyaddr Physical address to map from
+  * @param npages The region's size in number of pages
+  * @param flags Further page flags
+  *
+  * @return
+  * - A virtual address on success
+  * - 0 on failure.
+  */
+ size_t map_region(size_t viraddr, size_t phyaddr, uint32_t npages, uint32_t flags);
 
 /** @brief Initialize paging subsystem
  *
@@ -112,7 +141,7 @@ size_t page_virt_to_phys(size_t vir);
  * Before calling page_init(), the bootstrap tables contain a simple identity
  * paging. Which is replaced by more specific mappings.
  */
-int page_init();
+int page_init(void);
 
 /** @brief Map a continious region of pages
  *
@@ -138,9 +167,9 @@ int page_unmap(size_t viraddr, size_t npages);
  * @retval 0 Success. Everything went fine.
  * @retval <0 Error. Something went wrong.
  */
-int page_map_copy(task_t *dest);
+int page_map_copy(struct task *dest);
 
 /** @brief Free a whole page map tree */
-int page_map_drop();
+int page_map_drop(void);
 
 #endif

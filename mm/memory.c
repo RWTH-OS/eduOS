@@ -157,6 +157,34 @@ int put_pages(size_t phyaddr, size_t npages)
 	return ret;
 }
 
+int copy_page(size_t pdest, size_t psrc)
+{
+	static size_t viraddr;
+	if (!viraddr) { // statically allocate virtual memory area
+		viraddr = vma_alloc(2 * PAGE_SIZE, VMA_HEAP);
+		if (BUILTIN_EXPECT(!viraddr, 0))
+			return -ENOMEM;
+	}
+
+	// map pages
+	size_t vsrc = map_region(viraddr, psrc, 1, MAP_KERNEL_SPACE);
+	size_t vdest = map_region(viraddr + PAGE_SIZE, pdest, 1, MAP_KERNEL_SPACE);
+	if (BUILTIN_EXPECT(!vsrc || !vdest, 0)) {
+		unmap_region(viraddr, 2);
+		return -ENOMEM;
+	}
+
+	kprintf("copy_page: copy page frame from: %#lx (%#lx) to %#lx (%#lx)\n", vsrc, psrc, vdest, pdest); // TODO remove
+
+	// copy the whole page
+	memcpy((void*) vdest, (void*) vsrc, PAGE_SIZE);
+
+	// householding
+	unmap_region(viraddr, 2);
+
+	return 0;
+}
+
 int memory_init(void)
 {
 	unsigned int i;
@@ -165,6 +193,13 @@ int memory_init(void)
 
 	// mark all memory as used
 	memset(bitmap, 0xff, BITMAP_SIZE);
+
+	// enable paging and map SMP, VGA, Multiboot modules etc.
+	ret = page_init();
+	if (BUILTIN_EXPECT(ret, 0)) {
+		kputs("Failed to initialize paging!\n");
+		return ret;
+	}
 
 	// parse multiboot information for available memory
 	if (mb_info) {
@@ -246,11 +281,25 @@ int memory_init(void)
 		atomic_int32_dec(&total_available_pages);
 	}
 
-	// enable paging and map SMP, VGA, Multiboot modules etc.
-	ret = page_init();
+	//ret = vma_init();
 	if (BUILTIN_EXPECT(ret, 0)) {
-		kputs("Failed to initialize paging!\n");
+		kprintf("Failed to initialize VMA regions: %d\n", ret);
 		return ret;
+	}
+
+	/*
+	 * Modules like the init ram disk are already loaded.
+	 * Therefore, we set these pages as used.
+	 */
+	if (mb_info && (mb_info->flags & MULTIBOOT_INFO_MODS)) {
+		multiboot_module_t* mmodule = (multiboot_module_t*) ((size_t) mb_info->mods_addr);
+		for(i=0; i<mb_info->mods_count; i++) {
+			for(addr=mmodule[i].mod_start; addr<mmodule[i].mod_end; addr+=PAGE_SIZE) {
+				page_set_mark(addr >> PAGE_BITS);
+				atomic_int32_inc(&total_allocated_pages);
+				atomic_int32_dec(&total_available_pages);
+			}
+		}
 	}
 
 	return ret;
