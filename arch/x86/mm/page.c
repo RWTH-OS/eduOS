@@ -28,7 +28,7 @@
 
 /**
  * This is a 32/64 bit portable paging implementation for the x86 architecture
- * using self-referenced page tablesi.
+ * using self-referenced page tables	i.
  * See http://www.noteblok.net/2014/06/14/bachelor/ for a detailed description.
  * 
  * @author Steffen Vogel <steffen.vogel@rwth-aachen.de>
@@ -47,13 +47,13 @@
 /* Note that linker symbols are not variables, they have no memory
  * allocated for maintaining a value, rather their address is their value. */
 extern const void kernel_start;
-extern const void kernel_end;
+//extern const void kernel_end;
+
+/// This page is reserved for copying
+#define PAGE_TMP		(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
 
 /** Lock for kernel space page tables */
 static spinlock_t kslock = SPINLOCK_INIT;
-
-/** This PGD table is initialized in entry.asm */
-extern size_t* boot_map;
 
 /** A self-reference enables direct access to all page tables */
 static size_t* self[PAGE_LEVELS] = {
@@ -67,7 +67,7 @@ static size_t * other[PAGE_LEVELS] = {
 	(size_t *) 0xFFFFE000
 };
 
-size_t page_virt_to_phys(size_t addr)
+size_t virt_to_phys(size_t addr)
 {
 	size_t vpn   = addr >> PAGE_BITS;	// virtual page number
 	size_t entry = self[0][vpn];		// page table entry
@@ -75,16 +75,6 @@ size_t page_virt_to_phys(size_t addr)
 	size_t phy   = entry &  PAGE_MASK;	// physical page frame number
 
 	return phy | off;
-}
-
-int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits)
-{
-	if (BUILTIN_EXPECT(viraddr >= PAGE_MAP_ENTRIES*PAGE_SIZE, 0))
-		return -EINVAL;
-
-	boot_map[PAGE_MAP_ENTRIES + (viraddr >> PAGE_BITS)] = phyaddr | bits | PG_PRESENT;
-
-	return 0;
 }
 
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
@@ -266,6 +256,7 @@ int page_init(void)
 	/* Replace default pagefault handler */
 	irq_uninstall_handler(14);
 	irq_install_handler(14, page_fault_handler);
+<<<<<<< HEAD
 
 	/* Map kernel */
 	addr = (size_t) &kernel_start;
@@ -276,6 +267,8 @@ int page_init(void)
 	/* Map video memory */
 	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_RW | PG_PCD | PG_GLOBAL);
 #endif
+=======
+>>>>>>> refs/heads/stage5
 
 	/* Map multiboot information and modules */
 	if (mb_info) {
@@ -297,13 +290,8 @@ int page_init(void)
 		}
 	}
 
-	/* Unmap bootstrap identity paging (see entry.asm, PG_BOOT) */
-	for (i=0; i<PAGE_MAP_ENTRIES; i++)
-		if (self[0][i] & PG_BOOT)
-			self[0][i] = 0;
-
 	/* Flush TLB to adopt changes above */
-	flush_tlb();
+	//flush_tlb();
 
 	return 0;
 }

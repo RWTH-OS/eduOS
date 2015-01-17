@@ -102,6 +102,8 @@ include/eduos/config.inc: include/eduos/config.h
 	@echo "; This file is generated automatically from the config.h file." > include/eduos/config.inc
 	@echo "; Before editing this, you should consider editing config.h." >> include/eduos/config.inc
 	@awk '/^#define KERNEL_STACK_SIZE/{ print "%define KERNEL_STACK_SIZE", $$3 }' include/eduos/config.h >> include/eduos/config.inc
+	@awk '/^#define VIDEO_MEM_ADDR/{ print "%define VIDEO_MEM_ADDR", $$3 }' include/eduos/config.h >> include/eduos/config.inc
+	@awk '/^#define CONFIG_VGA/{ print "%define CONFIG_VGA" }' include/eduos/config.h >> include/eduos/config.inc
 
 %.o : %.asm include/eduos/config.inc
 	@echo [ASM] $@

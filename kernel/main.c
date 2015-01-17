@@ -34,6 +34,7 @@
 #include <eduos/tasks.h>
 #include <eduos/syscall.h>
 #include <eduos/memory.h>
+#include <eduos/vma.h>
 
 #include <asm/irq.h>
 #include <asm/irqflags.h>
@@ -81,16 +82,20 @@ static int wrapper(void* arg)
 	return jump_to_user_code((uint32_t) userfoo, (uint32_t) stack);
 #else
 	// dirty hack, map userfoo to the user space
-	size_t phys = page_virt_to_phys(((size_t) userfoo) & PAGE_MASK);
+	size_t phys = virt_to_phys(((size_t) userfoo) & PAGE_MASK);
 	size_t vuserfoo = 0x40000000; 
 	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_USER);
 	vuserfoo += (size_t)userfoo & 0xFFF;
+	vma_add(vuserfoo, vuserfoo + 2*PAGE_SIZE, VMA_USER|VMA_CACHEABLE|VMA_READ|VMA_EXECUTE);
 
 	// dirty hack, map ustack to the user space
-	phys = page_virt_to_phys((size_t) ustack);
+	phys = virt_to_phys((size_t) ustack);
 	size_t vstack = 0x80000000;
 	page_map(vstack, phys, KERNEL_STACK_SIZE >> PAGE_BITS, PG_PRESENT | PG_RW | PG_USER);
+	vma_add(vstack, vstack+KERNEL_STACK_SIZE, VMA_USER|VMA_CACHEABLE|VMA_READ|VMA_WRITE);
 	vstack = (vstack + KERNEL_STACK_SIZE - 16 - sizeof(size_t));
+
+	vma_dump();
 
 	return jump_to_user_code(vuserfoo, vstack);
 #endif
