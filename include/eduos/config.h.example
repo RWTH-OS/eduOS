@@ -39,6 +39,7 @@ extern "C" {
 #define VIDEO_MEM_ADDR		0xB8000 /* the video memory address */
 #define CACHE_LINE		64
 #define KERNEL_STACK_SIZE	(8<<10) /* 8 KiB */
+#define KERNEL_SPACE		(1 << 30) /* 1 GiB */
 #define BITMAP_SIZE		(128<<5) /* for 128 MiB of RAM */
 #define KMSG_SIZE		(8*1024)
 #define INT_SYSCALL		0x80
