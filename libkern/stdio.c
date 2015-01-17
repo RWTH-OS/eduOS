@@ -145,7 +145,7 @@ int kmsg_init(vfs_node_t * node, const char *name)
 		}
 	} while (blist);
 
-	kfree(new_node, sizeof(vfs_node_t));
+	kfree(new_node);
 
 	return -ENOMEM;
 }

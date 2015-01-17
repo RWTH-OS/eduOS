@@ -77,6 +77,12 @@ int ksnprintf(char *str, size_t size, const char *format, ...);
  */
 int kvprintf(char const *fmt, void (*func) (int, void *), void *arg, int radix, va_list ap);
 
+struct vfs_node;
+/**
+ * Init function to create a character device which represents all kernel messages
+ */
+int kmsg_init(struct vfs_node* node, const char *name);
+
 /**
  * Add UART device to dump kernel messages
  */

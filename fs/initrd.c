@@ -224,8 +224,7 @@ static int initrd_open(fildes_t* file, const char* name)
 			/* the first blist pointer have do remain valid. */
 			for(i=0; i<MAX_DATABLOCKS && !data; i++) {
 				if (blist->data[i]) {
-					kfree(blist->data[i], 
-						sizeof(data_block_t));	
+					kfree(blist->data[i]);
 				}
 			}
 			if (blist->next) {
@@ -237,12 +236,12 @@ static int initrd_open(fildes_t* file, const char* name)
 				do {
 					for(i=0; i<MAX_DATABLOCKS && !data; i++) {
 						if (blist->data[i]) {
-							kfree(blist->data[i], sizeof(data_block_t));	
+							kfree(blist->data[i]);
 						}
 					}
 					lastblist = blist;
 					blist = blist->next;
-					kfree(lastblist, sizeof(block_list_t));
+					kfree(lastblist);
 				} while(blist);
 			}
 
@@ -428,9 +427,9 @@ static vfs_node_t* initrd_mkdir(vfs_node_t* node, const char* name)
 		blist = blist->next;
 	} while(blist);
 
-	kfree(dir_block, sizeof(dir_block_t));
+	kfree(dir_block);
 out:
-	kfree(new_node, sizeof(vfs_node_t));
+	kfree(new_node);
 
 	return NULL;
 }

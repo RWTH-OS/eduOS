@@ -246,6 +246,7 @@ ssize_t write_fs(fildes_t* file, uint8_t* buffer, size_t size);
 
 /** @brief Yet to be documented */
 int open_fs(fildes_t* file, const char* fname);
+
 /** @brief Yet to be documented */
 int close_fs(fildes_t * file);
 

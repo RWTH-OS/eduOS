@@ -35,6 +35,7 @@
 #include <eduos/syscall.h>
 #include <eduos/memory.h>
 #include <eduos/vma.h>
+#include <eduos/fs.h>
 
 #include <asm/irq.h>
 #include <asm/irqflags.h>
