@@ -28,7 +28,7 @@
 
 /**
  * This is a 32/64 bit portable paging implementation for the x86 architecture
- * using self-referenced page tablesi.
+ * using self-referenced page tables	i.
  * See http://www.noteblok.net/2014/06/14/bachelor/ for a detailed description.
  * 
  * @author Steffen Vogel <steffen.vogel@rwth-aachen.de>
@@ -47,7 +47,10 @@
 /* Note that linker symbols are not variables, they have no memory
  * allocated for maintaining a value, rather their address is their value. */
 extern const void kernel_start;
-extern const void kernel_end;
+//extern const void kernel_end;
+
+/// This page is reserved for copying
+#define PAGE_TMP		(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
 
 /** Lock for kernel space page tables */
 static spinlock_t kslock = SPINLOCK_INIT;
@@ -67,7 +70,7 @@ static size_t * other[PAGE_LEVELS] = {
 	(size_t *) 0xFFFFE000
 };
 
-size_t page_virt_to_phys(size_t addr)
+size_t virt_to_phys(size_t addr)
 {
 	size_t vpn   = addr >> PAGE_BITS;	// virtual page number
 	size_t entry = self[0][vpn];		// page table entry
@@ -267,21 +270,12 @@ int page_init(void)
 	irq_uninstall_handler(14);
 	irq_install_handler(14, page_fault_handler);
 
-	/* Map kernel */
-	addr = (size_t) &kernel_start;
-	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
-	page_map(addr, addr, npages, PG_RW | PG_GLOBAL);
-
-#ifdef CONFIG_VGA
-	/* Map video memory */
-	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_RW | PG_PCD | PG_GLOBAL);
-#endif
-
 	/* Map multiboot information and modules */
 	if (mb_info) {
-		addr = (size_t) mb_info & PAGE_MASK;
-		npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
-		page_map(addr, addr, npages, PG_GLOBAL);
+		// already mapped => entry.asm
+		//addr = (size_t) mb_info & PAGE_MASK;
+		//npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
+		//page_map(addr, addr, npages, PG_GLOBAL);
 
 		if (mb_info->flags & MULTIBOOT_INFO_MODS) {
 			addr = mb_info->mods_addr;
@@ -297,13 +291,8 @@ int page_init(void)
 		}
 	}
 
-	/* Unmap bootstrap identity paging (see entry.asm, PG_BOOT) */
-	for (i=0; i<PAGE_MAP_ENTRIES; i++)
-		if (self[0][i] & PG_BOOT)
-			self[0][i] = 0;
-
 	/* Flush TLB to adopt changes above */
-	flush_tlb();
+	//flush_tlb();
 
 	return 0;
 }

@@ -30,6 +30,7 @@
 #include <eduos/string.h>
 #include <eduos/mailbox.h>
 #include <eduos/ctype.h>
+#include <eduos/vma.h>
 #include <asm/page.h>
 #include <asm/io.h>
 #include <asm/page.h>
@@ -326,6 +327,7 @@ Lsuccess:
 		mmio = 1;
 		page_map(iobase & PAGE_MASK, iobase & PAGE_MASK, 1, PG_GLOBAL | PG_ACCESSED | PG_DIRTY | PG_RW | PG_PCD);
 		kprintf("UART uses mmio address 0x%x\n", iobase);
+		vma_add(iobase, iobase + PAGE_SIZE, VMA_READ|VMA_WRITE);
 	}
 
 	// configure uart

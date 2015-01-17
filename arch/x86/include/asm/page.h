@@ -34,7 +34,8 @@
  * This file contains the several functions to manage the page tables
  */
 
-#include <eduos/tasks_types.h>
+#include <eduos/stddef.h>
+#include <eduos/stdlib.h>
 
 #ifndef __PAGE_H__
 #define __PAGE_H__
@@ -53,7 +54,7 @@
 /// Physical address width (we dont support PAE)
 #define PHYS_BITS		BITS
 /// Page map bits
-#define PAGE_MAP_BITS		10
+#define PAGE_MAP_BITS	10
 /// Number of page map indirections
 #define PAGE_LEVELS		2
 
@@ -90,11 +91,6 @@
 #define PG_GLOBAL		(1 << 8)
 /// This table is a self-reference and should skipped by page_map_copy()
 #define PG_SELF			(1 << 9)
-/// This page is used for bootstrapping the paging code.
-#define PG_BOOT			PG_SELF
-
-/// This page is reserved for copying
-#define PAGE_TMP		(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
 
 /** @brief Converts a virtual address to a physical
  *
@@ -103,7 +99,7 @@
  * @param addr Virtual address to convert
  * @return physical address
  */
-size_t page_virt_to_phys(size_t vir);
+size_t virt_to_phys(size_t vir);
 
 /** @brief Initialize paging subsystem
  *
@@ -125,18 +121,18 @@ int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits);
 
 /** @brief Map a continuous region of pages
  *
- * @param viraddr
- * @param phyaddr
- * @param npages
- * @param bits
+ * @param viraddr Desired virtual address
+ * @param phyaddr Physical address to map from
+ * @param npages The region's size in number of pages
+ * @param bits Further page flags
  * @return
  */
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits);
 
 /** @brief Unmap a continuous region of pages
  *
- * @param viraddr
- * @param npages
+ * @param viraddr The virtual start address
+ * @param npages The range's size in pages
  * @return
  */
 int page_unmap(size_t viraddr, size_t npages);
@@ -147,7 +143,7 @@ int page_unmap(size_t viraddr, size_t npages);
  * @retval 0 Success. Everything went fine.
  * @retval <0 Error. Something went wrong.
  */
-int page_map_copy(task_t *dest);
+int page_map_copy(struct task *dest);
 
 /** @brief Free a whole page map tree */
 int page_map_drop(void);

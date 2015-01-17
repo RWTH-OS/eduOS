@@ -33,6 +33,9 @@
 
 [BITS 32]
 
+extern kernel_start		; defined in linker script
+extern kernel_end
+
 ; We use a special name to map this section at the begin of our kernel
 ; =>  Multiboot expects its magic number at the beginning of the kernel.
 SECTION .mboot
@@ -62,10 +65,10 @@ stublet:
 ; Initialize stack pointer
     mov esp, boot_stack
     add esp, KERNEL_STACK_SIZE-16
+ ; Interpret multiboot information
+    mov DWORD [mb_info], ebx
 ; Initialize CPU features
     call cpu_init
-; Interpret multiboot information
-    mov DWORD [mb_info], ebx
 
 ; Jump to the boot processors's C code
     extern main
@@ -78,6 +81,49 @@ stublet:
 ; extensions (huge pages) enabled.
 global cpu_init
 cpu_init:
+; initialize page tables
+%ifdef CONFIG_VGA
+	push edi
+	mov eax, VIDEO_MEM_ADDR
+	and eax, 0xFFFFF000       ; page align lower half
+	mov edi, eax
+	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+	add edi, boot_pgt
+	or eax, 0x113             ; set present, global, writable and cache disable bits
+	mov DWORD [edi], eax
+	pop edi
+%endif
+    push edi
+    mov eax, DWORD [mb_info]  ; map multiboot info
+    and eax, 0xFFFFF000       ; page align lower half
+    mov edi, eax
+    shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+    add edi, boot_pgt
+    or eax, 0x101             ; set present and global bits
+    mov DWORD [edi], eax
+    pop edi
+    push edi
+    push ebx
+    push ecx
+    mov ecx, kernel_start
+    mov ebx, kernel_end
+    add ebx, 0x1000
+L0: cmp ecx, ebx
+	jae L1
+	mov eax, ecx
+	and eax, 0xFFFFF000       ; page align lower half
+    mov edi, eax
+	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+	add edi, boot_pgt
+	or eax, 0x103             ; set present, global and writable bits
+	mov DWORD [edi], eax
+	add ecx, 0x1000
+    jmp L0
+L1:
+	pop ecx
+	pop ebx
+    pop edi
+
 ; Set CR3
     mov eax, boot_pgd
     mov cr3, eax
@@ -329,15 +375,11 @@ ALIGN 4096
 global boot_map
 boot_map:
 boot_pgd:
-	DD boot_pgt + 0x107 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
-	times 1022 DD 0     ; PAGE_MAP_ENTRIES - 2
+	DD boot_pgt + 0x107	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
 	DD boot_pgd + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
-	%assign i 0
-	%rep 1024           ; PAGE_MAP_ENTRIES
-	DD i        + 0x203 ; PG_PRESENT | PG_BOOT | PG_RW
-	%assign i i + 4096  ; PAGE_SIZE
-	%endrep
+	times 1024 DD 0
 
 ; add some hints to the ELF file
 SECTION .note.GNU-stack noalloc noexec nowrite progbits
