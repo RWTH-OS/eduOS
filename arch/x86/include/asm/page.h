@@ -54,7 +54,7 @@
 /// Physical address width (we dont support PAE)
 #define PHYS_BITS		BITS
 /// Page map bits
-#define PAGE_MAP_BITS		10
+#define PAGE_MAP_BITS	10
 /// Number of page map indirections
 #define PAGE_LEVELS		2
 
@@ -68,9 +68,6 @@
 #define PAGE_FLOOR(addr)        (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
 /// Align to page
 #define PAGE_CEIL(addr)         ( (addr)                  & PAGE_MASK)
-
-/// Canonical address format
-#define CANONICAL(addr)			(addr)
 
 /// Page is present
 #define PG_PRESENT		(1 << 0)
@@ -104,36 +101,6 @@
  */
 size_t virt_to_phys(size_t vir);
 
- /** @brief Unmap the physical memory at a specific virtual address
-  *
-  * All Page table entries within this range will be marked as not present
-  * and (in the case of userspace memory) the page usage of the task will be decremented.
-  *
-  * @param viraddr The range's virtual address
-  * @param npages The range's size in pages
-  *
-  * @return
-  * - 0 on success
-  * - -EINVAL (-22) on failure.
-  */
- int unmap_region(size_t viraddr, uint32_t npages);
-
- /** @brief Mapping a physical mem-region to a virtual address
-  *
-  * Maps a physical memory region to a specific virtual address.
-  * If the virtual address is zero, this functions allocates a valid virtual address on demand.
-  *
-  * @param viraddr Desired virtual address
-  * @param phyaddr Physical address to map from
-  * @param npages The region's size in number of pages
-  * @param flags Further page flags
-  *
-  * @return
-  * - A virtual address on success
-  * - 0 on failure.
-  */
- size_t map_region(size_t viraddr, size_t phyaddr, uint32_t npages, uint32_t flags);
-
 /** @brief Initialize paging subsystem
  *
  * This function uses the existing bootstrap page tables (boot_{pgd, pgt})
@@ -143,20 +110,20 @@ size_t virt_to_phys(size_t vir);
  */
 int page_init(void);
 
-/** @brief Map a continious region of pages
+/** @brief Map a continuous region of pages
  *
- * @param viraddr
- * @param phyaddr
- * @param npages
- * @param bits
+ * @param viraddr Desired virtual address
+ * @param phyaddr Physical address to map from
+ * @param npages The region's size in number of pages
+ * @param bits Further page flags
  * @return
  */
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits);
 
 /** @brief Unmap a continious region of pages
  *
- * @param viraddr
- * @param npages
+ * @param viraddr The virtual start address
+ * @param npages The range's size in pages
  * @return
  */
 int page_unmap(size_t viraddr, size_t npages);

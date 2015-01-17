@@ -37,7 +37,7 @@
 #define __MEMORY_H__
 
 /** @brief Initialize the memory subsystem */
-int memory_init();
+int memory_init(void);
 
 /** @brief Request physical page frames */
 size_t get_pages(size_t npages);

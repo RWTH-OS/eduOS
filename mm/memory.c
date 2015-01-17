@@ -159,6 +159,8 @@ int put_pages(size_t phyaddr, size_t npages)
 
 int copy_page(size_t pdest, size_t psrc)
 {
+	int err;
+
 	static size_t viraddr;
 	if (!viraddr) { // statically allocate virtual memory area
 		viraddr = vma_alloc(2 * PAGE_SIZE, VMA_HEAP);
@@ -167,10 +169,17 @@ int copy_page(size_t pdest, size_t psrc)
 	}
 
 	// map pages
-	size_t vsrc = map_region(viraddr, psrc, 1, MAP_KERNEL_SPACE);
-	size_t vdest = map_region(viraddr + PAGE_SIZE, pdest, 1, MAP_KERNEL_SPACE);
-	if (BUILTIN_EXPECT(!vsrc || !vdest, 0)) {
-		unmap_region(viraddr, 2);
+	size_t vsrc = viraddr;
+	err = page_map(vsrc, psrc, 1, PG_GLOBAL|PG_RW);
+	if (BUILTIN_EXPECT(err, 0)) {
+		page_unmap(viraddr, 1);
+		return -ENOMEM;
+	}
+
+	size_t vdest = viraddr + PAGE_SIZE;
+	err = page_map(vdest, pdest, 1, PG_GLOBAL|PG_RW);
+	if (BUILTIN_EXPECT(err, 0)) {
+		page_unmap(viraddr + PAGE_SIZE, 1);
 		return -ENOMEM;
 	}
 
@@ -180,7 +189,7 @@ int copy_page(size_t pdest, size_t psrc)
 	memcpy((void*) vdest, (void*) vsrc, PAGE_SIZE);
 
 	// householding
-	unmap_region(viraddr, 2);
+	page_unmap(viraddr, 2);
 
 	return 0;
 }
@@ -194,7 +203,7 @@ int memory_init(void)
 	// mark all memory as used
 	memset(bitmap, 0xff, BITMAP_SIZE);
 
-	// enable paging and map SMP, VGA, Multiboot modules etc.
+	// enable paging and map Multiboot modules etc.
 	ret = page_init();
 	if (BUILTIN_EXPECT(ret, 0)) {
 		kputs("Failed to initialize paging!\n");
@@ -281,7 +290,7 @@ int memory_init(void)
 		atomic_int32_dec(&total_available_pages);
 	}
 
-	//ret = vma_init();
+	ret = vma_init();
 	if (BUILTIN_EXPECT(ret, 0)) {
 		kprintf("Failed to initialize VMA regions: %d\n", ret);
 		return ret;

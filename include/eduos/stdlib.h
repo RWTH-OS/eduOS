@@ -44,17 +44,6 @@
 extern "C" {
 #endif
 
-#define MAP_NO_ACCESS			(1 << 0)
-#define MAP_READ_ONLY			(1 << 1)
-#define MAP_USER_SPACE			(1 << 2)
-#define MAP_CODE				(1 << 3)
-#define MAP_WT					(1 << 4)
-#define MAP_NO_CACHE			(1 << 5)
-
-#define MAP_KERNEL_SPACE		(0 << 2)  // legacy compatibility
-#define MAP_REMAP				(1 << 12)
-//#define MAP_NON_CONTINUOUS	(1 << 13) // TODO
-
 /** @brief General page allocator function
  *
  * This function allocates and maps whole pages.

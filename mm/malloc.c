@@ -110,7 +110,7 @@ static void buddy_put(buddy_t* buddy)
 	spinlock_unlock(&buddy_lock);
 }
 
-void buddy_dump()
+void buddy_dump(void)
 {
 	size_t free = 0;
 	int i;
@@ -133,8 +133,9 @@ void* palloc(size_t sz, uint32_t flags)
 {
 	size_t phyaddr, viraddr;
 	uint32_t npages = PAGE_FLOOR(sz) >> PAGE_BITS;
+	int err;
 
-	kprintf("palloc(%lu) (%lu pages)\n", sz, npages); // TODO: remove
+	//kprintf("palloc(%lu) (%lu pages)\n", sz, npages);
 
 	// get free virtual address space
 	viraddr = vma_alloc(npages*PAGE_SIZE, VMA_HEAP);
@@ -149,8 +150,8 @@ void* palloc(size_t sz, uint32_t flags)
 	}
 
 	// map physical pages to VMA
-	viraddr = map_region(viraddr, phyaddr, npages, flags);
-	if (BUILTIN_EXPECT(!viraddr, 0)) {
+	err = page_map(viraddr, phyaddr, npages, PG_RW|PG_GLOBAL);
+	if (BUILTIN_EXPECT(err, 0)) {
 		vma_free(viraddr, viraddr+npages*PAGE_SIZE);
 		put_pages(phyaddr, npages);
 		return NULL;
@@ -169,13 +170,13 @@ void pfree(void* addr, size_t sz)
 	size_t viraddr = (size_t) addr & PAGE_MASK;
 	uint32_t npages = PAGE_FLOOR(sz) >> PAGE_BITS;
 
-	// memory is propably not continously mapped! (userspace heap)
+	// memory is probably not continuously mapped! (userspace heap)
 	for (i=0; i<npages; i++) {
 		phyaddr = virt_to_phys(viraddr+i*PAGE_SIZE);
 		put_page(phyaddr);
 	}
 
-	unmap_region(viraddr, npages);
+	page_unmap(viraddr, npages);
 	vma_free(viraddr, viraddr+npages*PAGE_SIZE);
 }
 
@@ -199,7 +200,7 @@ void* kmalloc(size_t sz)
 	buddy->prefix.magic = BUDDY_MAGIC;
 	buddy->prefix.exponent = exp;
 
-	kprintf("kmalloc(%lu) = %p\n", sz, buddy+1); // TODO: remove
+	//kprintf("kmalloc(%lu) = %p\n", sz, buddy+1);
 
 	// pointer arithmetic: we hide the prefix
 	return buddy+1;
@@ -210,7 +211,7 @@ void kfree(void *addr)
 	if (BUILTIN_EXPECT(!addr, 0))
 		return;
 
-	kprintf("kfree(%lu)\n", addr); // TODO: remove
+	//kprintf("kfree(%lu)\n", addr);
 
 	buddy_t* buddy = (buddy_t*) addr - 1; // get prefix
 

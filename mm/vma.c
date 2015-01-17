@@ -78,18 +78,15 @@ int vma_init(void)
 		if (BUILTIN_EXPECT(ret, 0))
 			goto out;
 
-		if (mb_info->flags & MULTIBOOT_INFO_MEM_MAP) {
-			ret = vma_add(PAGE_CEIL((size_t) mb_info->mmap_addr),
-				PAGE_FLOOR((size_t) mb_info->mmap_addr + mb_info->mmap_length),
-				VMA_READ|VMA_CACHEABLE);
-		}
-
 		if (mb_info->flags & MULTIBOOT_INFO_MODS) {
 			multiboot_module_t* mmodule = (multiboot_module_t*) ((size_t) mb_info->mods_addr);
 
 			ret = vma_add(PAGE_CEIL((size_t) mb_info->mods_addr),
-				PAGE_FLOOR((size_t) mb_info->mods_addr + mb_info->mods_count*sizeof(multiboot_module_t)),
-				VMA_READ|VMA_CACHEABLE);
+					PAGE_FLOOR((size_t) mb_info->mods_addr + mb_info->mods_count*sizeof(multiboot_module_t)),
+					VMA_READ|VMA_CACHEABLE);
+
+			//TODO: Why do we get error code -22 (-EINVAL);
+			ret = 0; // TODO: Remove workaround
 
 			int i;
 			for(i=0; i<mb_info->mods_count; i++) {
@@ -112,7 +109,7 @@ size_t vma_alloc(size_t size, uint32_t flags)
 	spinlock_t* lock;
 	vma_t** list;
 
-	kprintf("vma_alloc: size = %#lx, flags = %#x\n", size, flags); // TODO: remove
+	//kprintf("vma_alloc: size = %#lx, flags = %#x\n", size, flags);
 
 	size_t base, limit; // boundaries for search
 	size_t start, end; // boundaries of free gaps
@@ -186,7 +183,7 @@ int vma_free(size_t start, size_t end)
 	vma_t* vma;
 	vma_t** list = NULL;
 
-	kprintf("vma_free: start = %#lx, end = %#lx\n", start, end); // TODO: remove
+	//kprintf("vma_free: start = %#lx, end = %#lx\n", start, end);
 
 	if (BUILTIN_EXPECT(start >= end, 0))
 		return -EINVAL;
@@ -278,7 +275,7 @@ int vma_add(size_t start, size_t end, uint32_t flags)
 			return -EINVAL;
 	}
 
-	kprintf("vma_add: start = %#lx, end = %#lx, flags = %#x\n", start, end, flags); // TODO: remove
+	//kprintf("vma_add: start = %#lx, end = %#lx, flags = %#x\n", start, end, flags);
 
 	spinlock_lock(lock);
 

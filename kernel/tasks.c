@@ -200,6 +200,8 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 			task_table[i].last_stack_pointer = NULL;
 			task_table[i].stack = create_stack(i);
 			task_table[i].prio = prio;
+			spinlock_init(&task_table[i].vma_lock);
+			task_table[i].vma_list = NULL;
 
 			spinlock_irqsave_init(&task_table[i].page_lock);
 			atomic_int32_set(&task_table[i].user_usage, 0);

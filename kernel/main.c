@@ -34,6 +34,7 @@
 #include <eduos/tasks.h>
 #include <eduos/syscall.h>
 #include <eduos/memory.h>
+#include <eduos/vma.h>
 
 #include <asm/irq.h>
 #include <asm/irqflags.h>
@@ -75,7 +76,7 @@ static int wrapper(void* arg)
 	*stack-- = (size_t) arg;
 	*stack = (size_t) NULL; // put exit function as caller on the stack
 
-#if 1
+#if 0
 	// this triggers a page fault because a user task is not able to access the kernel space
 	return jump_to_user_code((uint32_t) userfoo, (uint32_t) stack);
 #else
@@ -84,12 +85,16 @@ static int wrapper(void* arg)
 	size_t vuserfoo = 0x40000000; 
 	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_USER);
 	vuserfoo += (size_t)userfoo & 0xFFF;
+	vma_add(vuserfoo, vuserfoo + 2*PAGE_SIZE, VMA_USER|VMA_CACHEABLE|VMA_READ|VMA_EXECUTE);
 
 	// dirty hack, map ustack to the user space
 	phys = virt_to_phys((size_t) ustack);
 	size_t vstack = 0x80000000;
 	page_map(vstack, phys, KERNEL_STACK_SIZE >> PAGE_BITS, PG_PRESENT | PG_RW | PG_USER);
+	vma_add(vstack, vstack+KERNEL_STACK_SIZE, VMA_USER|VMA_CACHEABLE|VMA_READ|VMA_WRITE);
 	vstack = (vstack + KERNEL_STACK_SIZE - 16 - sizeof(size_t));
+
+	vma_dump();
 
 	return jump_to_user_code(vuserfoo, vstack);
 #endif
@@ -144,7 +149,7 @@ int main(void)
 
 
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	//create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
+	create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
 
 	while(1) { 
 		HALT;
