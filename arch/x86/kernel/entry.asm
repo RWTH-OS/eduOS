@@ -65,10 +65,10 @@ stublet:
 ; Initialize stack pointer
     mov esp, boot_stack
     add esp, KERNEL_STACK_SIZE-16
+ ; Interpret multiboot information
+    mov DWORD [mb_info], ebx
 ; Initialize CPU features
     call cpu_init
-; Interpret multiboot information
-    mov DWORD [mb_info], ebx
 
 ; Jump to the boot processors's C code
     extern main
@@ -94,6 +94,15 @@ cpu_init:
 	pop edi
 %endif
     push edi
+    mov eax, DWORD [mb_info]  ; map multiboot info
+    and eax, 0xFFFFF000       ; page align lower half
+    mov edi, eax
+    shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+    add edi, boot_pgt
+    or eax, 0x101             ; set present and global bits
+    mov DWORD [edi], eax
+    pop edi
+    push edi
     push ebx
     push ecx
     mov ecx, kernel_start
@@ -106,7 +115,7 @@ L0: cmp ecx, ebx
     mov edi, eax
 	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
 	add edi, boot_pgt
-	or eax, 0x103             ; set present, global, writable and
+	or eax, 0x103             ; set present, global and writable bits
 	mov DWORD [edi], eax
 	add ecx, 0x1000
     jmp L0
@@ -363,6 +372,8 @@ boot_stack:
 ; These tables do a simple identity paging and will
 ; be replaced in page_init() by more fine-granular mappings.
 ALIGN 4096
+global boot_map
+boot_map:
 boot_pgd:
 	DD boot_pgt + 0x107	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2

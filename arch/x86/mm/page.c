@@ -55,6 +55,9 @@ extern const void kernel_start;
 /** Lock for kernel space page tables */
 static spinlock_t kslock = SPINLOCK_INIT;
 
+/** This PGD table is initialized in entry.asm */
+extern size_t* boot_map;
+
 /** A self-reference enables direct access to all page tables */
 static size_t* self[PAGE_LEVELS] = {
 	(size_t *) 0xFFC00000,
@@ -75,6 +78,16 @@ size_t virt_to_phys(size_t addr)
 	size_t phy   = entry &  PAGE_MASK;	// physical page frame number
 
 	return phy | off;
+}
+
+int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits)
+{
+	if (BUILTIN_EXPECT(viraddr >= PAGE_MAP_ENTRIES*PAGE_SIZE, 0))
+		return -EINVAL;
+
+	boot_map[PAGE_MAP_ENTRIES + (viraddr >> PAGE_BITS)] = phyaddr | bits | PG_PRESENT;
+
+	return 0;
 }
 
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
@@ -259,9 +272,10 @@ int page_init(void)
 
 	/* Map multiboot information and modules */
 	if (mb_info) {
-		addr = (size_t) mb_info & PAGE_MASK;
-		npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
-		page_map(addr, addr, npages, PG_GLOBAL);
+		// already mapped => entry.asm
+		//addr = (size_t) mb_info & PAGE_MASK;
+		//npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
+		//page_map(addr, addr, npages, PG_GLOBAL);
 
 		if (mb_info->flags & MULTIBOOT_INFO_MODS) {
 			addr = mb_info->mods_addr;
