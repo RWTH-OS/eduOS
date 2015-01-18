@@ -29,55 +29,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <dirent.h>
-
-/*file descriptor init*/
-#define NR_OPEN 10
-#define FS_INIT { [0 ... NR_OPEN-1] = {NULL, 0, 0} }
-
-#define TESTSTR "hello in new file '/bin/test.txt'"
+#undef errno
+extern int errno;
 
 int main(int argc, char** argv)
 {
-	int i, testfile;
-	char* teststr;
-	DIR* testdir;
-	dirent_t* testdirent;
+	int i;
 
+	printf("Hello World!!!\n");
 	for(i=0; environ[i]; i++)
 		printf("environ[%d] = %s\n", i, environ[i]);
 	for(i=0; i<argc; i++)
 		printf("argv[%d] = %s\n", i, argv[i]);
-
-	teststr = malloc(sizeof(char)*100);
-	if (!teststr)
-		exit(1);
-
-	testfile = open("/bin/test.txt", O_CREAT | O_EXCL, "wr");
-	if (testfile < 1) {
-		printf("error: Was not able to open /bin/test.txt\n");
-		exit(1);
-	}
-	write(testfile, TESTSTR, 34);
-	lseek(testfile, 0, SEEK_SET);
-	read(testfile, teststr, 100);
-	close(testfile);
-
-	printf("read from new file: %s\n", teststr);
-
-	if (strcmp(teststr, TESTSTR))
-		exit(1);
-
-	testdir = opendir("/bin/");
-	if (testdir < 1) {
-		printf("error: Was not able to open /bin directory");
-		exit(1);
-	}
-	testdirent = readdir(testdir);
-	printf("1. Dirent: %s\n", testdirent->d_name);
-	closedir(testdir);
 
 	return errno;
 }
