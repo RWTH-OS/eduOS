@@ -22,6 +22,7 @@ RANLIB_FOR_TARGET = $(CROSSCOMPREFIX)ranlib
 STRIP_FOR_TARGET = $(CROSSCOMPREFIX)strip
 READELF_FOR_TARGET = $(CROSSCOMPREFIX)readelf
 
+MAKE = make
 NASM = nasm
 NASMFLAGS = -felf32 -g -i$(TOPDIR)/include/eduos/
 GDB = $(CROSSCOMPREFIX)gdb
@@ -48,6 +49,9 @@ LDFLAGS = -T link.ld -z max-page-size=4096 --defsym __BUILD_DATE=$(shell date +'
 STRIP_DEBUG = --strip-debug
 KEEP_DEBUG = --only-keep-debug
 
+CFLAGS_FOR_TOOLS  = -m32 -O2 -Wall
+LDFLAGS_FOR_TOOLS =
+
 # Prettify output
 V = 0
 ifeq ($V,0)
@@ -57,7 +61,10 @@ endif
 
 default: all
 
-all: $(NAME).elf
+all: tools $(NAME).elf
+
+tools:
+	$(MAKE) ARCH=$(ARCH) CFLAGS="$(CFLAGS_FOR_TOOLS)" LDFLAGS="$(LDFLAGS_FOR_TOOLS)" -C tools
 
 $(NAME).elf:
 	$Q$(LD_FOR_TARGET) $(LDFLAGS) -o $(NAME).elf $^
@@ -68,6 +75,7 @@ $(NAME).elf:
 
 clean:
 	$Q$(RM) $(NAME).elf $(NAME).sym *~
+	$Q$(MAKE) -C tools clean
 	@echo Cleaned.
 
 veryclean: clean
@@ -75,14 +83,14 @@ veryclean: clean
 	@echo Very cleaned
 
 qemu: $(NAME).elf
-	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf
+	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf -initrd tools/initrd.img
 
 uart: $(NAME).elf
-	$(QEMU) $(QEMUFLAGS) $(QEMUSERIALFLAGS) -kernel $(NAME).elf -append uart=io:0xc110
+	$(QEMU) $(QEMUFLAGS) $(QEMUSERIALFLAGS) -kernel $(NAME).elf -append uart=io:0xc110 -initrd tools/initrd.img
 
 debug: $(NAME).elf
 	$(TERM) -e $(GDB) $(GDBFLAGS) &
-	$(QEMU) $(QEMUDEBUGFLAGS) -s -S -kernel $(NAME).elf
+	$(QEMU) $(QEMUDEBUGFLAGS) -s -S -kernel $(NAME).elf -initrd tools/initrd.img
 
 debug-eclipse: clean $(NAME).elf
 	killall $(QEMU) &
