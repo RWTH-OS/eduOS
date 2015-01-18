@@ -472,7 +472,8 @@ int initrd_init(void)
 	/* create the directory bin and dev */
 	mkdir_fs(fs_root, "bin");
 	mkdir_fs(fs_root, "sbin");
-	tmp = mkdir_fs(fs_root, "dev");
+	mkdir_fs(fs_root, "dev");
+	mkdir_fs(fs_root, "tmp");
 
 	/* create the character device "kmessages" */
 	tmp = mkdir_fs(fs_root, "var");
