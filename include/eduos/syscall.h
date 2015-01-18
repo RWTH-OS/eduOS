@@ -75,7 +75,6 @@ extern "C" {
 #define __NR_stat		30
 #define __NR_dup		31
 #define __NR_dup2		32
-#define __NR_clone		33
 
 #ifdef __cplusplus
 }
