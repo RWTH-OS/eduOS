@@ -70,7 +70,7 @@ METALSVM_BSP = libgloss.a
 METALSVM_OBJS = chown.o fork.o gettod.o kill.o open.o sbrk.o times.o write.o \
            close.o execve.o fstat.o init.o link.o read.o stat.o unlink.o \
            environ.o  _exit.o getpid.o isatty.o lseek.o readlink.o symlink.o wait.o \
-	   dup.o dup2.o closedir.o opendir.o readdir.o
+	   dup.o dup2.o
 
 #### Host specific Makefile fragment comes in here.
 @host_makefile_frag@
@@ -112,9 +112,6 @@ symlink.o: $(srcdir)/symlink.c
 wait.o: $(srcdir)/wait.c
 dup.o: $(srcdir)/dup.c
 dup2.o: $(srcdir)/dup2.c
-opendir.o: $(srcdir)/opendir.c
-closedir.o: $(srcdir)/closedir.c
-readdir.o: $(srcdir)/readdir.c
 
 install: $($(CPU)_INSTALL)
 	$(INSTALL_DATA) $(CRT0) $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/crt0.o

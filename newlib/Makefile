@@ -20,14 +20,12 @@ OPT = --disable-shared --disable-multilib --enable-newlib-hw-fp --disable-newlib
 
 default: $(ARCH)
 	$(MAKE) ARCH=$(ARCH) BIT=$(BIT) TARGET=$(TARGET) CFLAGS+="-ffreestanding -Wall -I$(NEWLIB)/include -I../../include -I../../arch/$(ARCH)/include" LDFLAGS+="-nostdlib -L$(NEWLIB)/lib" -C examples depend
-	$(MAKE) ARCH=$(ARCH) BIT=$(BIT) TARGET=$(TARGET) CFLAGS+="-ffreestanding -Wall -I$(NEWLIB)/include -I../../include -I../../arch/$(ARCH)/include" LDFLAGS+="-nostdlib -L$(NEWLIB)/lib" -C examples
+	#$(MAKE) ARCH=$(ARCH) BIT=$(BIT) TARGET=$(TARGET) CFLAGS+="-ffreestanding -Wall -I$(NEWLIB)/include -I../../include -I../../arch/$(ARCH)/include" LDFLAGS+="-nostdlib -L$(NEWLIB)/lib" -C examples
 
 $(ARCH):
 	$(RM) $(TMP)
 	$(MKDIR) $(TMP)
 	$(CD) $(TMP); $(TOPDIR)/src/configure --target=$(TARGET) --prefix=$(TOPDIR)/$(ARCH) $(OPT) && $(MAKE) && $(MAKE) install
-	$(MKDIR) $(NEWLIB)/include/netinet
-	$(MKDIR) $(NEWLIB)/include/arpa
 
 clean:
 	$(MAKE) -C examples clean
