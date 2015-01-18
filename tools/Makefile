@@ -1,8 +1,8 @@
 MAKE = make
 CC = gcc
-CFLAGS = -O2 -Wall #-m32
+CFLAGS = -O2 -Wall -m32
 LDFLGAS =  
-FILE = ../README.md
+EXECFILES = $(shell find ../newlib/examples -perm -u+r+x -type f)
 
 # other implicit rules
 %.o : %.c
@@ -13,7 +13,7 @@ default: all
 all: make_initrd initrd.img
 
 initrd.img: $(EXECFILES) make_initrd
-	./make_initrd /tmp $(FILE) $(shell basename $(FILE))
+	./make_initrd /bin $(foreach FILE, $(EXECFILES), $(FILE) $(shell basename $(FILE)))
 
 make_initrd: make_initrd.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) 
