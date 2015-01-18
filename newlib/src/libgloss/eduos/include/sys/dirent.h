@@ -7,7 +7,7 @@
  * Sean Eric Fagan, sef@Kithrup.COM
  */
 
-#include "../../../../../include/metalsvm/config.h"
+#include "../../../../../include/eduos/config.h"
 
 typedef struct _dirdesc {
 	int	dd_fd;
