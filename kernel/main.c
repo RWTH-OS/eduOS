@@ -157,6 +157,11 @@ int main(void)
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
 	create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
 
+#if 1
+	kputs("Filesystem:\n");
+	list_fs(fs_root, 1);
+#endif
+
 	while(1) { 
 		HALT;
 	}
