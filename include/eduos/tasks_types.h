@@ -83,6 +83,8 @@ typedef struct task {
 	spinlock_t		vma_lock;
 	/// list of VMAs
 	vma_t*			vma_list;
+	/// the userspace heap
+	vma_t*			heap;
 	/// usage in number of pages (including page map tables)
 	atomic_int32_t	user_usage;
 	/// next task in the queue

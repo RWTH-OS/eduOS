@@ -35,7 +35,9 @@
 #include <eduos/errno.h>
 #include <eduos/syscall.h>
 #include <eduos/memory.h>
-
+#include <eduos/fs.h>
+#include <eduos/vma.h>
+#include <asm/elf.h>
 #include <asm/page.h>
 
 /** @brief Array of task structures (aka PCB)
@@ -43,8 +45,8 @@
  * A task's id will be its position in this array.
  */
 static task_t task_table[MAX_TASKS] = { \
-		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, ATOMIC_INIT(0), NULL, NULL}, \
-		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, ATOMIC_INIT(0), NULL, NULL}};
+		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, NULL, ATOMIC_INIT(0), NULL, NULL}, \
+		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, NULL,ATOMIC_INIT(0), NULL, NULL}};
 
 static spinlock_irqsave_t table_lock = SPINLOCK_IRQSAVE_INIT;
 
@@ -112,6 +114,9 @@ void finish_task_switch(void)
 	}
 
 	spinlock_irqsave_unlock(&readyqueues.lock);
+
+	if (current_task->heap)
+		kfree(current_task->heap);
 }
 
 /** @brief A procedure to be called by
@@ -202,6 +207,7 @@ static int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio)
 			task_table[i].prio = prio;
 			spinlock_init(&task_table[i].vma_lock);
 			task_table[i].vma_list = NULL;
+			task_table[i].heap = NULL;
 
 			spinlock_irqsave_init(&task_table[i].page_lock);
 			atomic_int32_set(&task_table[i].user_usage, 0);
@@ -250,6 +256,303 @@ int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio)
 		prio = NORMAL_PRIO;
 
 	return create_task(id, ep, args, prio);
+}
+
+#define MAX_ARGS        (PAGE_SIZE - 2*sizeof(int) - sizeof(vfs_node_t*))
+
+/** @brief Structure which keeps all
+ * relevant data for a new user task to start */
+typedef struct {
+	/// Points to the node with the executable in the file system
+	vfs_node_t* node;
+	/// Argument count
+	int argc;
+	/// Environment var count
+	int envc;
+	/// Buffer for env and argv values
+	char buffer[MAX_ARGS];
+} load_args_t;
+
+/** @brief Internally used function to load tasks with a load_args_t structure
+ * keeping all the information needed to launch.
+ *
+ * This is where the serious loading action is done.
+ */
+static int load_task(load_args_t* largs)
+{
+	uint32_t i, offset, idx;
+	uint32_t addr, npages, flags;
+	size_t stack = 0, heap = 0;
+	elf_header_t header;
+	elf_program_header_t prog_header;
+	//elf_section_header_t sec_header;
+	///!!! kfree is missing!
+	fildes_t *file = kmalloc(sizeof(fildes_t));
+	file->offset = 0;
+	file->flags = 0;
+
+	//TODO: init the hole fildes_t struct!
+	task_t* curr_task = current_task;
+	int err;
+
+	if (!largs)
+		return -EINVAL;
+
+	file->node = largs->node;
+	if (!file->node)
+		return -EINVAL;
+
+	err = read_fs(file, (uint8_t*)&header, sizeof(elf_header_t));
+	if (err < 0) {
+		kprintf("read_fs failed: %d\n", err);
+		return err;
+	}
+
+	if (BUILTIN_EXPECT(header.ident.magic != ELF_MAGIC, 0))
+		goto invalid;
+
+	if (BUILTIN_EXPECT(header.type != ELF_ET_EXEC, 0))
+		goto invalid;
+
+	if (BUILTIN_EXPECT(header.machine != ELF_EM_386, 0))
+		goto invalid;
+
+	if (BUILTIN_EXPECT(header.ident._class != ELF_CLASS_32, 0))
+		goto invalid;
+
+	if (BUILTIN_EXPECT(header.ident.data != ELF_DATA_2LSB, 0))
+		goto invalid;
+
+	if (header.entry <= KERNEL_SPACE)
+		goto invalid;
+
+	// interpret program header table
+	for (i=0; i<header.ph_entry_count; i++) {
+		file->offset = header.ph_offset+i*header.ph_entry_size;
+		if (read_fs(file, (uint8_t*)&prog_header, sizeof(elf_program_header_t)) == 0) {
+			kprintf("Could not read programm header!\n");
+			continue;
+		}
+
+		switch(prog_header.type)
+		{
+		case  ELF_PT_LOAD:  // load program segment
+			if (!prog_header.virt_addr)
+				continue;
+
+			npages = (prog_header.mem_size >> PAGE_BITS);
+			if (prog_header.mem_size & (PAGE_SIZE-1))
+				npages++;
+
+			addr = get_pages(npages);
+
+			flags = PG_USER; //TODO: support of XD flags is missing
+
+			// map page frames in the address space of the current task
+			if (page_map(prog_header.virt_addr, addr, npages, flags|PG_RW))
+				kprintf("Could not map 0x%x at 0x%x\n", addr, prog_header.virt_addr);
+
+			// clear pages
+			memset((void*) prog_header.virt_addr, 0x00, npages*PAGE_SIZE);
+
+			// update heap location
+			if (heap < prog_header.virt_addr + prog_header.mem_size)
+				heap = prog_header.virt_addr + prog_header.mem_size;
+
+			// load program
+			file->offset = prog_header.offset;
+			read_fs(file, (uint8_t*)prog_header.virt_addr, prog_header.file_size);
+
+			flags = VMA_CACHEABLE;
+			if (prog_header.flags & PF_R)
+				flags |= VMA_READ;
+			if (prog_header.flags & PF_W)
+				flags |= VMA_WRITE;
+			if (prog_header.flags & PF_X)
+				flags |= VMA_EXECUTE;
+			vma_add(prog_header.virt_addr, prog_header.virt_addr+npages*PAGE_SIZE-1, flags);
+
+			if (!(prog_header.flags & PF_W))
+				page_set_flags(prog_header.virt_addr, npages, flags);
+			break;
+
+		case ELF_PT_GNU_STACK: // Indicates stack executability
+			// create user-level stack
+			npages = DEFAULT_STACK_SIZE >> PAGE_BITS;
+			if (DEFAULT_STACK_SIZE & (PAGE_SIZE-1))
+				npages++;
+
+			addr = get_pages(npages);
+			stack = header.entry*2; // virtual address of the stack
+
+			if (page_map(stack, addr, npages, PG_USER|PG_RW)) {
+				kprintf("Could not map stack at 0x%x\n", stack);
+				return -ENOMEM;
+			}
+			memset((void*) stack, 0x00, npages*PAGE_SIZE);
+
+			// create vma regions for the user-level stack
+			flags = VMA_CACHEABLE;
+			if (prog_header.flags & PF_R)
+				flags |= VMA_READ;
+			if (prog_header.flags & PF_W)
+				flags |= VMA_WRITE;
+			if (prog_header.flags & PF_X)
+				flags |= VMA_EXECUTE;
+			vma_add(stack, stack+npages*PAGE_SIZE-1, flags);
+			break;
+		}
+	}
+
+	// setup heap
+	if (!curr_task->heap)
+		curr_task->heap = (vma_t*) kmalloc(sizeof(vma_t));
+
+	if (BUILTIN_EXPECT(!curr_task->heap || !heap, 0)) {
+		kprintf("load_task: heap is missing!\n");
+		return -ENOMEM;
+	}
+
+	curr_task->heap->flags = VMA_HEAP|VMA_USER;
+	curr_task->heap->start = heap;
+	curr_task->heap->end = heap;
+
+	if (BUILTIN_EXPECT(!stack, 0)) {
+		kprintf("Stack is missing!\n");
+		return -ENOMEM;
+	}
+
+	// push strings on the stack
+	offset = DEFAULT_STACK_SIZE-8;
+	memset((void*) (stack+offset), 0, 4);
+	offset -= MAX_ARGS;
+	memcpy((void*) (stack+offset), largs->buffer, MAX_ARGS);
+	idx = offset;
+
+	// push argv on the stack
+	offset -= largs->argc * sizeof(char*);
+	for(i=0; i<largs->argc; i++) {
+		((char**) (stack+offset))[i] = (char*) (stack+idx);
+
+		while(((char*) stack)[idx] != '\0')
+			idx++;
+		idx++;
+	}
+
+	// push env on the stack
+	offset -= (largs->envc+1) * sizeof(char*);
+	for(i=0; i<largs->envc; i++) {
+		((char**) (stack+offset))[i] = (char*) (stack+idx);
+
+		while(((char*) stack)[idx] != '\0')
+			idx++;
+		idx++;
+	}
+	((char**) (stack+offset))[largs->envc] = NULL;
+
+	// push pointer to env
+	offset -= sizeof(char**);
+	if (!(largs->envc))
+		*((char***) (stack+offset)) = NULL;
+	else
+		*((char***) (stack+offset)) = (char**) (stack + offset + sizeof(char**));
+
+	// push pointer to argv
+	offset -= sizeof(char**);
+	*((char***) (stack+offset)) = (char**) (stack + offset + 2*sizeof(char**) + (largs->envc+1) * sizeof(char*));
+
+	// push argc on the stack
+	offset -= sizeof(int);
+	*((int*) (stack+offset)) = largs->argc;
+
+	kfree(largs);
+
+	// clear fpu state => currently not supported
+	//curr_task->flags &= ~(TASK_FPU_USED|TASK_FPU_INIT);
+
+	jump_to_user_code(header.entry, stack+offset);
+
+	return 0;
+
+invalid:
+	kprintf("Invalid executable!\n");
+	kprintf("magic number 0x%x\n", (uint32_t) header.ident.magic);
+	kprintf("header type 0x%x\n", (uint32_t) header.type);
+	kprintf("machine type 0x%x\n", (uint32_t) header.machine);
+	kprintf("elf ident class 0x%x\n", (uint32_t) header.ident._class);
+	kprintf("elf identdata !0x%x\n", header.ident.data);
+	kprintf("program entry point 0x%x\n", (size_t) header.entry);
+
+	return -EINVAL;
+}
+
+/** @brief This call is used to adapt create_task calls
+ * which want to have a start function and argument list */
+static int user_entry(void* arg)
+{
+	int ret;
+
+	finish_task_switch();
+
+	if (BUILTIN_EXPECT(!arg, 0))
+		return -EINVAL;
+
+	ret = load_task((load_args_t*) arg);
+
+	kfree(arg);
+
+	return ret;
+}
+
+/** @brief Luxus-edition of create_user_task functions. Just call with an exe name
+ *
+ * @param id Pointer to the tid_t structure which shall be filles
+ * @param fname Executable's path and filename
+ * @param argv Arguments list
+ * @return
+ * - 0 on success
+ * - -ENOMEM (-12) or -EINVAL (-22) on failure
+ */
+int create_user_task(tid_t* id, const char* fname, char** argv)
+{
+	vfs_node_t* node;
+	int argc = 0;
+	size_t i, buffer_size = 0;
+	load_args_t* load_args = NULL;
+	char *dest, *src;
+
+	node = findnode_fs((char*) fname);
+	if (!node || !(node->type == FS_FILE))
+		return -EINVAL;
+
+	// determine buffer size of argv
+	if (argv) {
+		while (argv[argc]) {
+			buffer_size += (strlen(argv[argc]) + 1);
+			argc++;
+		}
+	}
+
+	if (argc <= 0)
+		return -EINVAL;
+	if (buffer_size >= MAX_ARGS)
+		return -EINVAL;
+
+	load_args = kmalloc(sizeof(load_args_t));
+	if (BUILTIN_EXPECT(!load_args, 0))
+		return -ENOMEM;
+	load_args->node = node;
+	load_args->argc = argc;
+	load_args->envc = 0;
+	dest = load_args->buffer;
+	for (i=0; i<argc; i++) {
+		src = argv[i];
+		while ((*dest++ = *src++) != 0);
+	}
+
+
+	/* create new task */
+	return create_task(id, user_entry, load_args, NORMAL_PRIO);
 }
 
 /** @brief Wakeup a blocked task

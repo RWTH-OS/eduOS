@@ -137,6 +137,21 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits);
  */
 int page_unmap(size_t viraddr, size_t npages);
 
+/** @brief Change the page permission in the page tables of the current task
+ *
+ * Applies given flags noted in the 'flags' parameter to
+ * the range denoted by virtual start and end addresses.
+ *
+ * @param start Range's virtual start address
+ * @param end Range's virtual end address
+ * @param flags flags to apply
+ *
+ * @return
+ * - 0 on success
+ * - -EINVAL (-22) on failure.
+ */
+int page_set_flags(size_t viraddr, uint32_t npages, int flags);
+
 /** @brief Copy a whole page map tree
  *
  * @param dest Physical address of new page map

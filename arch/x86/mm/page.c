@@ -80,6 +80,12 @@ size_t virt_to_phys(size_t addr)
 	return phy | off;
 }
 
+//TODO: code is missing
+int page_set_flags(size_t viraddr, uint32_t npages, int flags)
+{
+	return -EINVAL;
+}
+
 int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits)
 {
 	if (BUILTIN_EXPECT(viraddr >= PAGE_MAP_ENTRIES*PAGE_SIZE, 0))
@@ -249,7 +255,32 @@ int page_map_copy(task_t *dest)
 void page_fault_handler(struct state *s)
 {
 	size_t viraddr = read_cr2();
+	task_t* task = current_task;
 
+	// on demand userspace heap mapping
+    if ((task->heap) && (viraddr >= task->heap->start) && (viraddr < task->heap->end)) {
+    	viraddr &= PAGE_MASK;
+
+    	size_t phyaddr = get_page();
+    	if (BUILTIN_EXPECT(!phyaddr, 0)) {
+    		kprintf("out of memory: task = %u\n", task->id);
+    		goto default_handler;
+    	}
+
+    	viraddr = page_map(viraddr, phyaddr, 1, PG_USER|PG_RW);
+    	if (BUILTIN_EXPECT(!viraddr, 0)) {
+    		kprintf("map_region: could not map %#lx to %#lx, task = %u\n", viraddr, phyaddr, task->id);
+    		put_page(phyaddr);
+
+    		goto default_handler;
+    	}
+
+    	memset((void*) viraddr, 0x00, PAGE_SIZE); // fill with zeros
+
+    	return;
+    }
+
+default_handler:
 	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
 		s->int_no, s->cs, s->eip, current_task->id, viraddr, s->error,
 		(s->error & 0x4) ? "user" : "supervisor",

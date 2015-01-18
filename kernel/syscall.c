@@ -30,12 +30,44 @@
 #include <eduos/tasks.h>
 #include <eduos/errno.h>
 #include <eduos/syscall.h>
+#include <eduos/spinlock.h>
 
-static int sys_write(const char* buff)
+static int sys_write(int fd, const char* buf, size_t len)
 {
-	kputs(buff);
+	//TODO: Currently, we ignore the file descriptor
+
+	if (BUILTIN_EXPECT(!buf, 0))
+		return -1;
+
+	kputs(buf);
 
 	return 0;
+}
+
+static int sys_sbrk(int incr)
+{
+	task_t* task = current_task;
+	vma_t* heap = task->heap;
+	int ret;
+
+	spinlock_lock(&task->vma_lock);
+
+	if (BUILTIN_EXPECT(!heap,0 )) {
+		kprintf("sys_sbrk: missing heap!\n");
+		abort();
+	}
+
+	ret = heap->end;
+	heap->end += incr;
+	if (heap->end < heap->start)
+		heap->end = heap->start;
+
+	// allocation and mapping of new pages for the heap
+	// is catched by the pagefault handler
+
+	spinlock_unlock(&task->vma_lock);
+
+	return ret;
 }
 
 int syscall_handler(uint32_t sys_nr, ...)
@@ -51,11 +83,26 @@ int syscall_handler(uint32_t sys_nr, ...)
 		sys_exit(va_arg(vl, uint32_t));
 		ret = 0;
 		break;
-	case __NR_write:
-		ret = sys_write(va_arg(vl, const char*));
+	case __NR_write: {
+		int fd = va_arg(vl, int);
+		const char* buf = va_arg(vl, const char*);
+		size_t len = va_arg(vl, size_t);
+		ret = sys_write(fd, buf, len);
 		break;
+	}
+	//TODO: Currently, we ignore file descriptors
+	case __NR_open:
+	case __NR_close:
+		ret = 0;
+		break;
+	case __NR_sbrk: {
+		int incr = va_arg(vl, int);
+
+		ret = sys_sbrk(incr);
+		break;
+	}
 	default:
-		kputs("invalid system call\n");
+		kprintf("invalid system call: %u\n", sys_nr);
 		ret = -ENOSYS;
 		break;
 	};
