@@ -151,15 +151,6 @@ void NORETURN leave_kernel_task(void) {
 	do_exit(result);
 }
 
-/** @brief This function shall be called by leaving user-level tasks */
-void NORETURN leave_user_task(void)
-{
-	SYSCALL1(__NR_exit, 0);
-
-	// this point should never reached
-	while(1) {}
-}
-
 /** @brief To be called by the systemcall to exit tasks */
 void NORETURN sys_exit(int arg) {
 	do_exit(arg);

@@ -133,9 +133,6 @@ void NORETURN abort(void);
 /** @brief This function shall be called by leaving kernel-level tasks */
 void NORETURN leave_kernel_task(void);
 
-/** @brief This function shall be called by leaving user-level tasks */
-void NORETURN leave_user_task(void);
-
 #ifdef __cplusplus
 }
 #endif
