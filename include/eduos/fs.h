@@ -285,7 +285,8 @@ vfs_node_t* mkdir_fs(vfs_node_t* node, const char* name);
  */
 vfs_node_t* findnode_fs(const char* name);
 
-/* @} */
+/** @brief List a filesystem hirachically */
+void list_fs(vfs_node_t* node, uint32_t depth);
 
 int initrd_init(void);
 

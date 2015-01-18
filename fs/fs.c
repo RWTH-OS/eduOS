@@ -207,3 +207,40 @@ vfs_node_t* findnode_fs(const char* name)
 
 	return ret;
 }
+
+void list_fs(vfs_node_t* node, uint32_t depth)
+{
+	int j, i = 0;
+	dirent_t* dirent = NULL;
+	fildes_t* file = kmalloc(sizeof(fildes_t));
+	file->offset = 0;
+	file->flags = 0;
+
+
+	while ((dirent = readdir_fs(node, i)) != 0) {
+		for(j=0; j<depth; j++)
+			kputs("  ");
+		kprintf("%s\n", dirent->name);
+
+		if (strcmp(dirent->name, ".") && strcmp(dirent->name, "..")) {
+			vfs_node_t *new_node = finddir_fs(node, dirent->name);
+			if (new_node) {
+				if (new_node->type == FS_FILE) {
+					char buff[16] = {[0 ... 15] = 0x00};
+
+					file->node = new_node;
+					file->offset = 0;
+					file->flags = 0;
+
+					read_fs(file, (uint8_t*)buff, 8);
+					for(j=0; j<depth+1; j++)
+						kputs("  ");
+					kprintf("content: %s\n", buff);
+				} else list_fs(new_node, depth+1);
+			}
+		}
+
+		i++;
+	}
+	kfree(file);
+}
