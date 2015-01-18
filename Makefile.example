@@ -1,12 +1,14 @@
 TERM = xterm
 TOPDIR = $(shell pwd)
 ARCH = x86
+BIT = 32
 NAME = eduos
 KERNDIRS = libkern kernel mm fs arch/$(ARCH)/kernel arch/$(ARCH)/mm
 SUBDIRS = $(KERNDIRS)
 
 # Set your own cross compiler tool chain prefix here
-CROSSCOMPREFIX = 
+CROSSCOMPREFIX =
+STACKPROT =
 
 CC_FOR_TARGET = $(CROSSCOMPREFIX)gcc
 CXX_FOR_TARGET = $(CROSSCOMPREFIX)g++
@@ -24,7 +26,7 @@ READELF_FOR_TARGET = $(CROSSCOMPREFIX)readelf
 
 MAKE = make
 NASM = nasm
-NASMFLAGS = -felf32 -g -i$(TOPDIR)/include/eduos/
+NASMFLAGS = -felf$(BIT) -g -i$(TOPDIR)/include/eduos/
 GDB = $(CROSSCOMPREFIX)gdb
 GDBFLAGS = -x debug.gdb
 QEMU = qemu-system-i386
@@ -49,7 +51,10 @@ LDFLAGS = -T link.ld -z max-page-size=4096 --defsym __BUILD_DATE=$(shell date +'
 STRIP_DEBUG = --strip-debug
 KEEP_DEBUG = --only-keep-debug
 
-CFLAGS_FOR_TOOLS  = -m32 -O2 -Wall
+CFLAGS_FOR_NEWLIB = -m$(BIT) $(STACKPROT)
+LDFLAGS_FOR_NEWLIB = -m$(BIT)
+NASMFLAGS_FOR_NEWLIB = -felf$(BIT)
+CFLAGS_FOR_TOOLS  = -m$(BIT) -O2 -Wall
 LDFLAGS_FOR_TOOLS =
 
 # Prettify output
@@ -61,10 +66,28 @@ endif
 
 default: all
 
-all: tools $(NAME).elf
+all: newlib tools $(NAME).elf
+
+newlib:
+	$(MAKE) ARCH=$(ARCH) BIT=$(BIT) \
+                LDFLAGS="$(LDFLAGS_FOR_NEWLIB)" \
+                CFLAGS="$(CFLAGS_FOR_NEWLIB)" \
+                NASMFLAGS="$(NASMFLAGS_FOR_NEWLIB)" \
+                CC_FOR_TARGET=$(CC_FOR_TARGET) \
+                CXX_FOR_TARGET=$(CXX_FOR_TARGET) \
+                GCC_FOR_TARGET=$(GCC_FOR_TARGET) \
+                AR_FOR_TARGET=$(AR_FOR_TARGET) \
+                AS_FOR_TARGET=$(AS_FOR_TARGET) \
+                LD_FOR_TARGET=$(LD_FOR_TARGET) \
+                NM_FOR_TARGET=$(NM_FOR_TARGET) \
+                OBJDUMP_FOR_TARGET=$(OBJDUMP_FOR_TARGET) \
+                OBJCOPY_FOR_TARGET=$(OBJCOPY_FOR_TARGET) \
+                RANLIB_FOR_TARGET=$(RANLIB_FOR_TARGET) \
+                STRIP_FOR_TARGET=$(STRIP_FOR_TARGET) \
+                READELF_FOR_TARGET=$(READELF_FOR_TARGET) -C newlib
 
 tools:
-	$(MAKE) ARCH=$(ARCH) CFLAGS="$(CFLAGS_FOR_TOOLS)" LDFLAGS="$(LDFLAGS_FOR_TOOLS)" -C tools
+	$(MAKE) ARCH=$(ARCH) BIT=$(BIT) CFLAGS="$(CFLAGS_FOR_TOOLS)" LDFLAGS="$(LDFLAGS_FOR_TOOLS)" -C tools
 
 $(NAME).elf:
 	$Q$(LD_FOR_TARGET) $(LDFLAGS) -o $(NAME).elf $^
@@ -80,6 +103,7 @@ clean:
 
 veryclean: clean
 	$Q$(RM) qemu-vlan0.pcap
+	$Q$(MAKE) -C newlib veryclean
 	@echo Very cleaned
 
 qemu: $(NAME).elf

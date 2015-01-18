@@ -66,8 +66,8 @@ OBJCOPY = `if [ -f ${objroot}/../binutils/objcopy ] ; \
 	else t='$(program_transform_name)'; echo objcopy | sed -e $$t ; fi`
 
 CRT0 = crt0_$(BIT).o
-METALSVM_BSP = libgloss.a
-METALSVM_OBJS = chown.o fork.o gettod.o kill.o open.o sbrk.o times.o write.o \
+EDUOS_BSP = libgloss.a
+EDUOS_OBJS = chown.o errno.o fork.o gettod.o kill.o open.o sbrk.o times.o write.o \
            close.o execve.o fstat.o init.o link.o read.o stat.o unlink.o \
            environ.o  _exit.o getpid.o isatty.o lseek.o readlink.o symlink.o wait.o \
 	   dup.o dup2.o
@@ -80,13 +80,14 @@ INCLUDES += -I$(srcdir)/include
 %.o : %.asm
 	$(NASM) $(NASMFLAGS) -o $@ $<
 
-all: $(CRT0) $(METALSVM_BSP)
+all: $(CRT0) $(EDUOS_BSP)
 
-$(METALSVM_BSP): $(METALSVM_OBJS)
+$(EDUOS_BSP): $(EDUOS_OBJS)
 	$(AR) $(ARFLAGS) $@ $?
 	$(RANLIB) $@
 
 chown.o: $(srcdir)/chown.c
+errno.o: $(srcdir)/errno.c
 fork.o: $(srcdir)/fork.c
 gettod.o: $(srcdir)/gettod.c
 kill.o: $(srcdir)/kill.c
@@ -115,7 +116,7 @@ dup2.o: $(srcdir)/dup2.c
 
 install: $($(CPU)_INSTALL)
 	$(INSTALL_DATA) $(CRT0) $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/crt0.o
-	$(INSTALL_DATA) $(METALSVM_BSP) $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/$(METALSVM_BSP)
+	$(INSTALL_DATA) $(EDUOS_BSP) $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/$(EDUOS_BSP)
 	$(INSTALL_DATA) ${srcdir}/link$(BIT).ld $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/link.ld
 	for i in ${srcdir}/include/sys/*.h; do \
 	 ${INSTALL_DATA} $$i ${DESTDIR}${tooldir}/include/sys/`basename $$i`; \
