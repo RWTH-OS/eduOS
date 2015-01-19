@@ -37,46 +37,46 @@ extern "C" {
 #define MP_FLT_SIGNATURE	0x5f504d5f
 
 /// Local APIC ID Register
-#define APIC_ID			0x0020	
+#define APIC_ID			0x0020
 /// Local APIC Version Register
-#define APIC_VERSION		0x0030	
+#define APIC_VERSION		0x0030
 /// Task Priority Regster
-#define APIC_TPR		0x0080	
+#define APIC_TPR		0x0080
 /// EOI Register
-#define APIC_EOI		0x00B0	
+#define APIC_EOI		0x00B0
 /// Spurious Interrupt Vector Register
-#define APIC_SVR		0x00F0	
+#define APIC_SVR		0x00F0
 /// Error Status Register
 #define APIC_ESR		0x0280
 /// Interrupt Command Register [bits 0-31]
-#define APIC_ICR1		0x0300	
+#define APIC_ICR1		0x0300
 /// Interrupt Command Register [bits 32-63]
-#define APIC_ICR2		0x0310	
+#define APIC_ICR2		0x0310
 /// LVT Timer Register
-#define APIC_LVT_T		0x0320	
+#define APIC_LVT_T		0x0320
 /// LVT Thermal Sensor Register
-#define APIC_LVT_TSR		0x0330
+#define APIC_LVT_TSR	0x0330
 /// LVT Performance Monitoring Counters Register
-#define APIC_LVT_PMC		0x0340	
+#define APIC_LVT_PMC	0x0340
 /// LVT LINT0 Register
-#define APIC_LINT0		0x0350	
+#define APIC_LINT0		0x0350
 /// LVT LINT1 Register
 #define APIC_LINT1		0x0360
 /// LVT Error Register
-#define APIC_LVT_ER		0x0370	
+#define APIC_LVT_ER		0x0370
 /// Initial Count Register
-#define APIC_ICR		0x0380	
+#define APIC_ICR		0x0380
 /// Current Count Register
-#define APIC_CCR		0x0390	
+#define APIC_CCR		0x0390
 /// Divide Configuration Register
-#define APIC_DCR		0x03E0	
+#define APIC_DCR		0x03E0
 
 /// Register index: ID
-#define IOAPIC_REG_ID		0x0000	
+#define IOAPIC_REG_ID		0x0000
 /// Register index: version
-#define IOAPIC_REG_VER		0x0001	
+#define IOAPIC_REG_VER		0x0001
 /// Redirection table base
-#define IOAPIC_REG_TABLE	0x0010	
+#define IOAPIC_REG_TABLE	0x0010
 
 #define APIC_DEST_SELF		0x40000
 #define APIC_DEST_ALLINC	0x80000
@@ -167,28 +167,28 @@ typedef struct {
 		struct {
 			uint32_t vector		:  8,
 				delivery_mode	:  3,	/* 000: FIXED
-							 * 001: lowest prio
-							 * 111: ExtINT
-							 */
-				dest_mode	:  1,	/* 0: physical, 1: logical */
-				delivery_status	:  1, 
-				polarity	:  1, 
-				irr		:  1, 
-				trigger		:  1,	/* 0: edge, 1: level */
-				mask		:  1,	/* 0: enabled, 1: disabled */
+				 	 	 	 	 	 	 * 001: lowest prio
+				 	 	 	 	 	 	 * 111: ExtINT
+				 	 	 	 	 	 	 */
+				dest_mode		:  1,	/* 0: physical, 1: logical */
+				delivery_status	:  1,
+				polarity		:  1,
+				irr				:  1,
+				trigger			:  1,	/* 0: edge, 1: level */
+				mask			:  1,	/* 0: enabled, 1: disabled */
 				__reserved_2	: 15;
 		} bitfield;
 		uint32_t whole;
 	} lower;
 	union {
 		struct {
-			uint32_t __reserved_1		: 24,	
+			uint32_t __reserved_1	: 24,
 				physical_dest		:  4,
 				__reserved_2		:  4;
 		} physical;
 
 		struct {
-			uint32_t __reserved_1		: 24,
+			uint32_t __reserved_1	: 24,
 				logical_dest		:  8;
 		} logical;
 		uint32_t upper;

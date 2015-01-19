@@ -84,8 +84,8 @@ static lapic_read_func lapic_read = lapic_read_default;
 static void lapic_write_default(uint32_t addr, uint32_t value)
 {
 #if 1
-	/* 
-	 * to avoid a pentium bug, we have to read a apic register 
+	/*
+	 * to avoid a pentium bug, we have to read a apic register
 	 * before we write a value to this register
 	 */
 	asm volatile ("movl (%%eax), %%edx; movl %%ebx, (%%eax)" :: "a"(lapic+addr), "b"(value) : "%edx");
@@ -239,7 +239,7 @@ static int lapic_reset(void)
 		lapic_write(APIC_DCR, 0xB);		// set it to 1 clock increments
 		lapic_write(APIC_LVT_T, 0x2007B);	// connects the timer to 123 and enables it
 		lapic_write(APIC_ICR, icr);
-	} else 
+	} else
 		lapic_write(APIC_LVT_T, 0x10000);	// disable timer interrupt
 	if (max_lvt >= 4)
 		lapic_write(APIC_LVT_TSR, 0x10000);	// disable thermal sensor interrupt
@@ -252,7 +252,7 @@ static int lapic_reset(void)
 	return 0;
 }
 
-/* 
+/*
  * detects the timer frequency of the APIC and restart
  * the APIC timer with the correct period
  */
@@ -300,7 +300,7 @@ int apic_calibration(void)
 
 		// now lets turn everything else on
 		for(i=0; i<=max_entry; i++)
-			if (i != 2) 
+			if (i != 2)
 				ioapic_inton(i, apic_processors[boot_processor]->id);
 		// now, we don't longer need the IOAPIC timer and turn it off
 		ioapic_intoff(2, apic_processors[boot_processor]->id);
@@ -325,11 +325,11 @@ static int apic_probe(void)
 		goto found_mp;
 
 found_mp:
-	if (!apic_mp) 
+	if (!apic_mp)
 		goto no_mp;
 
 	kprintf("Found MP config table at 0x%x\n", apic_mp);
-	kprintf("System uses Multiprocessing Specification 1.%u\n", apic_mp->version);	
+	kprintf("System uses Multiprocessing Specification 1.%u\n", apic_mp->version);
 	kprintf("MP features 1: %u\n", apic_mp->features[0]);
 
 	if (apic_mp->features[0]) {
@@ -351,7 +351,7 @@ found_mp:
 	// search the ISA bus => required to redirect the IRQs
 	for(i=0; i<apic_config->entry_count; i++) {
 		switch(*((uint8_t*) addr)) {
-		case 0: 
+		case 0:
 			addr += 20;
 			break;
 		case 1: {
@@ -416,7 +416,7 @@ found_mp:
 check_lapic:
 	if (apic_config)
 		lapic = apic_config->lapic;
-	else if (has_apic()) 
+	else if (has_apic())
 		lapic = 0xFEE00000;
 
 	if (!lapic)
@@ -469,7 +469,7 @@ static void apic_err_handler(struct state *s)
 }
 
 int apic_init(void)
-{ 
+{
 	int ret;
 
 	ret = apic_probe();
