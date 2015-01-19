@@ -109,7 +109,7 @@ Overview of all branches
 
 7. stage7 - A simple file system
 
-   Add a virtual filesystem and a prototype of a initial ramdiks
+   Add a virtual filesystem and a prototype of an initial ramdisk
 
 8. stage8 - HelloWorld in user space
 

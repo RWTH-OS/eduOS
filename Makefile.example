@@ -87,7 +87,7 @@ newlib:
                 READELF_FOR_TARGET=$(READELF_FOR_TARGET) -C newlib
 
 tools:
-	$(MAKE) ARCH=$(ARCH) BIT=$(BIT) CFLAGS="$(CFLAGS_FOR_TOOLS)" LDFLAGS="$(LDFLAGS_FOR_TOOLS)" -C tools
+	$Q$(MAKE) ARCH=$(ARCH) BIT=$(BIT) CFLAGS="$(CFLAGS_FOR_TOOLS)" LDFLAGS="$(LDFLAGS_FOR_TOOLS)" -C tools
 
 $(NAME).elf:
 	$Q$(LD_FOR_TARGET) $(LDFLAGS) -o $(NAME).elf $^
