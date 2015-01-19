@@ -27,7 +27,7 @@
 
 /**
  * @author Stefan Lankes
- * @file include/metalsvm/mailbox_types.h
+ * @file include/eduos/mailbox_types.h
  * @brief Mailbox system for inter-task communication
  */
 

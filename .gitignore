@@ -6,3 +6,7 @@
 documentation/html/
 include/eduos/config.h
 include/eduos/config.inc
+newlib/tmp/
+newlib/x86/
+tools/initrd.img
+tools/make_initrd

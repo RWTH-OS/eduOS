@@ -37,12 +37,34 @@
 #define __MEMORY_H__
 
 /** @brief Initialize the memory subsystem */
-int memory_init();
+int memory_init(void);
 
 /** @brief Request physical page frames */
 size_t get_pages(size_t npages);
 
+/** @brief Get a single page
+ *
+ * Convenience function: uses get_pages(1);
+ */
+static inline size_t get_page(void) { return get_pages(1); }
+
 /** @brief release physical page frames */
 int put_pages(size_t phyaddr, size_t npages);
+
+/** @brief Put a single page
+ *
+ * Convenience function: uses put_pages(1);
+ */
+static inline int put_page(size_t phyaddr) { return put_pages(phyaddr, 1); }
+
+/** @brief Copy a physical page frame
+ *
+ * @param psrc physical address of source page frame
+ * @param pdest physical address of source page frame
+ * @return
+ * - 0 on success
+ * - -1 on failure
+ */
+int copy_page(size_t pdest, size_t psrc);
 
 #endif

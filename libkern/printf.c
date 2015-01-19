@@ -40,7 +40,7 @@
  * published at http://www.pagetable.com/?p=298. 
  * The authors built a full-featured standalone version of printf().  The
  * base code has been taken from FreeBSD (sys/kern/subr_prf.c) and is 
- * therefore BSD-licensed. Unnecessary functions have been removed and 
+ * consequently BSD-licensed. Unnecessary functions have been removed and
  * all typedefs required have been added.
  */
 

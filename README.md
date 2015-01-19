@@ -21,6 +21,21 @@ It is derived from following tutorials and software distributions.
    Co. or Unix System Laboratories, Inc. and are reproduced herein with
    the permission of UNIX System Laboratories, Inc.
 
+2. JamesM's kernel development tutorials
+   The first version of eduOS's virtual filesystem and its initial
+   ramdiks is is derived from JamesM's kernel development tutorials.
+   (http://www.jamesmolloy.co.uk/tutorial_html/index.html)
+
+3. newlib
+   The C library "newlib" is used to build user-level aplications on the top
+   of eduOS. Newlib is a collection of source code, it is
+   distributed under the terms of several different licenses. All of the
+   licensing is either public domain or BSD-like, which means that even
+   proprietary applications can adopt newlib because its use does not
+   require distribution of the end work's source code. For convenience, all
+   of newlib's licenses are gathered up into the file COPYING.NEWLIB,
+   which is included in the directory newlib or in newlib's source code.
+
 
 Requirements of eduOS
 ---------------------
@@ -92,6 +107,14 @@ Overview of all branches
 
    Add basic support of a serial device
 
+7. stage7 - A simple file system
+
+   Add a virtual filesystem and a prototype of an initial ramdisk
+
+8. stage8 - HelloWorld in user space
+
+   Add HelloWorld example with a small C library (newlib)
+
 Usefull Links
 -------------
 0. http://www.gnu.org/software/grub/manual/multiboot/
@@ -100,3 +123,4 @@ Usefull Links
 3. http://techblog.lankes.org/tutorials/
 4. http://www.os.rwth-aachen.de
 5. http://www.noteblok.net/2014/06/14/bachelor
+6. https://sourceware.org/newlib/

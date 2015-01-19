@@ -34,7 +34,9 @@
 #ifdef CONFIG_PCI
 
 #include <asm/pci.h>
+#ifdef WITH_PCI_NAMES
 #include "pcihdr.h"
+#endif
 
 /*
  * PCI configuration registers
@@ -141,7 +143,7 @@ int pci_init(void)
 	return 0;
 }
 
-int pci_get_device_info(uint32_t vendor_id, uint32_t device_id, pci_info_t* info)
+int pci_get_device_info(uint32_t vendor_id, uint32_t device_id, uint32_t base, pci_info_t* info)
 {
 	uint32_t slot, bus, i;
 
@@ -164,6 +166,9 @@ int pci_get_device_info(uint32_t vendor_id, uint32_t device_id, pci_info_t* info
 						info->size[i] = (info->base[i]) ? pci_what_size(bus, slot, i) : 0;	
 					}
 					info->irq = pci_what_irq(bus, slot);
+					if (base)
+						if (!(info->base[0] == base))
+							continue;
 					return 0;
 				}
 			}
@@ -173,6 +178,7 @@ int pci_get_device_info(uint32_t vendor_id, uint32_t device_id, pci_info_t* info
 	return -EINVAL;
 }
 
+#ifdef WITH_PCI_NAMES
 int print_pci_adapters(void)
 {
 	uint32_t slot, bus;
@@ -216,5 +222,6 @@ int print_pci_adapters(void)
 
 	return 0;
 }
+#endif
 
 #endif

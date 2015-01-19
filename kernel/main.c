@@ -34,6 +34,8 @@
 #include <eduos/tasks.h>
 #include <eduos/syscall.h>
 #include <eduos/memory.h>
+#include <eduos/vma.h>
+#include <eduos/fs.h>
 
 #include <asm/irq.h>
 #include <asm/irqflags.h>
@@ -57,50 +59,11 @@ extern atomic_int32_t total_pages;
 extern atomic_int32_t total_allocated_pages;
 extern atomic_int32_t total_available_pages;
 
-static void NORETURN userfoo(void* arg)
-{
-
-	SYSCALL1(__NR_write, "hello from userfoo\n");
-	SYSCALL1(__NR_exit, 0);
-
-	while(1) ;
-}
-
-static char ustack[KERNEL_STACK_SIZE]  __attribute__ ((aligned (PAGE_SIZE)));
-
-static int wrapper(void* arg)
-{
-	size_t* stack = (size_t*) (ustack+KERNEL_STACK_SIZE-16);
-
-	memset(ustack, 0xCD, KERNEL_STACK_SIZE);
-	*stack-- = (size_t) arg;
-	*stack = (size_t) NULL; // put exit function as caller on the stack
-
-#if 0
-	// this triggers a page fault because a user task is not able to access the kernel space
-	return jump_to_user_code((uint32_t) userfoo, (uint32_t) stack);
-#else
-	// dirty hack, map userfoo to the user space
-	size_t phys = page_virt_to_phys(((size_t) userfoo) & PAGE_MASK);
-	size_t vuserfoo = 0x40000000; 
-	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_USER);
-	vuserfoo += (size_t)userfoo & 0xFFF;
-
-	// dirty hack, map ustack to the user space
-	phys = page_virt_to_phys((size_t) ustack);
-	size_t vstack = 0x80000000;
-	page_map(vstack, phys, KERNEL_STACK_SIZE >> PAGE_BITS, PG_PRESENT | PG_RW | PG_USER);
-	vstack = (vstack + KERNEL_STACK_SIZE - 16 - sizeof(size_t));
-
-	return jump_to_user_code(vuserfoo, vstack);
-#endif
-}
-
 static int foo(void* arg)
 {
 	int i;
 
-	for(i=0; i<10; i++) {
+	for(i=0; i<2; i++) {
 		kprintf("hello from %s\n", (char*) arg);
 	}
 
@@ -126,14 +89,14 @@ static int eduos_init(void)
 #ifdef CONFIG_UART
 	uart_init();
 #endif
+	initrd_init();
 
 	return 0;
 }
 
 int main(void)
 {
-	tid_t id1;
-	tid_t id2;
+	char* argv[] = {"/bin/hello", NULL};
 
 	eduos_init();
 	irq_enable();
@@ -143,11 +106,16 @@ int main(void)
 	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
 	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
 	kprintf("Total memory: %lu KiB\n", atomic_int32_read(&total_pages) * PAGE_SIZE / 1024);
-	kprintf("Total memory available: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
+	kprintf("Current allocated memory: %lu KiB\n", atomic_int32_read(&total_allocated_pages) * PAGE_SIZE / 1024);
+	kprintf("Curren available memory: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
 
+	create_kernel_task(NULL, foo, "foo", NORMAL_PRIO);
+	create_user_task(NULL, "/bin/hello", argv);
 
-	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
-	create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
+#if 0
+	kputs("Filesystem:\n");
+	list_fs(fs_root, 1);
+#endif
 
 	while(1) { 
 		HALT;

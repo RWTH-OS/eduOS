@@ -39,7 +39,7 @@
 
 #include <eduos/stddef.h>
 #include <eduos/spinlock_types.h>
-
+#include <eduos/vma.h>
 #include <asm/tasks_types.h>
 #include <asm/atomic.h>
 
@@ -79,12 +79,18 @@ typedef struct task {
 	size_t			page_map;
 	/// Lock for page tables
 	spinlock_irqsave_t	page_lock;
+	/// lock for the VMA_list
+	spinlock_t		vma_lock;
+	/// list of VMAs
+	vma_t*			vma_list;
+	/// the userspace heap
+	vma_t*			heap;
 	/// usage in number of pages (including page map tables)
-	atomic_int32_t		user_usage;
+	atomic_int32_t	user_usage;
 	/// next task in the queue
-	struct task*		next;
+	struct task*	next;
 	/// previous task in the queue
-	struct task*		prev;
+	struct task*	prev;
 } task_t;
 
 typedef struct {

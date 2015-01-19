@@ -54,11 +54,11 @@ size_t strlen(const char *str);
 #endif
 
 #ifndef HAVE_ARCH_STRNCPY
-char* strncpy(char *dest, const char *src, size_t n);
+char *strncpy(char *dest, const char *src, size_t n);
 #endif
 
 #ifndef HAVE_ARCH_STRCPY
-char* strcpy(char *dest, const char *src);
+char *strcpy(char *dest, const char *src);
 #endif
 
 #ifndef HAVE_ARCH_STRCMP
@@ -68,6 +68,8 @@ int strcmp(const char *s1, const char *s2);
 #ifndef HAVE_ARCH_STRNCMP
 int strncmp(const char *s1, const char *s2, size_t n);
 #endif
+
+char *strstr(const char *s, const char *find);
 
 #ifdef __cplusplus
 }

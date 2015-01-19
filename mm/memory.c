@@ -157,6 +157,43 @@ int put_pages(size_t phyaddr, size_t npages)
 	return ret;
 }
 
+int copy_page(size_t pdest, size_t psrc)
+{
+	int err;
+
+	static size_t viraddr;
+	if (!viraddr) { // statically allocate virtual memory area
+		viraddr = vma_alloc(2 * PAGE_SIZE, VMA_HEAP);
+		if (BUILTIN_EXPECT(!viraddr, 0))
+			return -ENOMEM;
+	}
+
+	// map pages
+	size_t vsrc = viraddr;
+	err = page_map(vsrc, psrc, 1, PG_GLOBAL|PG_RW);
+	if (BUILTIN_EXPECT(err, 0)) {
+		page_unmap(viraddr, 1);
+		return -ENOMEM;
+	}
+
+	size_t vdest = viraddr + PAGE_SIZE;
+	err = page_map(vdest, pdest, 1, PG_GLOBAL|PG_RW);
+	if (BUILTIN_EXPECT(err, 0)) {
+		page_unmap(viraddr + PAGE_SIZE, 1);
+		return -ENOMEM;
+	}
+
+	kprintf("copy_page: copy page frame from: %#lx (%#lx) to %#lx (%#lx)\n", vsrc, psrc, vdest, pdest); // TODO remove
+
+	// copy the whole page
+	memcpy((void*) vdest, (void*) vsrc, PAGE_SIZE);
+
+	// householding
+	page_unmap(viraddr, 2);
+
+	return 0;
+}
+
 int memory_init(void)
 {
 	unsigned int i;
@@ -166,31 +203,48 @@ int memory_init(void)
 	// mark all memory as used
 	memset(bitmap, 0xff, BITMAP_SIZE);
 
+	// enable paging and map Multiboot modules etc.
+	ret = page_init();
+	if (BUILTIN_EXPECT(ret, 0)) {
+		kputs("Failed to initialize paging!\n");
+		return ret;
+	}
+
 	// parse multiboot information for available memory
 	if (mb_info) {
 		if (mb_info->flags & MULTIBOOT_INFO_MEM_MAP) {
+			size_t end_addr;
 			multiboot_memory_map_t* mmap = (multiboot_memory_map_t*) ((size_t) mb_info->mmap_addr);
 			multiboot_memory_map_t* mmap_end = (void*) ((size_t) mb_info->mmap_addr + mb_info->mmap_length);
 
 			// mark available memory as free
 			while (mmap < mmap_end) {
 				if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
-					for (addr=mmap->addr; addr < mmap->addr + mmap->len; addr += PAGE_SIZE) {
-						page_clear_mark(addr >> PAGE_BITS);
-						atomic_int32_inc(&total_pages);
-						atomic_int32_inc(&total_available_pages);
+					/* set the available memory as "unused" */
+					addr = mmap->addr;
+					end_addr = addr + mmap->len;
+
+					while ((addr < end_addr) && (addr < (BITMAP_SIZE*8*PAGE_SIZE))) {
+						if (page_marked(addr >> PAGE_BITS)) {
+							page_clear_mark(addr >> PAGE_BITS);
+							atomic_int32_inc(&total_pages);
+							atomic_int32_inc(&total_available_pages);
+						}
+						addr += PAGE_SIZE;
 					}
 				}
-				mmap++;
+				mmap = (multiboot_memory_map_t*) ((size_t) mmap + sizeof(uint32_t) + mmap->size);
 			}
-		}
-		else if (mb_info->flags & MULTIBOOT_INFO_MEM) {
+		} else if (mb_info->flags & MULTIBOOT_INFO_MEM) {
 			size_t page;
 			size_t pages_lower = mb_info->mem_lower >> 2; /* KiB to page number */
 			size_t pages_upper = mb_info->mem_upper >> 2;
 
 			for (page=0; page<pages_lower; page++)
 				page_clear_mark(page);
+
+			if (pages_upper > BITMAP_SIZE*8-256)
+				pages_upper = BITMAP_SIZE*8-256;
 
 			for (page=0; page<pages_upper; page++)
 				page_clear_mark(page + 256); /* 1 MiB == 256 pages offset */
@@ -236,11 +290,25 @@ int memory_init(void)
 		atomic_int32_dec(&total_available_pages);
 	}
 
-	// enable paging and map SMP, VGA, Multiboot modules etc.
-	ret = page_init();
+	ret = vma_init();
 	if (BUILTIN_EXPECT(ret, 0)) {
-		kputs("Failed to initialize paging!\n");
+		kprintf("Failed to initialize VMA regions: %d\n", ret);
 		return ret;
+	}
+
+	/*
+	 * Modules like the init ram disk are already loaded.
+	 * Therefore, we set these pages as used.
+	 */
+	if (mb_info && (mb_info->flags & MULTIBOOT_INFO_MODS)) {
+		multiboot_module_t* mmodule = (multiboot_module_t*) ((size_t) mb_info->mods_addr);
+		for(i=0; i<mb_info->mods_count; i++) {
+			for(addr=mmodule[i].mod_start; addr<mmodule[i].mod_end; addr+=PAGE_SIZE) {
+				page_set_mark(addr >> PAGE_BITS);
+				atomic_int32_inc(&total_allocated_pages);
+				atomic_int32_dec(&total_available_pages);
+			}
+		}
 	}
 
 	return ret;

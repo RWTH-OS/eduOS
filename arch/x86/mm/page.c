@@ -28,7 +28,7 @@
 
 /**
  * This is a 32/64 bit portable paging implementation for the x86 architecture
- * using self-referenced page tablesi.
+ * using self-referenced page tables	i.
  * See http://www.noteblok.net/2014/06/14/bachelor/ for a detailed description.
  * 
  * @author Steffen Vogel <steffen.vogel@rwth-aachen.de>
@@ -47,13 +47,16 @@
 /* Note that linker symbols are not variables, they have no memory
  * allocated for maintaining a value, rather their address is their value. */
 extern const void kernel_start;
-extern const void kernel_end;
+//extern const void kernel_end;
+
+/// This page is reserved for copying
+#define PAGE_TMP		(PAGE_FLOOR((size_t) &kernel_start) - PAGE_SIZE)
 
 /** Lock for kernel space page tables */
 static spinlock_t kslock = SPINLOCK_INIT;
 
 /** This PGD table is initialized in entry.asm */
-extern size_t boot_map[PAGE_MAP_ENTRIES];
+extern size_t* boot_map;
 
 /** A self-reference enables direct access to all page tables */
 static size_t* self[PAGE_LEVELS] = {
@@ -67,7 +70,7 @@ static size_t * other[PAGE_LEVELS] = {
 	(size_t *) 0xFFFFE000
 };
 
-size_t page_virt_to_phys(size_t addr)
+size_t virt_to_phys(size_t addr)
 {
 	size_t vpn   = addr >> PAGE_BITS;	// virtual page number
 	size_t entry = self[0][vpn];		// page table entry
@@ -75,6 +78,22 @@ size_t page_virt_to_phys(size_t addr)
 	size_t phy   = entry &  PAGE_MASK;	// physical page frame number
 
 	return phy | off;
+}
+
+//TODO: code is missing
+int page_set_flags(size_t viraddr, uint32_t npages, int flags)
+{
+	return -EINVAL;
+}
+
+int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits)
+{
+	if (BUILTIN_EXPECT(viraddr >= PAGE_MAP_ENTRIES*PAGE_SIZE, 0))
+		return -EINVAL;
+
+	boot_map[PAGE_MAP_ENTRIES + (viraddr >> PAGE_BITS)] = phyaddr | bits | PG_PRESENT;
+
+	return 0;
 }
 
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
@@ -129,6 +148,7 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 		}
 	}
 
+	ret = 0;
 out:
 	if (bits & PG_USER)
 		spinlock_irqsave_unlock(&current_task->page_lock);
@@ -155,10 +175,11 @@ int page_unmap(size_t viraddr, size_t npages)
 	spinlock_irqsave_unlock(&current_task->page_lock);
 	spinlock_unlock(&kslock);
 
+	/* This can't fail because we don't make checks here */
 	return 0;
 }
 
-int page_map_drop()
+int page_map_drop(void)
 {
 	void traverse(int lvl, long vpn) {
 		long stop;
@@ -179,7 +200,8 @@ int page_map_drop()
 	traverse(PAGE_LEVELS-1, 0);
 
 	spinlock_irqsave_unlock(&current_task->page_lock);
-	
+
+	/* This can't fail because we don't make checks here */
 	return 0;
 }
 
@@ -223,8 +245,9 @@ int page_map_copy(task_t *dest)
 	other[PAGE_LEVELS-1][PAGE_MAP_ENTRIES-1] = dest->page_map | PG_PRESENT | PG_SELF | PG_RW;
 	self [PAGE_LEVELS-1][PAGE_MAP_ENTRIES-2] = 0;
 	spinlock_irqsave_unlock(&current_task->page_lock);
-	
-	flush_tlb(); /* Flush TLB entries of 'other' self-reference */
+
+	/* Flush TLB entries of 'other' self-reference */
+	flush_tlb();
 
 	return ret;
 }
@@ -232,7 +255,32 @@ int page_map_copy(task_t *dest)
 void page_fault_handler(struct state *s)
 {
 	size_t viraddr = read_cr2();
+	task_t* task = current_task;
 
+	// on demand userspace heap mapping
+    if ((task->heap) && (viraddr >= task->heap->start) && (viraddr < task->heap->end)) {
+    	viraddr &= PAGE_MASK;
+
+    	size_t phyaddr = get_page();
+    	if (BUILTIN_EXPECT(!phyaddr, 0)) {
+    		kprintf("out of memory: task = %u\n", task->id);
+    		goto default_handler;
+    	}
+
+    	viraddr = page_map(viraddr, phyaddr, 1, PG_USER|PG_RW);
+    	if (BUILTIN_EXPECT(!viraddr, 0)) {
+    		kprintf("map_region: could not map %#lx to %#lx, task = %u\n", viraddr, phyaddr, task->id);
+    		put_page(phyaddr);
+
+    		goto default_handler;
+    	}
+
+    	memset((void*) viraddr, 0x00, PAGE_SIZE); // fill with zeros
+
+    	return;
+    }
+
+default_handler:
 	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
 		s->int_no, s->cs, s->eip, current_task->id, viraddr, s->error,
 		(s->error & 0x4) ? "user" : "supervisor",
@@ -244,7 +292,7 @@ void page_fault_handler(struct state *s)
 	while(1) HALT;
 }
 
-int page_init()
+int page_init(void)
 {
 	size_t addr, npages;
 	int i;
@@ -253,21 +301,12 @@ int page_init()
 	irq_uninstall_handler(14);
 	irq_install_handler(14, page_fault_handler);
 
-	/* Map kernel */
-	addr = (size_t) &kernel_start;
-	npages = PAGE_FLOOR((size_t) &kernel_end - (size_t) &kernel_start) >> PAGE_BITS;
-	page_map(addr, addr, npages, PG_RW | PG_GLOBAL);
-
-#ifdef CONFIG_VGA
-	/* Map video memory */
-	page_map(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR, 1, PG_RW | PG_PCD | PG_GLOBAL);
-#endif
-
 	/* Map multiboot information and modules */
 	if (mb_info) {
-		addr = (size_t) mb_info & PAGE_MASK;
-		npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
-		page_map(addr, addr, npages, PG_GLOBAL);
+		// already mapped => entry.asm
+		//addr = (size_t) mb_info & PAGE_MASK;
+		//npages = PAGE_FLOOR(sizeof(*mb_info)) >> PAGE_BITS;
+		//page_map(addr, addr, npages, PG_GLOBAL);
 
 		if (mb_info->flags & MULTIBOOT_INFO_MODS) {
 			addr = mb_info->mods_addr;
@@ -278,18 +317,13 @@ int page_init()
 			for(i=0; i<mb_info->mods_count; i++) {
 				addr = mmodule[i].mod_start;
 				npages = PAGE_FLOOR(mmodule[i].mod_end - mmodule[i].mod_start) >> PAGE_BITS;
-				page_map(addr, addr, npages, PG_USER | PG_GLOBAL);
+				page_map(addr, addr, npages, PG_GLOBAL);
 			}
 		}
 	}
 
-	/* Unmap bootstrap identity paging (see entry.asm, PG_BOOT) */
-	for (i=0; i<PAGE_MAP_ENTRIES; i++)
-		if (self[0][i] & PG_BOOT)
-			self[0][i] = 0;
-
 	/* Flush TLB to adopt changes above */
-	flush_tlb();
+	//flush_tlb();
 
 	return 0;
 }
