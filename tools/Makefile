@@ -31,6 +31,10 @@ clean:
 	@echo Cleaning tools
 	$Q$(RM) -rf *.o *~ make_initrd initrd.img
 
+veryclean:
+	@echo Propper cleaning tools
+	$Q$(RM) -rf *.o *~ make_initrd initrd.img
+
 depend:
 	$Q$(CC) -MM $(CFLAGS) *.c > Makefile.dep
 

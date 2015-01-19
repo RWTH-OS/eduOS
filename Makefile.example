@@ -69,7 +69,7 @@ default: all
 all: newlib tools $(NAME).elf
 
 newlib:
-	$(MAKE) ARCH=$(ARCH) BIT=$(BIT) \
+	$Q$(MAKE) ARCH=$(ARCH) BIT=$(BIT) \
                 LDFLAGS="$(LDFLAGS_FOR_NEWLIB)" \
                 CFLAGS="$(CFLAGS_FOR_NEWLIB)" \
                 NASMFLAGS="$(NASMFLAGS_FOR_NEWLIB)" \
@@ -98,12 +98,15 @@ $(NAME).elf:
 
 clean:
 	$Q$(RM) $(NAME).elf $(NAME).sym *~
+	$Q$(MAKE) -C newlib clean
 	$Q$(MAKE) -C tools clean
 	@echo Cleaned.
 
-veryclean: clean
+veryclean:
+	$Q$(RM) $(NAME).elf $(NAME).sym *~
 	$Q$(RM) qemu-vlan0.pcap
 	$Q$(MAKE) -C newlib veryclean
+	$Q$(MAKE) -C tools veryclean
 	@echo Very cleaned
 
 qemu: $(NAME).elf

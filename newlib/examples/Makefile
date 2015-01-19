@@ -15,25 +15,39 @@ ifeq ($(BIT),64)
 override LDFLAGS += -Wl,-n,-z,max-page-size=0x1000
 endif
 
+# Prettify output
+V = 0
+ifeq ($V,0)
+	Q = @
+	P = > /dev/null
+endif
+
 # other implicit rules
 %.o : %.c
-	$(CC_FOR_TARGET) -c $(CFLAGS) -o $@ $< 
+	@echo [CC] $@
+	$Q$(CC_FOR_TARGET) -c $(CFLAGS) -o $@ $< 
 
 default: all
 
 all: hello
 
 hello: hello.o
-	$(CC_FOR_TARGET) $(LDFLAGS) -o $@ $<
-	$(OBJCOPY_FOR_TARGET) $(KEEP_DEBUG) $@ $@.sym
-	$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $@
-	chmod a-x $@.sym
+	@echo [LD] $@
+	$Q$(CC_FOR_TARGET) $(LDFLAGS) -o $@ $<
+	$Q$(OBJCOPY_FOR_TARGET) $(KEEP_DEBUG) $@ $@.sym
+	$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $@
+	$Qchmod a-x $@.sym
 
 clean:
-	$(RM) hello *.sym *.o *~ 
+	@echo Cleaning examples
+	$Q$(RM) hello *.sym *.o *~ 
+
+veryclean:
+	@echo Propper cleaning examples
+	$Q$(RM) hello *.sym *.o *~
 
 depend:
-	$(CC_FOR_TARGET) -MM $(CFLAGS) *.c > Makefile.dep
+	$Q$(CC_FOR_TARGET) -MM $(CFLAGS) *.c > Makefile.dep
 
 -include Makefile.dep
 # DO NOT DELETE

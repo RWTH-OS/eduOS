@@ -18,19 +18,29 @@ MKDIR = mkdir
 TMP = $(TOPDIR)/tmp
 OPT = --disable-shared --disable-multilib --enable-newlib-hw-fp --disable-newlib-multithread --disable-newlib-reent-small
 
+# Prettify output
+V = 0
+ifeq ($V,0)
+	Q = @
+	P = > /dev/null
+endif
+
 default: $(ARCH)
-	$(MAKE) ARCH=$(ARCH) BIT=$(BIT) TARGET=$(TARGET) CFLAGS+="-ffreestanding -Wall -I$(NEWLIB)/include -I../../include -I../../arch/$(ARCH)/include" LDFLAGS+="-nostdlib -L$(NEWLIB)/lib" -C examples depend
-	$(MAKE) ARCH=$(ARCH) BIT=$(BIT) TARGET=$(TARGET) CFLAGS+="-ffreestanding -Wall -I$(NEWLIB)/include -I../../include -I../../arch/$(ARCH)/include" LDFLAGS+="-nostdlib -L$(NEWLIB)/lib" -C examples
+	$Q$(MAKE) ARCH=$(ARCH) BIT=$(BIT) TARGET=$(TARGET) CFLAGS+="-ffreestanding -Wall -I$(NEWLIB)/include -I../../include -I../../arch/$(ARCH)/include" LDFLAGS+="-nostdlib -L$(NEWLIB)/lib" -C examples depend
+	$Q$(MAKE) ARCH=$(ARCH) BIT=$(BIT) TARGET=$(TARGET) CFLAGS+="-ffreestanding -Wall -I$(NEWLIB)/include -I../../include -I../../arch/$(ARCH)/include" LDFLAGS+="-nostdlib -L$(NEWLIB)/lib" -C examples
 
 $(ARCH):
-	$(RM) $(TMP)
-	$(MKDIR) $(TMP)
-	$(CD) $(TMP); $(TOPDIR)/src/configure --target=$(TARGET) --prefix=$(TOPDIR)/$(ARCH) $(OPT) && $(MAKE) && $(MAKE) install
+	@echo Build newlib
+	$Q$(RM) $(TMP)
+	$Q$(MKDIR) $(TMP)
+	$Q$(CD) $(TMP); $(TOPDIR)/src/configure --target=$(TARGET) --prefix=$(TOPDIR)/$(ARCH) $(OPT) && $(MAKE) && $(MAKE) install
 
 clean:
-	$(MAKE) -C examples clean
-	$(RM) $(TMP)
+	@echo Cleaning newlib
+	$Q$(MAKE) -C examples clean
+	$Q$(RM) $(TMP)
 
-veryclean: clean
-	$(MAKE) -C examples clean
-	$(RM) $(TOPDIR)/$(ARCH)
+veryclean:
+	@echo Propper cleaning newlib
+	$Q$(MAKE) -C examples veryclean
+	$Q$(RM) $(TOPDIR)/$(ARCH)
