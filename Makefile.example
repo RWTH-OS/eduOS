@@ -64,7 +64,7 @@ default: all
 all: tools $(NAME).elf
 
 tools:
-	$(MAKE) ARCH=$(ARCH) CFLAGS="$(CFLAGS_FOR_TOOLS)" LDFLAGS="$(LDFLAGS_FOR_TOOLS)" -C tools
+	$Q$(MAKE) ARCH=$(ARCH) CFLAGS="$(CFLAGS_FOR_TOOLS)" LDFLAGS="$(LDFLAGS_FOR_TOOLS)" -C tools
 
 $(NAME).elf:
 	$Q$(LD_FOR_TARGET) $(LDFLAGS) -o $(NAME).elf $^
