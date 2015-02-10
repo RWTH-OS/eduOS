@@ -92,11 +92,11 @@ static int wrapper(void* arg)
 	page_map(vstack, phys, KERNEL_STACK_SIZE >> PAGE_BITS, PG_PRESENT | PG_RW | PG_USER);
 	vstack = (vstack + KERNEL_STACK_SIZE - 16 - sizeof(size_t));
 
-	// this still throws a General Protection Fault
-	asm volatile("pushq %0" :: "r"((size_t)0x20));	// SS = 0x20 (RING3 DS) ?
-	asm volatile("pushq %0" :: "r"(vstack));			// RSP = vstack
-	asm volatile("pushf");							// EFLAGS
-	asm volatile("pushq %0" :: "r"((size_t)0x18));	// CS = 0x18 (RING3 CS)
+	// Create a pseudo interrupt on the stack and return to user function
+	asm volatile("pushq %0" :: "r"((size_t)0x23));	// SS = 0x20 (RING3 DS)
+	asm volatile("pushq %0" :: "r"(vstack));		// RSP = vstack
+	asm volatile("pushfq");							// RFLAGS
+	asm volatile("pushq %0" :: "r"((size_t)0x1b));	// CS = 0x18 (RING3 CS)
 	asm volatile("pushq %0" :: "r"(vuserfoo));		// RIP = vuserfoo
 
 	asm volatile("iretq");
