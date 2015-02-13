@@ -45,6 +45,8 @@
 /* eduOS prelude */
 #include <eduos/stddef.h>
 
+#if __SIZEOF_POINTER__ == 4
+
 typedef uint64_t 	u_quad_t;
 typedef int64_t		quad_t;
 typedef uint32_t	u_long;
@@ -327,3 +329,5 @@ u_quad_t uq, vq, *arq;
 	tmp.ul[L] = COMBINE(qspace[3], qspace[4]);
 	return (tmp.q);
 }
+
+#endif

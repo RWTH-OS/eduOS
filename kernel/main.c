@@ -59,6 +59,56 @@ extern atomic_int32_t total_pages;
 extern atomic_int32_t total_allocated_pages;
 extern atomic_int32_t total_available_pages;
 
+
+static void NORETURN userfoo(void* arg)
+{
+
+	SYSCALL1(__NR_write, "hello from userfoo\n");
+	SYSCALL1(__NR_exit, 0);
+
+	while(1) ;
+}
+
+static char ustack[KERNEL_STACK_SIZE]  __attribute__ ((aligned (PAGE_SIZE)));
+
+static int wrapper(void* arg)
+{
+	size_t* stack = (size_t*) (ustack+KERNEL_STACK_SIZE-16);
+
+	memset(ustack, 0xCD, KERNEL_STACK_SIZE);
+	*stack-- = (size_t) arg;
+	*stack = (size_t) NULL; // put exit function as caller on the stack
+
+#if 0
+	// this triggers a page fault because a user task is not able to access the kernel space
+	return jump_to_user_code((uint32_t) userfoo, (uint32_t) stack);
+#else
+	// dirty hack, map userfoo to the user space
+	size_t phys = virt_to_phys(((size_t) userfoo) & PAGE_MASK);
+	size_t vuserfoo = 0x40000000; 
+	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_USER);
+	vuserfoo += (size_t)userfoo & 0xFFF;
+
+	// dirty hack, map ustack to the user space
+	phys = virt_to_phys((size_t) ustack);
+	size_t vstack = 0x80000000;
+	page_map(vstack, phys, KERNEL_STACK_SIZE >> PAGE_BITS, PG_PRESENT | PG_RW | PG_USER);
+	vstack = (vstack + KERNEL_STACK_SIZE - 16 - sizeof(size_t));
+
+	// Create a pseudo interrupt on the stack and return to user function
+	asm volatile("pushq %0" :: "r"((size_t)0x23));	// SS = 0x20 (RING3 DS)
+	asm volatile("pushq %0" :: "r"(vstack));		// RSP = vstack
+	asm volatile("pushfq");							// RFLAGS
+	asm volatile("pushq %0" :: "r"((size_t)0x1b));	// CS = 0x18 (RING3 CS)
+	asm volatile("pushq %0" :: "r"(vuserfoo));		// RIP = vuserfoo
+
+	asm volatile("iretq");
+
+	return 42;
+//	return jump_to_user_code(vuserfoo, vstack);
+#endif
+}
+
 static int foo(void* arg)
 {
 	int i;
@@ -109,6 +159,7 @@ int main(void)
 	kprintf("Current allocated memory: %lu KiB\n", atomic_int32_read(&total_allocated_pages) * PAGE_SIZE / 1024);
 	kprintf("Curren available memory: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
 
+
 	create_kernel_task(NULL, foo, "foo", NORMAL_PRIO);
 	create_user_task(NULL, "/bin/hello", argv);
 
@@ -116,6 +167,10 @@ int main(void)
 	kputs("Filesystem:\n");
 	list_fs(fs_root, 1);
 #endif
+
+	// x64: wrapper maps function to user space to start a user-space task
+	//create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
+
 
 	while(1) { 
 		HALT;

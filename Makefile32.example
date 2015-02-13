@@ -8,7 +8,7 @@ SUBDIRS = $(KERNDIRS)
 
 # Set your own cross compiler tool chain prefix here
 CROSSCOMPREFIX =
-STACKPROT =
+STACKPROT = -fno-stack-protector
 
 CC_FOR_TARGET = $(CROSSCOMPREFIX)gcc
 CXX_FOR_TARGET = $(CROSSCOMPREFIX)g++
@@ -41,20 +41,21 @@ QEMUSERIALFLAGS = -device pci-serial,chardev=tS0 \
 
 INCLUDE = -I$(TOPDIR)/include -I$(TOPDIR)/arch/$(ARCH)/include
 # Compiler options for final code
-CFLAGS = -g -m32 -march=i586 -Wall -O2 -fno-builtin -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc $(INCLUDE) -fno-stack-protector
+CFLAGS = -g -m32 -march=i586 -Wall -O2 -fstrength-reduce -fomit-frame-pointer -finline-functions -ffreestanding -nostdinc -fno-stack-protector $(INCLUDE)
 # Compiler options for debugging
-debug debug-eclipse : CFLAGS = -g -O0 -m32 -march=i586 -Wall -fno-builtin -DWITH_FRAME_POINTER -nostdinc $(INCLUDE) -fno-stack-protector
+debug debug-eclipse : CFLAGS = -g -O0 -m32 -march=i586 -Wall -fno-builtin -DWITH_FRAME_POINTER -nostdinc -fno-stack-protector $(INCLUDE)
 AR = ar
 ARFLAGS = rsv
 RM = rm -rf
-LDFLAGS = -T link.ld -z max-page-size=4096 --defsym __BUILD_DATE=$(shell date +'%Y%m%d') --defsym __BUILD_TIME=$(shell date +'%H%M%S')
+LDFLAGS = -T link$(BIT).ld -z max-page-size=4096 --defsym __BUILD_DATE=$(shell date +'%Y%m%d') --defsym __BUILD_TIME=$(shell date +'%H%M%S')
 STRIP_DEBUG = --strip-debug
 KEEP_DEBUG = --only-keep-debug
+OUTPUT_FORMAT = -O elf32-i386
 
 CFLAGS_FOR_NEWLIB = -m$(BIT) $(STACKPROT)
 LDFLAGS_FOR_NEWLIB = -m$(BIT)
 NASMFLAGS_FOR_NEWLIB = -felf$(BIT)
-CFLAGS_FOR_TOOLS  = -m$(BIT) -O2 -Wall
+CFLAGS_FOR_TOOLS = -m$(BIT) -O2 -Wall
 LDFLAGS_FOR_TOOLS =
 
 # Prettify output
@@ -94,7 +95,7 @@ $(NAME).elf:
 	@echo [OBJCOPY] $(NAME).sym
 	$Q$(OBJCOPY_FOR_TARGET) $(KEEP_DEBUG) $(NAME).elf $(NAME).sym
 	@echo [OBJCOPY] $(NAME).elf
-	$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $(NAME).elf
+	$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $(OUTPUT_FORMAT) $(NAME).elf
 
 clean:
 	$Q$(RM) $(NAME).elf $(NAME).sym *~
@@ -109,19 +110,19 @@ veryclean:
 	$Q$(MAKE) -C tools veryclean
 	@echo Very cleaned
 
-qemu: $(NAME).elf
+qemu: all
 	$(QEMU) $(QEMUFLAGS) -kernel $(NAME).elf -initrd tools/initrd.img
 
-uart: $(NAME).elf
+uart: all
 	$(QEMU) $(QEMUFLAGS) $(QEMUSERIALFLAGS) -kernel $(NAME).elf -append uart=io:0xc110 -initrd tools/initrd.img
 
-debug: $(NAME).elf
+debug: all
 	$(TERM) -e $(GDB) $(GDBFLAGS) &
 	$(QEMU) $(QEMUDEBUGFLAGS) -s -S -kernel $(NAME).elf -initrd tools/initrd.img
 
-debug-eclipse: clean $(NAME).elf
+debug-eclipse: clean all
 	killall $(QEMU) &
-	( ( $(QEMU) $(QEMUDEBUGFLAGS) $(QEMUSERIALFLAGS) -s -S -kernel $(NAME).elf & ) & )
+	( ( $(QEMU) $(QEMUDEBUGFLAGS) $(QEMUSERIALFLAGS) -s -S -kernel $(NAME).elf -initrd tools/initrd.img & ) & )
 
 doc:
 	@echo Create documentation...
@@ -139,6 +140,8 @@ include/eduos/config.inc: include/eduos/config.h
 	@awk '/^#define KERNEL_STACK_SIZE/{ print "%define KERNEL_STACK_SIZE", $$3 }' include/eduos/config.h >> include/eduos/config.inc
 	@awk '/^#define VIDEO_MEM_ADDR/{ print "%define VIDEO_MEM_ADDR", $$3 }' include/eduos/config.h >> include/eduos/config.inc
 	@awk '/^#define CONFIG_VGA/{ print "%define CONFIG_VGA" }' include/eduos/config.h >> include/eduos/config.inc
+	@echo "%define CONFIG_X86_$(BIT)" >> include/eduos/config.inc
+
 
 %.o : %.asm include/eduos/config.inc
 	@echo [ASM] $@

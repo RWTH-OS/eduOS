@@ -39,6 +39,8 @@
 
 #include <eduos/stddef.h>
 
+#if __SIZEOF_POINTER__ == 4
+
 typedef uint64_t u_quad_t;
 u_quad_t __qdivrem(u_quad_t uq, u_quad_t vq, u_quad_t* arq);
 
@@ -51,3 +53,5 @@ u_quad_t a, b;
 
 	return (__qdivrem(a, b, (u_quad_t *) 0));
 }
+
+#endif

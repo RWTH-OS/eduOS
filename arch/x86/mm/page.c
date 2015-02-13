@@ -58,17 +58,35 @@ static spinlock_t kslock = SPINLOCK_INIT;
 /** This PGD table is initialized in entry.asm */
 extern size_t* boot_map;
 
+#ifdef CONFIG_X86_32
 /** A self-reference enables direct access to all page tables */
-static size_t* self[PAGE_LEVELS] = {
+static size_t * const self[PAGE_LEVELS] = {
 	(size_t *) 0xFFC00000,
 	(size_t *) 0xFFFFF000
 };
 
 /** An other self-reference for page_map_copy() */
-static size_t * other[PAGE_LEVELS] = {
+static size_t * const other[PAGE_LEVELS] = {
 	(size_t *) 0xFF800000,
 	(size_t *) 0xFFFFE000
 };
+#elif defined(CONFIG_X86_64)
+/** A self-reference enables direct access to all page tables */
+static size_t* const self[PAGE_LEVELS] = {
+	(size_t *) 0xFFFFFF8000000000,
+	(size_t *) 0xFFFFFFFFC0000000,
+	(size_t *) 0xFFFFFFFFFFE00000,
+	(size_t *) 0xFFFFFFFFFFFFF000
+};
+
+/** An other self-reference for page_map_copy() */
+static size_t * const other[PAGE_LEVELS] = {
+	(size_t *) 0xFFFFFF0000000000,
+	(size_t *) 0xFFFFFFFF80000000,
+	(size_t *) 0xFFFFFFFFFFC00000,
+	(size_t *) 0xFFFFFFFFFFFFE000
+};
+#endif
 
 size_t virt_to_phys(size_t addr)
 {
@@ -281,6 +299,7 @@ void page_fault_handler(struct state *s)
     }
 
 default_handler:
+#ifdef CONFIG_X86_32
 	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
 		s->int_no, s->cs, s->eip, current_task->id, viraddr, s->error,
 		(s->error & 0x4) ? "user" : "supervisor",
@@ -288,6 +307,15 @@ default_handler:
 		(s->error & 0x2) ? "write" : ((s->error & 0x10) ? "fetch" : "read"),
 		(s->error & 0x1) ? "protection" : "not present",
 		(s->error & 0x8) ? "reserved bit" : "\b");
+#elif defined(CONFIG_X86_64)
+	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
+		s->int_no, s->cs, s->rip, current_task->id, viraddr, s->error,
+		(s->error & 0x4) ? "user" : "supervisor",
+		(s->error & 0x10) ? "instruction" : "data",
+		(s->error & 0x2) ? "write" : ((s->error & 0x10) ? "fetch" : "read"),
+		(s->error & 0x1) ? "protection" : "not present",
+		(s->error & 0x8) ? "reserved bit" : "\b");
+#endif
 
 	while(1) HALT;
 }

@@ -40,6 +40,7 @@
 extern "C" {
 #endif
 
+#if __SIZEOF_POINTER__ == 4
 #define CONFIG_X86_32
 /// This type is used to represent the size of an object.
 typedef unsigned long size_t;
@@ -49,6 +50,19 @@ typedef long ptrdiff_t;
 typedef long ssize_t;
 /// The type represents an offset and is similar to size_t, but must be a signed type.
 typedef long off_t;
+#elif __SIZEOF_POINTER__ == 8
+#define CONFIG_X86_64
+// A popular type for addresses
+typedef unsigned long long size_t;
+/// Pointer differences
+typedef long long ptrdiff_t;
+#ifdef __KERNEL__
+typedef long long ssize_t;
+typedef long long off_t;
+#endif
+#else
+#error unsupported architecture
+#endif
 
 /// Unsigned 64 bit integer
 typedef unsigned long long uint64_t;
@@ -71,6 +85,7 @@ typedef unsigned short wchar_t;
 
 /// This defines what the stack looks like after the task context is saved.
 struct state {
+#ifdef CONFIG_X86_32
 	/// ds register
 	uint32_t ds;
 	/// es register
@@ -102,6 +117,51 @@ struct state {
 	uint32_t eflags;
 	uint32_t useresp;
 	uint32_t ss;
+#elif defined(CONFIG_X86_64)
+	/// R15 register
+	uint64_t r15;
+	/// R14 register
+	uint64_t r14;
+	/// R13 register
+	uint64_t r13;
+	/// R12 register
+	uint64_t r12;
+	/// R11 register
+	uint64_t r11;
+	/// R10 register
+	uint64_t r10;
+	/// R9 register
+	uint64_t r9;
+	/// R8 register
+	uint64_t r8;
+	/// RDI register
+	uint64_t rdi;
+	/// RSI register
+	uint64_t rsi;
+	/// RBP register
+	uint64_t rbp;
+	/// (pseudo) RSP register
+	uint64_t rsp;
+	/// RBX register
+	uint64_t rbx;
+	/// RDX register
+	uint64_t rdx;
+	/// RCX register
+	uint64_t rcx;
+	/// RAX register
+	uint64_t rax;
+
+	/// Interrupt number
+	uint64_t int_no;
+
+	// pushed by the processor automatically
+	uint64_t error;
+	uint64_t rip;
+	uint64_t cs;
+	uint64_t rflags;
+	uint64_t userrsp;
+	uint64_t ss;
+#endif
 };
 
 #ifdef __cplusplus

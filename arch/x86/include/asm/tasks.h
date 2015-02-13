@@ -84,11 +84,16 @@ static inline int register_task(void)
  */
 static inline int jump_to_user_code(uint32_t ep, uint32_t stack)
 {
+#ifdef CONFIG_X86_32
 	asm volatile ("mov %0, %%ds; mov %0, %%fs; mov %0, %%gs; mov %0, %%es" :: "r"(0x23));
 	asm volatile ("push $0x23; push %0; push $0x1B; push %1" :: "r"(stack), "r"(ep));
 	asm volatile ("lret" ::: "cc");
 
 	return 0;
+#else
+	//TODO: code is missing
+	return -22;
+#endif
 }
 
 #ifdef __cplusplus

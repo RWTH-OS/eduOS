@@ -8,10 +8,17 @@
 ; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ;
 
+%include "config.inc"
+
+%ifdef CONFIG_X86_32
 [BITS 32]
+%else
+[BITS 64]
+%endif
 SECTION .text
 global strcpy
 strcpy:
+%ifdef CONFIG_X86_32
    push ebp
    mov ebp, esp
    push edi
@@ -19,21 +26,29 @@ strcpy:
 
    mov esi, [ebp+12]
    mov edi, [ebp+8]
+%else
+   push rdi
+%endif
 
 L1:
    lodsb
    stosb
    test al, al
    jne L1
-   
+
+%ifdef CONFIG_X86_32
    mov eax, [ebp+8]
    pop esi
    pop edi
    pop ebp
+%else
+   pop rax
+%endif
    ret
 
 global strncpy
 strncpy:
+%ifdef CONFIG_X86_32
    push ebp
    mov ebp, esp
    push edi
@@ -45,6 +60,13 @@ strncpy:
 
 L2:
    dec ecx
+%else
+   push rdi
+   mov rcx, rdx
+
+L2:
+   dec rcx
+%endif
    js L3
    lodsb
    stosb
@@ -54,10 +76,14 @@ L2:
    stosb
 
 L3:
+%ifdef CONFIG_X86_32
    mov eax, [ebp+8]
    pop esi
    pop edi
    pop ebp
+%else
+   pop rax
+%endif
    ret
 
 SECTION .note.GNU-stack noalloc noexec nowrite progbits
