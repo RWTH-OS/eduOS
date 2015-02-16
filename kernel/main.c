@@ -38,7 +38,6 @@
 #include <eduos/fs.h>
 
 #include <asm/irq.h>
-#include <asm/irqflags.h>
 #include <asm/atomic.h>
 #include <asm/page.h>
 #include <asm/uart.h>
@@ -99,8 +98,7 @@ int main(void)
 	char* argv[] = {"/bin/hello", NULL};
 
 	eduos_init();
-	irq_enable();
-	system_calibration();
+	system_calibration(); // enables also interrupts
 
 	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
 	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
