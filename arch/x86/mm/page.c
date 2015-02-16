@@ -55,9 +55,6 @@ extern const void kernel_start;
 /** Lock for kernel space page tables */
 static spinlock_t kslock = SPINLOCK_INIT;
 
-/** This PGD table is initialized in entry.asm */
-extern size_t* boot_map;
-
 /** A self-reference enables direct access to all page tables */
 static size_t* self[PAGE_LEVELS] = {
 	(size_t *) 0xFFC00000,
@@ -84,16 +81,6 @@ size_t virt_to_phys(size_t addr)
 int page_set_flags(size_t viraddr, uint32_t npages, int flags)
 {
 	return -EINVAL;
-}
-
-int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits)
-{
-	if (BUILTIN_EXPECT(viraddr >= PAGE_MAP_ENTRIES*PAGE_SIZE, 0))
-		return -EINVAL;
-
-	boot_map[PAGE_MAP_ENTRIES + (viraddr >> PAGE_BITS)] = phyaddr | bits | PG_PRESENT;
-
-	return 0;
 }
 
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
@@ -258,7 +245,7 @@ void page_fault_handler(struct state *s)
 	task_t* task = current_task;
 
 	// on demand userspace heap mapping
-    if ((task->heap) && (viraddr >= task->heap->start) && (viraddr < task->heap->end)) {
+	if ((task->heap) && (viraddr >= task->heap->start) && (viraddr < task->heap->end)) {
     	viraddr &= PAGE_MASK;
 
     	size_t phyaddr = get_page();
@@ -278,7 +265,7 @@ void page_fault_handler(struct state *s)
     	memset((void*) viraddr, 0x00, PAGE_SIZE); // fill with zeros
 
     	return;
-    }
+	}
 
 default_handler:
 	kprintf("Page Fault Exception (%d) at cs:ip = %#x:%#lx, task = %u, addr = %#lx, error = %#x [ %s %s %s %s %s ]\n",
@@ -312,18 +299,17 @@ int page_init(void)
 			addr = mb_info->mods_addr;
 			npages = PAGE_FLOOR(mb_info->mods_count*sizeof(multiboot_module_t)) >> PAGE_BITS;
 			page_map(addr, addr, npages, PG_GLOBAL);
+			kprintf("Map modulei info at 0x%lx\n", addr);
 
 			multiboot_module_t* mmodule = (multiboot_module_t*) ((size_t) mb_info->mods_addr);
 			for(i=0; i<mb_info->mods_count; i++) {
 				addr = mmodule[i].mod_start;
 				npages = PAGE_FLOOR(mmodule[i].mod_end - mmodule[i].mod_start) >> PAGE_BITS;
 				page_map(addr, addr, npages, PG_GLOBAL);
+				kprintf("Map modules at 0x%lx\n", addr);
 			}
 		}
 	}
-
-	/* Flush TLB to adopt changes above */
-	//flush_tlb();
 
 	return 0;
 }

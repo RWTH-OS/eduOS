@@ -110,15 +110,6 @@ size_t virt_to_phys(size_t vir);
  */
 int page_init(void);
 
-/** @brief Map one page into the boot page table
- *
- * @param viraddr
- * @param phyaddr
- * @param bits
- * @return
- */
-int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits);
-
 /** @brief Map a continuous region of pages
  *
  * @param viraddr Desired virtual address
