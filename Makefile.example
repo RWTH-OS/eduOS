@@ -8,7 +8,7 @@ SUBDIRS = $(KERNDIRS)
 
 # Set your own cross compiler tool chain prefix here
 CROSSCOMPREFIX =
-STACKPROT =
+STACKPROT = -fno-stack-protector
 
 CC_FOR_TARGET = $(CROSSCOMPREFIX)gcc
 CXX_FOR_TARGET = $(CROSSCOMPREFIX)g++
