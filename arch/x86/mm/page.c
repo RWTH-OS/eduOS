@@ -299,7 +299,7 @@ int page_init(void)
 			addr = mb_info->mods_addr;
 			npages = PAGE_FLOOR(mb_info->mods_count*sizeof(multiboot_module_t)) >> PAGE_BITS;
 			page_map(addr, addr, npages, PG_GLOBAL);
-			kprintf("Map modulei info at 0x%lx\n", addr);
+			kprintf("Map module info at 0x%lx\n", addr);
 
 			multiboot_module_t* mmodule = (multiboot_module_t*) ((size_t) mb_info->mods_addr);
 			for(i=0; i<mb_info->mods_count; i++) {
