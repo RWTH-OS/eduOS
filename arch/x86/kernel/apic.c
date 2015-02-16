@@ -33,6 +33,7 @@
 #include <eduos/processor.h>
 #include <eduos/time.h>
 #include <eduos/spinlock.h>
+#include <eduos/vma.h>
 #include <asm/irq.h>
 #include <asm/idt.h>
 #include <asm/irqflags.h>
@@ -40,6 +41,9 @@
 #include <asm/page.h>
 #include <asm/apic.h>
 #include <asm/multiboot.h>
+
+#define IOAPIC_ADDR	((size_t) KERNEL_SPACE - 1*PAGE_SIZE)
+#define LAPIC_ADDR	((size_t) KERNEL_SPACE - 2*PAGE_SIZE)
 
 // IO APIC MMIO structure: write reg, then read or write data.
 typedef struct {
@@ -199,27 +203,39 @@ int apic_enable_timer(void)
 }
 
 static apic_mp_t* search_apic(size_t base, size_t limit) {
-	size_t ptr, ptr_old = 0;
+	size_t ptr=PAGE_CEIL(base), vptr=0;
 	apic_mp_t* tmp;
+	uint32_t i;
 
-	for (ptr=base; ptr<=limit-sizeof(uint32_t); ptr++) {
-		tmp = (apic_mp_t*) ptr;
-
-		if (!(ptr & PAGE_MASK)) {
-			if (ptr_old)
-				page_unmap(ptr_old, 1);
-			ptr_old = ptr;
-			page_map(ptr, ptr, 1, PG_GLOBAL | PG_RW | PG_PCD);
+	while(ptr<=limit-sizeof(apic_mp_t)) {
+		if (vptr) {
+			// unmap page via mapping a zero page
+			page_unmap(vptr, 1);
+			vptr = 0;
 		}
 
-		if (tmp->signature == MP_FLT_SIGNATURE) {
-			if (!((tmp->version > 4) || tmp->features[0]))
-				return tmp;
+		if (BUILTIN_EXPECT(!page_map(ptr & PAGE_MASK, ptr & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD), 1))
+			vptr = ptr & PAGE_MASK;
+		else
+			return NULL;
+
+		for(i=0; (vptr) && (i<PAGE_SIZE-sizeof(apic_mp_t)); i+=4, vptr+=4) {
+			tmp = (apic_mp_t*) vptr;
+			if (tmp->signature == MP_FLT_SIGNATURE) {
+				if (!((tmp->version > 4) || (tmp->features[0]))) {
+					vma_add(ptr & PAGE_MASK, (ptr & PAGE_MASK) + PAGE_SIZE, VMA_READ|VMA_WRITE);
+					return tmp;
+				}
+			}
 		}
+
+		ptr += PAGE_SIZE;
 	}
 
-	if (ptr_old)
-		page_unmap(ptr_old, 1);
+	if (vptr) {
+		// unmap page via mapping a zero page
+		page_unmap(vptr, 1);
+	}
 
 	return NULL;
 }
@@ -328,7 +344,7 @@ found_mp:
 	if (!apic_mp)
 		goto no_mp;
 
-	kprintf("Found MP config table at 0x%x\n", apic_mp);
+	kprintf("Found MP config table at 0x%x\n", apic_mp->mp_config);
 	kprintf("System uses Multiprocessing Specification 1.%u\n", apic_mp->version);
 	kprintf("MP features 1: %u\n", apic_mp->features[0]);
 
@@ -377,8 +393,6 @@ found_mp:
 		if (*((uint8_t*) addr) == 0) { // cpu entry
 			if (i < MAX_CORES) {
 				apic_processors[i] = (apic_processor_entry_t*) addr;
-				//TODO: remove dirty hack
-				page_map((size_t)apic_processors[i] & PAGE_MASK, (size_t)apic_processors[i] & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
 				if (!(apic_processors[i]->cpu_flags & 0x01)) // is the processor usable?
 					apic_processors[i] = NULL;
 				else if (apic_processors[i]->cpu_flags & 0x02)
@@ -390,13 +404,12 @@ found_mp:
 			apic_io_entry_t* io_entry = (apic_io_entry_t*) addr;
 			ioapic = (ioapic_t*) ((size_t) io_entry->addr);
 			kprintf("Found IOAPIC at 0x%x\n", ioapic);
-			//TODO: remove dirty hack
-			page_map(0x91000, (size_t)ioapic & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
-			ioapic = (ioapic_t*) 0x91000;
+			page_map(IOAPIC_ADDR, (size_t)ioapic & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
+			vma_add(IOAPIC_ADDR, IOAPIC_ADDR + PAGE_SIZE, VMA_READ|VMA_WRITE);
+			ioapic = (ioapic_t*) IOAPIC_ADDR;
 			addr += 8;
 			kprintf("Map IOAPIC to 0x%x\n", ioapic);
 		} else if (*((uint8_t*) addr) == 3) { // IO_INT
-			/* TODO: page_map is missing */
 			apic_ioirq_entry_t* extint = (apic_ioirq_entry_t*) addr;
 			if (extint->src_bus == isa_bus) {
 				irq_redirect[extint->src_irq] = extint->dest_intin;
@@ -422,9 +435,9 @@ check_lapic:
 	if (!lapic)
 		goto out;
 	kprintf("Found APIC at 0x%x\n", lapic);
-	//TODO: remove dirty hack
-	page_map(0x90000, (size_t)lapic & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
-	lapic = 0x90000;
+	page_map(LAPIC_ADDR, (size_t)lapic & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
+	vma_add(LAPIC_ADDR, LAPIC_ADDR + PAGE_SIZE, VMA_READ | VMA_WRITE);
+	lapic = LAPIC_ADDR;
 
 	if (has_x2apic()) {
 		kprintf("Enable X2APIC support!\n");
