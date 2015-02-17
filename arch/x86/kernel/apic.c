@@ -202,7 +202,7 @@ int apic_enable_timer(void)
 	return -EINVAL;
 }
 
-static apic_mp_t* search_apic(size_t base, size_t limit) {
+static apic_mp_t* search_mptable(size_t base, size_t limit) {
 	size_t ptr=PAGE_CEIL(base), vptr=0;
 	apic_mp_t* tmp;
 	uint32_t i;
@@ -330,13 +330,13 @@ int apic_calibration(void)
 static int apic_probe(void)
 {
 	size_t addr;
-	uint32_t i, count;
+	uint32_t i, j, count;
 	int isa_bus = -1;
 
-	apic_mp = search_apic(0xF0000, 0x100000);
+	apic_mp = search_mptable(0xF0000, 0x100000);
 	if (apic_mp)
 		goto found_mp;
-	apic_mp = search_apic(0x9F000, 0xA0000);
+	apic_mp = search_mptable(0x9F000, 0xA0000);
 	if (apic_mp)
 		goto found_mp;
 
@@ -353,7 +353,17 @@ found_mp:
 		goto no_mp;
 	}
 
+	if (apic_mp->features[1] & 0x80)
+		kputs("PIC mode implemented\n");
+	else
+		kputs("Virtual-Wire mode implemented\n");
+
 	apic_config = (apic_config_table_t*) ((size_t) apic_mp->mp_config);
+	if (((size_t) apic_config & PAGE_MASK) != ((size_t) apic_mp & PAGE_MASK)) {
+		page_map((size_t) apic_config & PAGE_MASK,  (size_t) apic_config & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
+		vma_add( (size_t) apic_config & PAGE_MASK, ((size_t) apic_config & PAGE_MASK) + PAGE_SIZE, VMA_READ|VMA_WRITE);
+	}
+
 	if (!apic_config || strncmp((void*) &apic_config->signature, "PCMP", 4) !=0) {
 		kputs("Invalid MP config table\n");
 		goto no_mp;
@@ -361,8 +371,6 @@ found_mp:
 
 	addr = (size_t) apic_config;
 	addr += sizeof(apic_config_table_t);
-	if (addr % 4)
-		addr += 4 - addr % 4;
 
 	// search the ISA bus => required to redirect the IRQs
 	for(i=0; i<apic_config->entry_count; i++) {
@@ -378,6 +386,7 @@ found_mp:
 				    mp_bus->name[2] == 'A')
 					isa_bus = i;
 			}
+			addr += 8;
 			break;
 		default:
 			addr += 8;
@@ -386,19 +395,23 @@ found_mp:
 
 	addr = (size_t) apic_config;
 	addr += sizeof(apic_config_table_t);
-	if (addr % 4)
-		addr += 4 - addr % 4;
 
-	for(i=0, count=0; i<apic_config->entry_count; i++) {
+	for(i=0, j=0, count=0; i<apic_config->entry_count; i++) {
 		if (*((uint8_t*) addr) == 0) { // cpu entry
-			if (i < MAX_CORES) {
-				apic_processors[i] = (apic_processor_entry_t*) addr;
-				if (!(apic_processors[i]->cpu_flags & 0x01)) // is the processor usable?
-					apic_processors[i] = NULL;
-				else if (apic_processors[i]->cpu_flags & 0x02)
-					boot_processor = i;
+			apic_processor_entry_t* cpu = (apic_processor_entry_t*) addr;
+
+			if (j < MAX_CORES) {
+				 // is the processor usable?
+				if (cpu->cpu_flags & 0x01) {
+					apic_processors[j] = cpu;
+					if (cpu->cpu_flags & 0x02)
+						boot_processor = j;
+					j++;
+				}
 			}
-			count++;
+
+			if (cpu->cpu_flags & 0x01)
+				count++;
 			addr += 20;
 		} else if (*((uint8_t*) addr) == 2) { // IO_APIC
 			apic_io_entry_t* io_entry = (apic_io_entry_t*) addr;
@@ -435,18 +448,19 @@ check_lapic:
 	if (!lapic)
 		goto out;
 	kprintf("Found APIC at 0x%x\n", lapic);
-	page_map(LAPIC_ADDR, (size_t)lapic & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
-	vma_add(LAPIC_ADDR, LAPIC_ADDR + PAGE_SIZE, VMA_READ | VMA_WRITE);
-	lapic = LAPIC_ADDR;
 
 	if (has_x2apic()) {
 		kprintf("Enable X2APIC support!\n");
 		wrmsr(0x1B, lapic | 0xD00);
 		lapic_read = lapic_read_msr;
 		lapic_write = lapic_write_msr;
+	} else {
+		page_map(LAPIC_ADDR, (size_t)lapic & PAGE_MASK, 1, PG_GLOBAL | PG_RW | PG_PCD);
+		vma_add(LAPIC_ADDR, LAPIC_ADDR + PAGE_SIZE, VMA_READ | VMA_WRITE);
+		lapic = LAPIC_ADDR;
+		kprintf("Map APIC to 0x%x\n", lapic);
 	}
 
-	kprintf("Map APIC to 0x%x\n", lapic);
 	kprintf("Maximum LVT Entry: 0x%x\n", apic_lvt_entries());
 	kprintf("APIC Version: 0x%x\n", apic_version());
 
