@@ -123,6 +123,7 @@ typedef struct {
 	uint32_t lapic;
 	uint16_t extended_table_length;
 	uint8_t extended_table_checksum;
+	uint8_t reserved;
 } __attribute__ ((packed)) apic_config_table_t;
 
 /** @brief APIC Processor Entry */
