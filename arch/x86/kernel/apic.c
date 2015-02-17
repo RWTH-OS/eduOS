@@ -45,6 +45,12 @@
 #define IOAPIC_ADDR	((size_t) KERNEL_SPACE - 1*PAGE_SIZE)
 #define LAPIC_ADDR	((size_t) KERNEL_SPACE - 2*PAGE_SIZE)
 
+// position to add the new apic interrupt handler
+extern const void irq_caller;
+
+// forward declaration of the new interrupt handler
+extern void** apic_irq_handler(void *s);
+
 // IO APIC MMIO structure: write reg, then read or write data.
 typedef struct {
 	uint32_t reg;
@@ -321,7 +327,13 @@ int apic_calibration(void)
 		// now, we don't longer need the IOAPIC timer and turn it off
 		ioapic_intoff(2, apic_processors[boot_processor]->id);
 	}
+
 	initialized = 1;
+	// patch kernel to use the APIC-based interrupt handler
+	ssize_t off =  (size_t) apic_irq_handler;
+	off -= (size_t) &irq_caller + 1 + sizeof(size_t);
+	memcpy(((uint8_t*) &irq_caller)+1, &off, sizeof(size_t));
+	flush_cache();
 	irq_nested_enable(flags);
 
 	return 0;

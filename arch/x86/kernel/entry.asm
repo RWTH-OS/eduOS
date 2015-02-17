@@ -334,6 +334,7 @@ isrsyscall:
     iret
 
 extern irq_handler
+extern irq_handler
 extern get_current_stack
 extern finish_task_switch
 
@@ -372,6 +373,9 @@ common_stub:
     push esp
 
     extern set_kernel_stack
+global irq_caller
+ALIGN 4
+irq_caller:
     call irq_handler
     add esp, 4
 

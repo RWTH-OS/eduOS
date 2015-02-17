@@ -223,7 +223,16 @@ static inline void write_cr4(size_t val) {
  * is used here
  */
 inline static void flush_cache(void) {
-	asm volatile ("wbinvd" : : : "memory");
+	asm volatile ("wbinvd" ::: "memory");
+}
+
+/** @brief Invalidate cache
+ *
+ * The invd asm instruction which invalidates cache without writing back
+ * is used here
+ */
+inline static void invalidate_cache(void) {
+	asm volatile ("invd" ::: "memory");
 }
 
 /** @brief Flush Translation Lookaside Buffer
