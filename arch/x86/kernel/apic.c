@@ -147,20 +147,25 @@ static inline uint32_t ioapic_max_redirection_entry(void)
  */
 void apic_eoi(void)
 {
-	if (BUILTIN_EXPECT(lapic, 1))
-		lapic_write(APIC_EOI, 0);
+	lapic_write(APIC_EOI, 0);
+}
+
+static inline int apic_is_enabled(void)
+{
+	return (lapic && initialized);
 }
 
 uint32_t apic_cpu_id(void)
 {
-	if (lapic && initialized)
+	if (apic_is_enabled())
 		return ((lapic_read(APIC_ID)) >> 24);
+
 	return 0;
 }
 
 static inline void apic_set_cpu_id(uint32_t id)
 {
-	if (lapic && initialized)
+	if (apic_is_enabled())
 		lapic_write(APIC_ID, id << 24);
 }
 
@@ -178,11 +183,6 @@ static inline uint32_t apic_lvt_entries(void)
 		return (lapic_read(APIC_VERSION) >> 16) & 0xFF;
 
 	return 0;
-}
-
-int apic_is_enabled(void)
-{
-	return (lapic && initialized);
 }
 
 int apic_disable_timer(void)
