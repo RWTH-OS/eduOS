@@ -261,7 +261,7 @@ size_t** irq_handler(struct state *s)
 	outportb(0x20, 0x20);
 
 	// timer interrupt?
-	if ((s->int_no == 32) || (s->int_no == 123))
+	if (s->int_no == 32)
 		return scheduler(); // switch to a new task
 	else if ((s->int_no >= 32) && (get_highest_priority() > current_task->prio))
 		return scheduler();
