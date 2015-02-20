@@ -139,7 +139,7 @@ cpu_init:
 	pop edi
 %endif
 
-	; map multiboot info 1:1
+    ; map multiboot info 1:1
     push edi
     mov eax, DWORD [mb_info]  ; map multiboot info
     and eax, 0xFFFFF000       ; page align lower half
@@ -662,7 +662,7 @@ ALIGN 4096
 global boot_map
 boot_map:
 boot_pgd:
-	DD boot_pgt + 0x107	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	DD boot_pgt + 0x103	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
 	DD boot_pgd + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
@@ -675,7 +675,7 @@ boot_pgt:
 global boot_map
 boot_map:
 boot_pml4:
-	DQ boot_pdpt + 0x107 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	DQ boot_pdpt + 0x103 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
 	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pdpt:
