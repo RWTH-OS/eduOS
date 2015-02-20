@@ -103,9 +103,8 @@ clean:
 	$Q$(MAKE) -C tools clean
 	@echo Cleaned.
 
-veryclean:
-	$Q$(RM) $(NAME).elf $(NAME).sym *~
-	$Q$(RM) qemu-vlan0.pcap
+veryclean: clean
+	$Q$(RM) qemu-vlan0.pcap include/eduos/config.inc
 	$Q$(MAKE) -C newlib veryclean
 	$Q$(MAKE) -C tools veryclean
 	@echo Very cleaned
