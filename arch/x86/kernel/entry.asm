@@ -253,9 +253,10 @@ start64:
 	mov ax, GDT64.Data
 	mov ds, ax
 	mov es, ax
+	mov ss, ax
+	mov ax, 0x00
 	mov fs, ax
 	mov gs, ax
-	mov ss, ax
 	; set default stack pointer
 	mov rsp, boot_stack
 	add rsp, KERNEL_STACK_SIZE-16
@@ -285,9 +286,10 @@ gdt_flush:
 	mov ax, 0x10
 	mov ds, ax
 	mov es, ax
+	mov ss, ax
+	mov ax, 0x00
 	mov fs, ax
 	mov gs, ax
-	mov ss, ax
 	jmp 0x08:flush2
 flush2:
 	ret
@@ -450,8 +452,8 @@ switch_context:
     push DWORD 0x0              ; Interrupt number
     push DWORD 0x00edbabe       ; Error code
     pusha                       ; push all general purpose registers...
-    push 0x10                   ; kernel data segment
-    push 0x10                   ; kernel data segment
+    push 0x10                   ; kernel data segment (for ES)
+    push 0x10                   ; kernel data segment (for DS)
 
     jmp common_switch
 
@@ -506,6 +508,7 @@ no_context_switch:
 global isrsyscall
 ; used to realize system calls
 isrsyscall:
+	cli
     push r15
     push r14
     push r13
@@ -522,11 +525,12 @@ isrsyscall:
     push rdx
     push rcx
     push rax
+	sti
 
-    mov rdi, rsp
     extern syscall_handler
     call syscall_handler
 
+	cli
     pop rax
     pop rcx
     pop rdx
@@ -542,6 +546,8 @@ isrsyscall:
     pop r12
     pop r13
     pop r14
+    pop r15
+    sti
     iretq
 
 global switch_context
@@ -550,9 +556,6 @@ switch_context:
     ; create on the stack a pseudo interrupt
     ; afterwards, we switch to the task with iret
     mov rax, rdi                ; rdi contains the address to store the old rsp
-    push QWORD 0x10             ; SS
-    push rsp                    ; RSP
-    add QWORD [rsp], 8*1
     pushf                       ; RFLAGS
     push QWORD 0x08             ; CS
     push QWORD rollback         ; RIP
@@ -662,7 +665,7 @@ ALIGN 4096
 global boot_map
 boot_map:
 boot_pgd:
-	DD boot_pgt + 0x103	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	DD boot_pgt + 0x103	; PG_PRESENT | PG_GLOBAL | PG_RW
 	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
 	DD boot_pgd + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
@@ -675,15 +678,15 @@ boot_pgt:
 global boot_map
 boot_map:
 boot_pml4:
-	DQ boot_pdpt + 0x103 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	DQ boot_pdpt + 0x103 ; PG_PRESENT | PG_GLOBAL | PG_RW
 	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
 	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pdpt:
-	DQ boot_pgd + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	DQ boot_pgd + 0x103  ; PG_PRESENT | PG_GLOBAL | PG_RW
 	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
 	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgd:
-	DQ boot_pgt + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	DQ boot_pgt + 0x103  ; PG_PRESENT | PG_GLOBAL | PG_RW
 	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
 	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
