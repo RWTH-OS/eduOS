@@ -47,6 +47,8 @@ static gdt_entry_t		gdt[GDT_ENTRIES] = {[0 ... GDT_ENTRIES-1] = {0, 0, 0, 0, 0, 
  */
 extern void gdt_flush(void);
 
+extern const void boot_stack;
+
 void set_kernel_stack(void)
 {
 	task_t* curr_task = current_task;
@@ -91,15 +93,16 @@ void configure_gdt_entry(gdt_entry_t *dest_entry, unsigned long base, unsigned l
  */
 void gdt_install(void)
 {
-	unsigned long mode, limit;
+	unsigned long gran_ds, gran_cs, limit;
 
 	memset(&task_state_segment, 0x00, sizeof(tss_t));
 
 #ifdef CONFIG_X86_32
-	mode = GDT_FLAG_32_BIT;
+	gran_cs = gran_ds = GDT_FLAG_32_BIT | GDT_FLAG_4K_GRAN;
 	limit = 0xFFFFFFFF;
 #elif defined(CONFIG_X86_64)
-	mode = GDT_FLAG_64_BIT;
+	gran_cs = GDT_FLAG_64_BIT;
+	gran_ds = 0;
 	limit = 0;
 #else
 #error invalid mode
@@ -115,11 +118,10 @@ void gdt_install(void)
 	/* 
 	 * The second entry is our Code Segment. The base address
 	 * is 0, the limit is 4 GByte, it uses 4KByte granularity,
-	 * uses 32-bit opcodes, and is a Code Segment descriptor.
+	 * and is a Code Segment descriptor.
 	 */
 	gdt_set_gate(1, 0, limit,
-		GDT_FLAG_RING0 | GDT_FLAG_SEGMENT | GDT_FLAG_CODESEG | GDT_FLAG_PRESENT,
-		GDT_FLAG_4K_GRAN | mode);
+		GDT_FLAG_RING0 | GDT_FLAG_SEGMENT | GDT_FLAG_CODESEG | GDT_FLAG_PRESENT, gran_cs);
 
 	/* 
 	 * The third entry is our Data Segment. It's EXACTLY the
@@ -127,36 +129,33 @@ void gdt_install(void)
 	 * this entry's access byte says it's a Data Segment 
 	 */
 	gdt_set_gate(2, 0, limit,
-		GDT_FLAG_RING0 | GDT_FLAG_SEGMENT | GDT_FLAG_DATASEG | GDT_FLAG_PRESENT,
-		GDT_FLAG_4K_GRAN | mode);
+		GDT_FLAG_RING0 | GDT_FLAG_SEGMENT | GDT_FLAG_DATASEG | GDT_FLAG_PRESENT, gran_ds);
 		
 	/*
-	 * Create code segement for userspace applications (ring 3)
+	 * Create code segment for userspace applications (ring 3)
 	 */
 	gdt_set_gate(3, 0, limit,
-		GDT_FLAG_RING3 | GDT_FLAG_SEGMENT | GDT_FLAG_CODESEG | GDT_FLAG_PRESENT,
-		GDT_FLAG_4K_GRAN | mode);
+		GDT_FLAG_RING3 | GDT_FLAG_SEGMENT | GDT_FLAG_CODESEG | GDT_FLAG_PRESENT, gran_cs);
 
 	/*
-	 * Create data segement for userspace applications (ring 3)
+	 * Create data segment for userspace applications (ring 3)
 	 */
 	gdt_set_gate(4, 0, limit,
-		GDT_FLAG_RING3 | GDT_FLAG_SEGMENT | GDT_FLAG_DATASEG | GDT_FLAG_PRESENT,
-		GDT_FLAG_4K_GRAN | mode);
+		GDT_FLAG_RING3 | GDT_FLAG_SEGMENT | GDT_FLAG_DATASEG | GDT_FLAG_PRESENT, gran_ds);
 
 #ifdef CONFIG_X86_32
 	/* set default values */
 	task_state_segment.eflags = 0x1202;
 	task_state_segment.ss0 = 0x10;			// data segment
-	task_state_segment.esp0 = 0xDEADBEEF;	// invalid pseudo address
+	task_state_segment.esp0 = (size_t) &boot_stack - 0x10;
 	task_state_segment.cs = 0x0b;
 	task_state_segment.ss = task_state_segment.ds = task_state_segment.es = task_state_segment.fs = task_state_segment.gs = 0x13;
 	gdt_set_gate(5, (unsigned long) (&task_state_segment), sizeof(tss_t)-1,
-			GDT_FLAG_PRESENT | GDT_FLAG_TSS | GDT_FLAG_RING0, mode);
+			GDT_FLAG_PRESENT | GDT_FLAG_TSS | GDT_FLAG_RING0, gran_ds);
 #elif defined(CONFIG_X86_64)
-	task_state_segment.rsp0 = 0xDEADBEEF;       // invalid pseudo address
+	task_state_segment.rsp0 = (size_t) &boot_stack - 0x10;
 	gdt_set_gate(5, (unsigned long) (&task_state_segment), sizeof(tss_t)-1,
-			GDT_FLAG_PRESENT | GDT_FLAG_TSS | GDT_FLAG_RING0, mode);
+			GDT_FLAG_PRESENT | GDT_FLAG_TSS | GDT_FLAG_RING0, gran_ds);
 #endif
 
 	/* Flush out the old GDT and install the new changes! */
