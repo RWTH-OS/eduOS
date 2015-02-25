@@ -47,26 +47,48 @@
 /// Mask the page address without page map flags
 #define PAGE_MASK		(-1L << PAGE_BITS)
 
+#ifdef CONFIG_X86_32
 /// Total operand width in bits
 #define BITS			32
-/// Linear/virtual address width
-#define VIRT_BITS		BITS
 /// Physical address width (we dont support PAE)
 #define PHYS_BITS		BITS
-#ifdef CONFIG_X86_32
+/// Linear/virtual address width
+#define VIRT_BITS		BITS
 /// Page map bits
 #define PAGE_MAP_BITS	10
 /// Number of page map indirections
 #define PAGE_LEVELS		2
 #elif defined(CONFIG_X86_64)
+/// Total operand width in bits
+#define BITS			64
+/// Physical address width (maximum value)
+#define PHYS_BITS		52
+/// Linear/virtual address width
+#define VIRT_BITS		48
 /// Page map bits
 #define PAGE_MAP_BITS	9
 /// Number of page map indirections
 #define PAGE_LEVELS		4
+
+/** @brief Sign extending a integer
+ *
+ * @param addr The integer to extend
+ * @param bits The width if addr which should be extended
+ * @return The extended integer
+ */
+static inline size_t sign_extend(ssize_t addr, int bits)
+{
+	int shift = BITS - bits;
+	return (addr << shift) >> shift; // sign bit gets copied during arithmetic right shift
+}
 #endif
 
 /// Make address canonical
+#ifdef CONFIG_X86_32
 #define CANONICAL(addr)		(addr) // only for 32 bit paging
+#elif defined(CONFIG_X86_64)
+#define CANONICAL(addr)		sign_extend(addr, VIRT_BITS)
+#endif
 
 /// The number of entries in a page map table
 #define PAGE_MAP_ENTRIES	       (1L << PAGE_MAP_BITS)
@@ -98,6 +120,11 @@
 #define PG_GLOBAL		(1 << 8)
 /// This table is a self-reference and should skipped by page_map_copy()
 #define PG_SELF			(1 << 9)
+
+#ifdef CONFIG_X86_64
+/// Disable execution for this page
+#define PG_XD			(1L << 63)
+#endif
 
 /** @brief Converts a virtual address to a physical
  *
