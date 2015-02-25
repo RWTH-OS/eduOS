@@ -69,7 +69,7 @@ extern "C" {
 #define _SYSCALLSTR(x)          "int $" _STR(x) " "
 #define INT_SYSCALL		0x80
 
-#ifdef CONFIG_X86_32
+#if __SIZEOF_POINTER__ == 4
 inline static long
 syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
 	unsigned long arg3, unsigned long arg4)
@@ -83,7 +83,7 @@ syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
 
         return res;
 }
-#else
+#elif __SIZEOF_POINTER__ == 8
 inline static long
 syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
 	unsigned long arg3, unsigned long arg4)
@@ -97,6 +97,8 @@ syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
 
         return res;
 }
+#else
+#error unsupported architecture
 #endif
 
 #define SYSCALL0(NR) \
