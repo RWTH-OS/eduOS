@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #define _STR(token)		#token
-#define _SYSCALLSTR(x)		"int $" _STR(x) " "
+#define _SYSCALLSTR(x)	"int $" _STR(x) " "
 
 /** @brief the syscall function which issues an interrupt to the kernel
  *
@@ -59,6 +59,7 @@ extern "C" {
  * @param arg4 Argument 4
  * @return The return value of the system call
  */
+#ifdef CONFIG_X86_32
 inline static long
 syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
 	unsigned long arg3, unsigned long arg4)
@@ -72,26 +73,36 @@ syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
 
         return res;
 }
+#else
+inline static long
+syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
+	unsigned long arg3, unsigned long arg4)
+{
+        long res;
 
+	asm volatile ("mov %5, %%r8; mov %6, %%r9;" _SYSCALLSTR(INT_SYSCALL)
+             : "=a" (res)
+             : "D" (nr), "S" (arg0), "d" (arg1), "c" (arg2), "r" (arg3), "r" (arg4)
+             : "memory", "cc", "%r8", "%r9");
+
+        return res;
+}
+#endif
 
 /// System call macro with one single argument; the syscall number
 #define SYSCALL0(NR) \
 	syscall(NR, 0, 0, 0, 0, 0)
-/// System call macro with system call number and one argument
-#define SYSCALL1(NR, ARG1) \
-	syscall(NR, (unsigned long)ARG1, 0, 0, 0, 0)
-/// System call macro with system call number and 2 arguments
-#define SYSCALL2(NR, ARG1, ARG2) \
-	syscall(NR, (unsigned long)ARG1, (unsigned long)ARG2, 0, 0, 0)
-/// System call macro with system call number and 3 arguments
-#define SYSCALL3(NR, ARG1, ARG2, ARG3) \
-	syscall(NR, (unsigned long)ARG1, (unsigned long)ARG2, (unsigned long)ARG3, 0, 0)
-/// System call macro with system call number and 4 arguments
-#define SYSCALL4(NR, ARG1, ARG2, ARG3, ARG4) \
-	syscall(NR, (unsigned long)ARG1, (unsigned long)ARG2, (unsigned long)ARG3, (unsigned long) ARG4, 0)
-/// System call macro with system call number and 5 arguments
-#define SYSCALL5(NR, ARG1, ARG2, ARG3, ARG4) \
-        syscall(NR, (unsigned long)ARG1, (unsigned long)ARG2, (unsigned long)ARG3, (unsigned long) ARG4, (unsigned long) ARG5)
+#define SYSCALL1(NR, ARG0) \
+	syscall(NR, (unsigned long)ARG0, 0, 0, 0, 0)
+#define SYSCALL2(NR, ARG0, ARG1) \
+	syscall(NR, (unsigned long)ARG0, (unsigned long)ARG1, 0, 0, 0)
+#define SYSCALL3(NR, ARG0, ARG1, ARG2) \
+	syscall(NR, (unsigned long)ARG0, (unsigned long)ARG1, (unsigned long)ARG2, 0, 0)
+#define SYSCALL4(NR, ARG0, ARG1, ARG2, ARG3) \
+	syscall(NR, (unsigned long)ARG0, (unsigned long)ARG1, (unsigned long)ARG2, (unsigned long) ARG3, 0)
+#define SYSCALL5(NR, ARG0, ARG1, ARG2, ARG3, ARG4) \
+	syscall(NR, (unsigned long)ARG0, (unsigned long)ARG1, (unsigned long)ARG2, (unsigned long) ARG3, (unsigned long) ARG4)
+
 #ifdef __cplusplus
 }
 #endif
