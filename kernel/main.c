@@ -62,8 +62,9 @@ extern atomic_int32_t total_available_pages;
 
 static void NORETURN userfoo(void* arg)
 {
+	char str[] = "hello from userfoo\n";
 
-	SYSCALL1(__NR_write, "hello from userfoo\n");
+	SYSCALL3(__NR_write, 0, str, 20);
 	SYSCALL1(__NR_exit, 0);
 
 	while(1) ;
@@ -81,31 +82,21 @@ static int wrapper(void* arg)
 
 #if 0
 	// this triggers a page fault because a user task is not able to access the kernel space
-	return jump_to_user_code((uint32_t) userfoo, (uint32_t) stack);
+	return jump_to_user_code((size_t) userfoo, (size_t) stack);
 #else
 	// dirty hack, map userfoo to the user space
 	size_t phys = virt_to_phys(((size_t) userfoo) & PAGE_MASK);
-	size_t vuserfoo = 0x40000000; 
+	size_t vuserfoo = KERNEL_SPACE+PAGE_SIZE;
 	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_USER);
-	vuserfoo += (size_t)userfoo & 0xFFF;
+	vuserfoo += (size_t)userfoo & (PAGE_SIZE-1);
 
 	// dirty hack, map ustack to the user space
 	phys = virt_to_phys((size_t) ustack);
-	size_t vstack = 0x80000000;
+	size_t vstack = 3*KERNEL_SPACE;
 	page_map(vstack, phys, KERNEL_STACK_SIZE >> PAGE_BITS, PG_PRESENT | PG_RW | PG_USER);
-	vstack = (vstack + KERNEL_STACK_SIZE - 16 - sizeof(size_t));
+	vstack = (vstack + KERNEL_STACK_SIZE - 16);
 
-	// Create a pseudo interrupt on the stack and return to user function
-	asm volatile("pushq %0" :: "r"((size_t)0x23));	// SS = 0x20 (RING3 DS)
-	asm volatile("pushq %0" :: "r"(vstack));		// RSP = vstack
-	asm volatile("pushfq");							// RFLAGS
-	asm volatile("pushq %0" :: "r"((size_t)0x1b));	// CS = 0x18 (RING3 CS)
-	asm volatile("pushq %0" :: "r"(vuserfoo));		// RIP = vuserfoo
-
-	asm volatile("iretq");
-
-	return 42;
-//	return jump_to_user_code(vuserfoo, vstack);
+	return jump_to_user_code(vuserfoo, vstack);
 #endif
 }
 
@@ -161,7 +152,7 @@ int main(void)
 
 
 	create_kernel_task(NULL, foo, "foo", NORMAL_PRIO);
-	create_user_task(NULL, "/bin/hello", argv);
+	//create_user_task(NULL, "/bin/hello", argv);
 
 #if 0
 	kputs("Filesystem:\n");
@@ -169,7 +160,7 @@ int main(void)
 #endif
 
 	// x64: wrapper maps function to user space to start a user-space task
-	//create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
+	create_kernel_task(NULL, wrapper, "userfoo", NORMAL_PRIO);
 
 
 	while(1) { 
