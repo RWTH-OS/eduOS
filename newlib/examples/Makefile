@@ -12,7 +12,9 @@ ifeq ($(BIT),64)
 # Default section offsets in x86-64 ELF files are aligned to the page-size.
 # For x86-64 the pagesize is huge (2 MB) with the consquence of large sparse
 # ELF files (which lead to a huge initrd). To solve this, we manually set the page-size to 4 KB.
-override LDFLAGS += -Wl,-n,-z,max-page-size=0x1000
+# Furthermore, we use a large memory model to deal with real 64bit application.
+override LDFLAGS += -Wl,-n,-z,max-page-size=0x1000 -mcmodel=large
+override CFLAGS += -mcmodel=large
 endif
 
 # Prettify output
@@ -33,7 +35,7 @@ all: hello
 
 hello: hello.o
 	@echo [LD] $@
-	$Q$(CC_FOR_TARGET) $(LDFLAGS) -o $@ $<
+	$Q$(CC_FOR_TARGET) $(LDFLAGS) $(CFLAGS) -o $@ $<
 	$Q$(OBJCOPY_FOR_TARGET) $(KEEP_DEBUG) $@ $@.sym
 	$Q$(OBJCOPY_FOR_TARGET) $(STRIP_DEBUG) $@
 	$Qchmod a-x $@.sym

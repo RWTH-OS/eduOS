@@ -63,7 +63,8 @@ L2:
    mov qword [rax], rdx
    jmp L4
 L3:
-   mov qword [rax], __env
+   mov rdx, __env
+   mov qword [rax], rdx
 L4:
 
    ; arguments are already on the stack

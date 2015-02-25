@@ -52,8 +52,8 @@ STRIP_DEBUG = --strip-debug
 KEEP_DEBUG = --only-keep-debug
 OUTPUT_FORMAT = -O elf32-i386
 
-CFLAGS_FOR_NEWLIB = -m$(BIT) $(STACKPROT)
-LDFLAGS_FOR_NEWLIB = -m$(BIT)
+CFLAGS_FOR_NEWLIB = -m$(BIT) -mcmodel=large $(STACKPROT)
+LDFLAGS_FOR_NEWLIB = -m$(BIT) -mcmodel=large
 NASMFLAGS_FOR_NEWLIB = -felf$(BIT)
 CFLAGS_FOR_TOOLS = -m$(BIT) -O2 -Wall
 LDFLAGS_FOR_TOOLS =
