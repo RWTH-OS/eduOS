@@ -41,7 +41,10 @@ extern "C" {
 #endif
 
 #if __SIZEOF_POINTER__ == 4
+
 #define CONFIG_X86_32
+#define KERNEL_SPACE	(1 << 30) /*  1 GiB */
+
 /// This type is used to represent the size of an object.
 typedef unsigned long size_t;
 /// Pointer differences
@@ -51,7 +54,10 @@ typedef long ssize_t;
 /// The type represents an offset and is similar to size_t, but must be a signed type.
 typedef long off_t;
 #elif __SIZEOF_POINTER__ == 8
+
 #define CONFIG_X86_64
+#define KERNEL_SPACE (512ULL*512ULL*512ULL*4096ULL)
+
 // A popular type for addresses
 typedef unsigned long long size_t;
 /// Pointer differences
