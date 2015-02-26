@@ -38,12 +38,12 @@ extern atexit
 extern exit
 _start:
    ; call init hooks, if any exists
-   lea rax, [hardware_init_hook]
+   lea rax, [qword hardware_init_hook]
    cmp rax, 0
    je	L1
    call rax
 L1:
-   lea rax, [software_init_hook]
+   lea rax, [qword software_init_hook]
    cmp rax, 0
    je L2
    call rax
