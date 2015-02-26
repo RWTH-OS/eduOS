@@ -57,7 +57,7 @@ L2:
 
    ; set default environment
    mov rax, environ
-   mov rdx, [esp+8]
+   mov rdx, [rsp+8]
    cmp rdx, 0
    je L3
    mov qword [rax], rdx
