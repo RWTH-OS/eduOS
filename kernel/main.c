@@ -152,7 +152,7 @@ int main(void)
 
 
 	create_kernel_task(NULL, foo, "foo", NORMAL_PRIO);
-	//create_user_task(NULL, "/bin/hello", argv);
+	create_user_task(NULL, "/bin/hello", argv);
 
 #if 0
 	kputs("Filesystem:\n");
@@ -160,8 +160,7 @@ int main(void)
 #endif
 
 	// x64: wrapper maps function to user space to start a user-space task
-	create_kernel_task(NULL, wrapper, "userfoo", NORMAL_PRIO);
-
+	//create_kernel_task(NULL, wrapper, "userfoo", NORMAL_PRIO);
 
 	while(1) { 
 		HALT;
