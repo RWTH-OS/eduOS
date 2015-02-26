@@ -66,6 +66,7 @@ extern "C" {
 #define ELF_EM_88K	0x0005	// Motorola 88000
 #define ELF_EM_860	0x0007	// Intel 80860
 #define ELF_EM_MIPS	0x0008	// MIPS RS3000
+#define ELF_EM_X86_64 0x003e // Intel X86_64
 
 #define ELF_CLASS_NONE	0x0000
 #define ELF_CLASS_32	0x0001	// 32bit file
@@ -122,6 +123,7 @@ typedef struct {
  * ELF header\n
  * This structure keeps information about the format of the executable itself.
  */
+#ifdef CONFIG_X86_32
 typedef struct {
 	elf_ident_t ident;
 	uint16_t type;
@@ -138,12 +140,31 @@ typedef struct {
 	uint16_t sh_entry_count;
 	uint16_t sh_str_table_index;
 } __attribute__ ((packed)) elf_header_t;
+#elif defined(CONFIG_X86_64)
+typedef struct {
+	elf_ident_t ident;
+	uint16_t type;
+	uint16_t machine;
+	uint32_t version;
+	size_t entry;
+	size_t ph_offset;
+	size_t sh_offset;
+	uint32_t flags;
+	uint16_t header_size;
+	uint16_t ph_entry_size;
+	uint16_t ph_entry_count;
+	uint16_t sh_entry_size;
+	uint16_t sh_entry_count;
+	uint16_t sh_str_table_index;
+} __attribute__ ((packed)) elf_header_t;
+#endif
 
 /** @brief program header information
  *
  * program header table\n
  * This structure keeps information about the program header.
  */
+#ifdef CONFIG_X86_32
 typedef struct {
 	uint32_t type;
 	uint32_t offset;
@@ -154,14 +175,28 @@ typedef struct {
 	uint32_t flags;
 	uint32_t alignment;
 } __attribute__ ((packed)) elf_program_header_t;
+#elif defined(CONFIG_X86_64)
+typedef struct
+{
+	uint32_t	type;
+	uint32_t	flags;
+	uint64_t	offset;
+	uint64_t	virt_addr;
+	uint64_t	phys_addr;
+	uint64_t	file_size;
+	uint64_t	mem_size;
+	uint64_t	alignment;
+} __attribute__ ((packed)) elf_program_header_t;
+#endif
 
 /** @brief Information about ELF section
  *
  * ELF section\n
  * This structure keeps information about a specific ELF section
  */
+#ifdef CONFIG_X86_32
 typedef struct {
-uint32_t name;
+	uint32_t name;
 	uint32_t type;
 	uint32_t flags;
 	uint32_t addr;
@@ -172,6 +207,20 @@ uint32_t name;
 	uint32_t align;
 	uint32_t enttry_size;
 } __attribute__ ((packed)) elf_section_header_t;
+#elif defined(CONFIG_X86_64)
+typedef struct {
+	uint32_t name;
+	uint32_t type;
+	uint64_t flags;
+	uint64_t addr;
+	uint64_t offset;
+	uint64_t size;
+	uint32_t link;
+	uint32_t info;
+	uint64_t align;
+	uint64_t enttry_size;
+} __attribute__ ((packed)) elf_section_header_t;
+#endif
 
 #ifdef __cplusplus
 }

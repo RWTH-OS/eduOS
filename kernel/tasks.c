@@ -305,11 +305,25 @@ static int load_task(load_args_t* largs)
 	if (BUILTIN_EXPECT(header.type != ELF_ET_EXEC, 0))
 		goto invalid;
 
+#ifdef CONFIG_X86_32
 	if (BUILTIN_EXPECT(header.machine != ELF_EM_386, 0))
 		goto invalid;
+#elif defined(CONFIG_X86_64)
+	if (BUILTIN_EXPECT(header.machine != ELF_EM_X86_64, 0))
+		goto invalid;
+#else
+	goto invalid;
+#endif
 
+#ifdef CONFIG_X86_32
 	if (BUILTIN_EXPECT(header.ident._class != ELF_CLASS_32, 0))
 		goto invalid;
+#elif defined(CONFIG_X86_64)
+	if (BUILTIN_EXPECT(header.ident._class != ELF_CLASS_64, 0))
+		goto invalid;
+#else
+	goto invalid;
+#endif
 
 	if (BUILTIN_EXPECT(header.ident.data != ELF_DATA_2LSB, 0))
 		goto invalid;
@@ -471,8 +485,8 @@ invalid:
 	kprintf("header type 0x%x\n", (uint32_t) header.type);
 	kprintf("machine type 0x%x\n", (uint32_t) header.machine);
 	kprintf("elf ident class 0x%x\n", (uint32_t) header.ident._class);
-	kprintf("elf identdata !0x%x\n", header.ident.data);
-	kprintf("program entry point 0x%x\n", (size_t) header.entry);
+	kprintf("elf identdata 0x%x\n", header.ident.data);
+	kprintf("program entry point 0x%lx\n", (size_t) header.entry);
 
 	return -EINVAL;
 }
