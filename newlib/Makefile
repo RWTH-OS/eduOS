@@ -16,7 +16,7 @@ RM = rm -rf
 CD = cd
 MKDIR = mkdir
 TMP = $(TOPDIR)/tmp
-OPT = --disable-shared --disable-multilib --enable-newlib-hw-fp --disable-newlib-multithread --disable-newlib-reent-small
+OPT = --disable-shared --disable-multilib --disable-newlib-multithread --disable-newlib-reent-small
 
 # Prettify output
 V = 0
