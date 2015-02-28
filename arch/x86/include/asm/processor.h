@@ -48,8 +48,13 @@ extern "C" {
 
 // feature list 1
 #define CPU_FEATURE_FPU         (1 << 0)
+#define CPU_FEATUE_PSE			(1 << 3)
 #define CPU_FEATURE_MSR         (1 << 5)
+#define CPU_FEATURE_PAE			(1 << 6)
 #define CPU_FEATURE_APIC        (1 << 9)
+#define CPU_FEATURE_PGE			(1 << 13)
+#define CPU_FEATURE_PAT			(1 << 16)
+#define CPU_FEATURE_PSE36		(1 << 17)
 #define CPU_FEATURE_MMX         (1 << 23)
 #define CPU_FEATURE_FXSR        (1 << 24)
 #define CPU_FEATURE_SSE         (1 << 25)
@@ -60,8 +65,105 @@ extern "C" {
 #define CPU_FEATURE_AVX         (1 << 28)
 #define CPU_FEATURE_HYPERVISOR  (1 << 31)
 
+// CPUID.80000001H:EDX feature list
+#define CPU_FEATURE_NX			(1 << 20)
+#define CPU_FEATURE_1GBHP		(1 << 26)
+#define CPU_FEATURE_LM			(1 << 29)
+
+// x86 control registers
+
+/// Protected Mode Enable
+#define CR0_PE					(1 << 0)
+/// Monitor coprocessor
+#define CR0_MP					(1 << 1)
+/// Enable FPU emulation
+#define CR0_EM					(1 << 2)
+/// Task switched
+#define CR0_TS					(1 << 3)
+/// Extension type of coprocessor
+#define CR0_ET					(1 << 4)
+/// Enable FPU error reporting
+#define CR0_NE					(1 << 5)
+/// Enable write protected pages
+#define CR0_WP					(1 << 16)
+/// Enable alignment checks
+#define CR0_AM					(1 << 18)
+/// Globally enables/disable write-back caching
+#define CR0_NW					(1 << 29)
+/// Globally disable memory caching
+#define CR0_CD					(1 << 30)
+/// Enable paging
+#define CR0_PG					(1 << 31)
+
+/// Virtual 8086 Mode Extensions
+#define CR4_VME					(1 << 0)
+/// Protected-mode Virtual Interrupts
+#define CR4_PVI					(1 << 1)
+/// Disable Time Stamp Counter register (rdtsc instruction)
+#define CR4_TSD					(1 << 2)
+/// Enable debug extensions
+#define CR4_DE					(1 << 3)
+///  Enable hugepage support
+#define CR4_PSE					(1 << 4)
+/// Enable physical address extension
+#define CR4_PAE					(1 << 5)
+/// Enable machine check exceptions
+#define CR4_MCE					(1 << 6)
+/// Enable global pages
+#define CR4_PGE					(1 << 7)
+/// Enable Performance-Monitoring Counter
+#define CR4_PCE					(1 << 8)
+/// Enable Operating system support for FXSAVE and FXRSTOR instructions
+#define CR4_OSFXSR				(1 << 9)
+/// Enable Operating System Support for Unmasked SIMD Floating-Point Exceptions
+#define CR4_OSXMMEXCPT			(1 << 10)
+/// Enable Virtual Machine Extensions, see Intel VT-x
+#define CR4_VMXE				(1 << 13)
+/// Enable Safer Mode Extensions, see Trusted Execution Technology (TXT)
+#define CR4_SMXE				(1 << 14)
+/// Enables the instructions RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE
+#define CR4_FSGSBASE			(1 << 16)
+/// Enables process-context identifiers
+#define CR4_PCIDE				(1 << 17)
+/// Enable XSAVE and Processor Extended States
+#define CR4_OSXSAVE				(1 << 18)
+/// Enable Supervisor Mode Execution Protection
+#define CR4_SMEP				(1 << 20)
+/// Enable Supervisor Mode Access Protection
+#define CR4_SMAP				(1 << 21)
+
+// x86-64 specific MSRs
+
+/// extended feature register
+#define MSR_EFER				0xc0000080
+/// legacy mode SYSCALL target
+#define MSR_STAR				0xc0000081
+/// long mode SYSCALL target
+#define MSR_LSTAR				0xc0000082
+/// compat mode SYSCALL target
+#define MSR_CSTAR				0xc0000083
+/// EFLAGS mask for syscall
+#define MSR_SYSCALL_MASK		0xc0000084
+/// 64bit FS base
+#define MSR_FS_BASE				0xc0000100
+/// 64bit GS base
+#define MSR_GS_BASE				0xc0000101
+/// SwapGS GS shadow
+#define MSR_KERNEL_GS_BASE		0xc0000102
+
+// MSR EFER bits
+#define EFER_SCE				(1 << 0)
+#define EFER_LME				(1 << 8)
+#define EFER_LMA				(1 << 10)
+#define EFER_NXE				(1 << 11)
+#define EFER_SVME				(1 << 12)
+#define EFER_LMSLE				(1 << 13)
+#define EFER_FFXSR				(1 << 14)
+#define EFER_TCE				(1 << 15)
+
 typedef struct {
-	uint32_t feature1, feature2;
+	uint32_t feature1, feature2, feature3;
+	uint32_t addr_width;
 } cpu_info_t;
 
 extern cpu_info_t cpu_info;
@@ -105,6 +207,16 @@ inline static uint32_t on_hypervisor(void) {
 	return (cpu_info.feature2 & CPU_FEATURE_HYPERVISOR);
 }
 
+inline static uint32_t has_pge(void)
+{
+	return (cpu_info.feature1 & CPU_FEATURE_PGE);
+}
+
+inline static uint32_t has_nx(void)
+{
+	return (cpu_info.feature3 & CPU_FEATURE_NX);
+}
+
 /** @brief Read out time stamp counter
  *
  * The rdtsc asm command puts a 64 bit time stamp value
@@ -114,9 +226,15 @@ inline static uint32_t on_hypervisor(void) {
  */
 inline static uint64_t rdtsc(void)
 {
+#ifdef CONFIG_X86_32
 	uint64_t x;
 	asm volatile ("rdtsc" : "=A" (x));
 	return x;
+#elif defined(CONFIG_X86_64)
+	uint64_t lo, hi;
+	asm volatile ("rdtsc" : "=a"(lo), "=d"(hi) );
+	return (hi << 32 | lo);
+#endif
 }
 
 /** @brief Read MSR

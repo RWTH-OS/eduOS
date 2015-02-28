@@ -43,7 +43,7 @@ extern "C" {
 #if __SIZEOF_POINTER__ == 4
 
 #define CONFIG_X86_32
-#define KERNEL_SPACE	(1 << 30) /*  1 GiB */
+#define KERNEL_SPACE	(1UL << 30) /*  1 GiB */
 
 /// This type is used to represent the size of an object.
 typedef unsigned long size_t;

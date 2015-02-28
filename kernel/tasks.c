@@ -45,8 +45,8 @@
  * A task's id will be its position in this array.
  */
 static task_t task_table[MAX_TASKS] = { \
-		[0]                 = {0, TASK_IDLE, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, NULL, ATOMIC_INIT(0), NULL, NULL}, \
-		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, NULL,ATOMIC_INIT(0), NULL, NULL}};
+		[0]                 = {0, TASK_IDLE, NULL, NULL, TASK_DEFAULT_FLAGS, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, NULL, ATOMIC_INIT(0), NULL, NULL}, \
+		[1 ... MAX_TASKS-1] = {0, TASK_INVALID, NULL, NULL, TASK_DEFAULT_FLAGS, 0, 0, SPINLOCK_IRQSAVE_INIT, SPINLOCK_INIT, NULL, NULL,ATOMIC_INIT(0), NULL, NULL}};
 
 static spinlock_irqsave_t table_lock = SPINLOCK_IRQSAVE_INIT;
 
@@ -419,8 +419,8 @@ static int load_task(load_args_t* largs)
 	}
 
 	curr_task->heap->flags = VMA_HEAP|VMA_USER;
-	curr_task->heap->start = heap;
-	curr_task->heap->end = heap;
+	curr_task->heap->start = PAGE_FLOOR(heap);
+	curr_task->heap->end = PAGE_FLOOR(heap);
 
 	if (BUILTIN_EXPECT(!stack, 0)) {
 		kprintf("Stack is missing!\n");
@@ -467,13 +467,13 @@ static int load_task(load_args_t* largs)
 	*((char***) (stack+offset)) = (char**) (stack + offset + 2*sizeof(char**) + (largs->envc+1) * sizeof(char*));
 
 	// push argc on the stack
-	offset -= sizeof(int);
-	*((int*) (stack+offset)) = largs->argc;
+	offset -= sizeof(ssize_t);
+	*((ssize_t*) (stack+offset)) = (ssize_t) largs->argc;
 
 	kfree(largs);
 
 	// clear fpu state => currently not supported
-	//curr_task->flags &= ~(TASK_FPU_USED|TASK_FPU_INIT);
+	curr_task->flags &= ~(TASK_FPU_USED|TASK_FPU_INIT);
 
 	jump_to_user_code(header.entry, stack+offset);
 
@@ -707,6 +707,12 @@ get_task_out:
 	spinlock_irqsave_unlock(&readyqueues.lock);
 
 	if (current_task != orig_task) {
+		/* if the original task is using the FPU, we need to save the FPU context */
+		if ((orig_task->flags & TASK_FPU_USED) && (orig_task->status == TASK_READY)) {
+			save_fpu_state(&(orig_task->fpu));
+			orig_task->flags &= ~TASK_FPU_USED;
+		}
+
 		//kprintf("schedule from %u to %u with prio %u\n", orig_task->id, current_task->id, (uint32_t)current_task->prio);
 
 		return (size_t**) &(orig_task->last_stack_pointer);
