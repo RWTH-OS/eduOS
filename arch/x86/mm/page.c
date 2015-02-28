@@ -276,27 +276,27 @@ void page_fault_handler(struct state *s)
 	task_t* task = current_task;
 
 	// on demand userspace heap mapping
-    if ((task->heap) && (viraddr >= task->heap->start) && (viraddr < task->heap->end)) {
-    	viraddr &= PAGE_MASK;
+	if ((task->heap) && (viraddr >= task->heap->start) && (viraddr < task->heap->end)) {
+		viraddr &= PAGE_MASK;
 
-    	size_t phyaddr = get_page();
-    	if (BUILTIN_EXPECT(!phyaddr, 0)) {
-    		kprintf("out of memory: task = %u\n", task->id);
-    		goto default_handler;
-    	}
+		size_t phyaddr = get_page();
+		if (BUILTIN_EXPECT(!phyaddr, 0)) {
+			kprintf("out of memory: task = %u\n", task->id);
+			goto default_handler;
+		}
 
-    	viraddr = page_map(viraddr, phyaddr, 1, PG_USER|PG_RW);
-    	if (BUILTIN_EXPECT(!viraddr, 0)) {
-    		kprintf("map_region: could not map %#lx to %#lx, task = %u\n", viraddr, phyaddr, task->id);
-    		put_page(phyaddr);
+		int ret = page_map(viraddr, phyaddr, 1, PG_USER|PG_RW);
+		if (BUILTIN_EXPECT(ret, 0)) {
+			kprintf("map_region: could not map %#lx to %#lx, task = %u\n", phyaddr, viraddr, task->id);
+			put_page(phyaddr);
 
-    		goto default_handler;
-    	}
+			goto default_handler;
+		}
 
-    	memset((void*) viraddr, 0x00, PAGE_SIZE); // fill with zeros
+		memset((void*) viraddr, 0x00, PAGE_SIZE); // fill with zeros
 
-    	return;
-    }
+		return;
+	}
 
 default_handler:
 #ifdef CONFIG_X86_32
