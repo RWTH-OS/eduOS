@@ -121,7 +121,7 @@ uint32_t detect_cpu_frequency(void)
 }
 
 int cpu_detection(void) {
-	uint32_t a, b, c, d;
+	uint32_t a=0, b=0, c=0, d=0;
 	size_t cr4;
 	uint8_t first_time = 0;
 
@@ -168,8 +168,7 @@ int cpu_detection(void) {
 	}
 
 	if (first_time && has_avx())
-		kprintf(
-				"The CPU owns the Advanced Vector Extensions (AVX). However, eduOS doesn't support AVX!\n");
+		kprintf("The CPU owns the Advanced Vector Extensions (AVX). However, eduOS doesn't support AVX!\n");
 
 	if (has_fpu()) {
 		if (first_time)
