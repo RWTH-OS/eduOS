@@ -4,7 +4,7 @@ ENTRY(_start)
 GROUP(-lc -lgloss)
 SEARCH_DIR(.)
 __DYNAMIC  =  0;
-phys = 0x8000200000;
+phys = 0x40200000;
 PAGE_SIZE = 0x1000;
 
 /*

@@ -13,8 +13,7 @@ ifeq ($(BIT),64)
 # For x86-64 the pagesize is huge (2 MB) with the consquence of large sparse
 # ELF files (which lead to a huge initrd). To solve this, we manually set the page-size to 4 KB.
 # Furthermore, we use a large memory model to deal with real 64bit application.
-override LDFLAGS += -Wl,-n,-z,max-page-size=0x1000 -mcmodel=large
-override CFLAGS += -mcmodel=large
+override LDFLAGS += -Wl,-n,-z,max-page-size=0x1000
 endif
 
 # Prettify output

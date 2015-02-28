@@ -132,7 +132,11 @@ cpu_init:
 	mov eax, VIDEO_MEM_ADDR   ; map vga
 	and eax, 0xFFFFF000       ; page align lower half
 	mov edi, eax
+%ifdef CONFIG_X86_64
+    shr edi, 9                ; (edi >> 12) * 8 (index for boot_pgt)
+%else
 	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+%endif
 	add edi, boot_pgt
 	or eax, 0x113             ; set present, global, writable and cache disable bits
 	mov DWORD [edi], eax
@@ -144,7 +148,11 @@ cpu_init:
     mov eax, DWORD [mb_info]  ; map multiboot info
     and eax, 0xFFFFF000       ; page align lower half
     mov edi, eax
-    shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+%ifdef CONFIG_X86_64
+    shr edi, 9                ; (edi >> 12) * 8 (index for boot_pgt)
+%else
+	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+%endif
     add edi, boot_pgt
     or eax, 0x101             ; set present and global bits
     mov DWORD [edi], eax
@@ -162,7 +170,11 @@ L0: cmp ecx, ebx
 	mov eax, ecx
 	and eax, 0xFFFFF000       ; page align lower half
     mov edi, eax
+%ifdef CONFIG_X86_64
+    shr edi, 9                ; (edi >> 12) * 8 (index for boot_pgt)
+%else
 	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+%endif
 	add edi, boot_pgt
 	or eax, 0x103             ; set present, global and writable bits
 	mov DWORD [edi], eax
@@ -232,6 +244,7 @@ L1:
 	; Set CR0
 	mov eax, cr0
 	and eax, ~(1 << 30)     ; enable caching
+	and eax, ~(1 << 16)	; allow kernel write access to read-only pages
 	or eax, (1 << 31)       ; enable paging
 	%ifdef CONFIG_X86_64
 		or eax, (1 << 0)    ; long mode also needs PM-bit set
@@ -665,36 +678,28 @@ ALIGN 4096
 global boot_map
 boot_map:
 boot_pgd:
-	DD boot_pgt + 0x103	; PG_PRESENT | PG_GLOBAL | PG_RW
+	DD boot_pgt + 0x103	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
 	DD boot_pgd + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
-	%assign i 0
-	%rep 1024           ; PAGE_MAP_ENTRIES
-	DD i        + 0x203 ; PG_PRESENT | PG_BOOT | PG_RW
-	%assign i i + 4096  ; PAGE_SIZE
-	%endrep
+	times 1024 DD 0
 %else
 global boot_map
 boot_map:
 boot_pml4:
-	DQ boot_pdpt + 0x103 ; PG_PRESENT | PG_GLOBAL | PG_RW
+	DQ boot_pdpt + 0x107 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
 	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pdpt:
-	DQ boot_pgd + 0x103  ; PG_PRESENT | PG_GLOBAL | PG_RW
+	DQ boot_pgd + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
 	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgd:
-	DQ boot_pgt + 0x103  ; PG_PRESENT | PG_GLOBAL | PG_RW
+	DQ boot_pgt + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
 	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
-	%assign i 0
-	%rep 512             ; PAGE_MAP_ENTRIES
-	DQ i        + 0x203  ; PG_PRESENT | PG_BOOT | PG_RW
-	%assign i i + 4096   ; PAGE_SIZE
-	%endrep
+	times 512 DQ 0
 %endif
 
 ; add some hints to the ELF file

@@ -148,7 +148,7 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 						atomic_int32_inc(&current_task->user_usage);
 
 					/* Reference the new table within its parent */
-					self[lvl][vpn] = phyaddr | bits | PG_PRESENT;
+					self[lvl][vpn] = phyaddr | bits | PG_PRESENT | PG_USER | PG_RW;
 
 					/* Fill new table with zeros */
 					memset(&self[lvl-1][vpn<<PAGE_MAP_BITS], 0, PAGE_SIZE);

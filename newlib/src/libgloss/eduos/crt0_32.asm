@@ -27,6 +27,8 @@
 [BITS 32]
 SECTION .text
 global _start
+extern __bss_start
+extern __bss_end
 extern main
 extern environ
 extern __env
@@ -37,6 +39,13 @@ extern software_init_hook
 extern atexit
 extern exit
 _start:
+   ; initialize BSS
+   mov edi, __bss_start
+   mov ecx, __bss_end
+   sub ecx, edi
+   xor eax, eax
+   rep; stosb
+
    ; call init hooks, if any exists
    lea eax, [hardware_init_hook]
    cmp eax, 0

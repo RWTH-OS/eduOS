@@ -56,7 +56,7 @@ typedef long off_t;
 #elif __SIZEOF_POINTER__ == 8
 
 #define CONFIG_X86_64
-#define KERNEL_SPACE (512ULL*512ULL*512ULL*4096ULL)
+#define KERNEL_SPACE (1ULL << 30)
 
 // A popular type for addresses
 typedef unsigned long long size_t;
