@@ -544,7 +544,8 @@ isrsyscall:
     call syscall_handler
 
 	cli
-    pop rax
+	add rsp, 8 ; rax contains the return value
+               ; => we did not restore rax
     pop rcx
     pop rdx
     pop rbx
