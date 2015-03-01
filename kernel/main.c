@@ -59,7 +59,8 @@ extern atomic_int32_t total_pages;
 extern atomic_int32_t total_allocated_pages;
 extern atomic_int32_t total_available_pages;
 
-
+#if 0
+// Demo of a user-level task
 static void NORETURN userfoo(void* arg)
 {
 	char str[] = "hello from userfoo\n";
@@ -99,6 +100,7 @@ static int wrapper(void* arg)
 	return jump_to_user_code(vuserfoo, vstack);
 #endif
 }
+#endif
 
 static int foo(void* arg)
 {
@@ -138,7 +140,7 @@ static int eduos_init(void)
 int main(void)
 {
 	char* argv1[] = {"/bin/hello", NULL};
-	char* argv2[] = {"/bin/jacobi", NULL};
+	//char* argv2[] = {"/bin/jacobi", NULL};
 
 	eduos_init();
 	irq_enable();
