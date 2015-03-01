@@ -486,7 +486,6 @@ common_stub:
 ; Use the same handler for interrupts and exceptions
     push esp
 
-    extern set_kernel_stack
     call irq_handler
     add esp, 4
 
@@ -504,6 +503,7 @@ common_switch:
     mov cr0, eax
 
 ; Set esp0 in the task state segment
+    extern set_kernel_stack
     call set_kernel_stack
 
 ; Call cleanup code
@@ -633,6 +633,10 @@ common_switch:
     mov rax, cr0
     or eax, 8
     mov cr0, rax
+
+    ; set rsp0 in the task state segment
+    extern set_kernel_stack
+    call set_kernel_stack
 
     ; call cleanup code
     call finish_task_switch
