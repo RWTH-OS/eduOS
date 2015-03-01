@@ -47,23 +47,24 @@ extern "C" {
 #endif
 
 // feature list 1
-#define CPU_FEATURE_FPU         (1 << 0)
+#define CPU_FEATURE_FPU			(1 << 0)
 #define CPU_FEATUE_PSE			(1 << 3)
-#define CPU_FEATURE_MSR         (1 << 5)
+#define CPU_FEATURE_MSR			(1 << 5)
 #define CPU_FEATURE_PAE			(1 << 6)
-#define CPU_FEATURE_APIC        (1 << 9)
+#define CPU_FEATURE_APIC		(1 << 9)
+#define CPU_FEATURE_SEP			(1 << 11)
 #define CPU_FEATURE_PGE			(1 << 13)
 #define CPU_FEATURE_PAT			(1 << 16)
 #define CPU_FEATURE_PSE36		(1 << 17)
-#define CPU_FEATURE_MMX         (1 << 23)
-#define CPU_FEATURE_FXSR        (1 << 24)
-#define CPU_FEATURE_SSE         (1 << 25)
-#define CPU_FEATURE_SSE2        (1 << 26)
+#define CPU_FEATURE_MMX			(1 << 23)
+#define CPU_FEATURE_FXSR		(1 << 24)
+#define CPU_FEATURE_SSE			(1 << 25)
+#define CPU_FEATURE_SSE2		(1 << 26)
 
 // feature list 2
-#define CPU_FEATURE_X2APIC      (1 << 21)
-#define CPU_FEATURE_AVX         (1 << 28)
-#define CPU_FEATURE_HYPERVISOR  (1 << 31)
+#define CPU_FEATURE_X2APIC		(1 << 21)
+#define CPU_FEATURE_AVX			(1 << 28)
+#define CPU_FEATURE_HYPERVISOR	(1 << 31)
 
 // CPUID.80000001H:EDX feature list
 #define CPU_FEATURE_NX			(1 << 20)
@@ -195,6 +196,15 @@ inline static uint32_t has_sse2(void) {
 	return (cpu_info.feature1 & CPU_FEATURE_SSE2);
 }
 
+inline static uint32_t has_pge(void)
+{
+	return (cpu_info.feature1 & CPU_FEATURE_PGE);
+}
+
+inline static uint32_t has_sep(void) {
+	return (cpu_info.feature1 & CPU_FEATURE_SEP);
+}
+
 inline static uint32_t has_x2apic(void) {
 	return (cpu_info.feature2 & CPU_FEATURE_X2APIC);
 }
@@ -205,11 +215,6 @@ inline static uint32_t has_avx(void) {
 
 inline static uint32_t on_hypervisor(void) {
 	return (cpu_info.feature2 & CPU_FEATURE_HYPERVISOR);
-}
-
-inline static uint32_t has_pge(void)
-{
-	return (cpu_info.feature1 & CPU_FEATURE_PGE);
 }
 
 inline static uint32_t has_nx(void)
