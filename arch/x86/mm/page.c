@@ -147,8 +147,12 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 					if (bits & PG_USER)
 						atomic_int32_inc(&current_task->user_usage);
 
+#ifdef CONFIG_X86_32
 					/* Reference the new table within its parent */
 					self[lvl][vpn] = phyaddr | bits | PG_PRESENT | PG_USER | PG_RW;
+#elif defined(CONFIG_X86_64)
+					self[lvl][vpn] = (phyaddr | bits | PG_PRESENT | PG_USER | PG_RW) & ~PG_XD;
+#endif
 
 					/* Fill new table with zeros */
 					memset(&self[lvl-1][vpn<<PAGE_MAP_BITS], 0, PAGE_SIZE);
