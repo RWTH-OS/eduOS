@@ -103,6 +103,8 @@ ELIX_4_SOURCES =
 else
 ELIX_4_SOURCES = \
 	memmem.c \
+	memrchr.c \
+	rawmemchr.c \
 	wcscasecmp.c \
 	wcsncasecmp.c
 endif !ELIX_LEVEL_3
@@ -140,7 +142,7 @@ wcsncmp.def	wcsncpy.def	wcsnlen.def	wcspbrk.def \
 wcsrchr.def	wcsspn.def	wcsstr.def 	wcstok.def  \
 wcswidth.def	wcsxfrm.def	wcwidth.def	wmemchr.def \
 wmemcmp.def	wmemcpy.def	wmemmove.def	wmemset.def \
-memmem.def
+memmem.def	memrchr.def	rawmemchr.def
 
 SUFFIXES = .def
 

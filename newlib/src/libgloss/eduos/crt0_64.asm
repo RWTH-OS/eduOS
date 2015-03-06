@@ -27,6 +27,8 @@
 [BITS 64]
 SECTION .text
 global _start
+extern __bss_start
+extern __bss_end
 extern main
 extern environ
 extern __env
@@ -37,13 +39,20 @@ extern software_init_hook
 extern atexit
 extern exit
 _start:
+   ; initialize BSS
+   mov rdi, __bss_start
+   mov rcx, __bss_end
+   sub rcx, rdi
+   xor rax, rax
+   rep; stosb
+
    ; call init hooks, if any exists
-   lea rax, [hardware_init_hook]
+   lea rax, [qword hardware_init_hook]
    cmp rax, 0
    je	L1
    call rax
 L1:
-   lea rax, [software_init_hook]
+   lea rax, [qword software_init_hook]
    cmp rax, 0
    je L2
    call rax
@@ -57,13 +66,14 @@ L2:
 
    ; set default environment
    mov rax, environ
-   mov rdx, [esp+8]
+   mov rdx, [rsp+16]
    cmp rdx, 0
    je L3
    mov qword [rax], rdx
    jmp L4
 L3:
-   mov qword [rax], __env
+   mov rdx, __env
+   mov qword [rax], rdx
 L4:
 
    ; arguments are already on the stack

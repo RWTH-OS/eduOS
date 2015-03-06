@@ -1,3 +1,568 @@
+2014-12-16  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* config.sub: Merge from binutils.
+	* config.guess: Ditto.
+
+2014-07-05  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac: Don't accept isl 0.10.
+	* configure: Regenerate.
+
+2014-05-14  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* configure.ac (target_makefile_frag): Set for nios2-*-elf*.
+	* configure: Regenerated.
+
+2014-04-04  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* COPYING.NEWLIB: Add to current TI license to
+        include tirtos addition.
+
+2014-02-04  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR target/59788
+	* ltmain.sh (opt_duplicate_compiler_generated_deps): Enable on
+	*solaris2*.
+
+2013-10-16  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* configure.ac: Update from GCC.
+	* configure: Regenerate.
+
+2013-10-15  Hans-Peter Nilsson  <hp@axis.com>
+
+	* src-release (do-proto-toplevel): Support subdir-path-prefixed
+	files in SUPPORT_FILES.
+	(SIM_SUPPORT_DIRS): New variable.
+	(sim.tar.bz2): New rule.
+
+2013-10-08  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* configure.ac: Update from GCC.
+	* configure: Regenerate.
+
+2013-10-01  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* COPYING.NEWLIB: Update with new copyright.
+
+2013-09-21  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* configure.ac: Update from GCC.
+	* configure: Regenerate.
+
+2013-09-20  Alan Modra  <amodra@gmail.com>
+
+	* libtool.m4 (_LT_ENABLE_LOCK <ld -m flags>): Remove non-canonical
+	ppc host match.  Support little-endian powerpc linux hosts.
+
+2013-08-16  Joel Brobecker  <brobecker@adacore.com>
+
+	* src-release (VER): When using $(TOOL)/common/create-version.sh,
+	strip the "-cvs" suffix from the version number if present.
+
+2013-08-12  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* configure.ac: Sync with GCC repo.
+	* Makefile.def: Ditto.
+	* configure: Regenerate.
+	* Makefile.in: Ditto.
+
+2013-07-22  Joel Brobecker  <brobecker@adacore.com>
+
+	* src-release (VER): Use $(TOOL)/common/create-version.sh
+	if it exists.
+
+2013-06-22  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* configure.ac (mips*-*-bsd*, mips*-*-ultrix*, mips*-*-osf*)
+	(mips*-*-ecoff*, mips*-*-pe*, mips*-*-irix* [v4 and earlier])
+	(mips*-*-lnews*, mips*-*-riscos*): Add gas and ld to noconfigdirs.
+	* configure: Regenerate.
+
+2013-06-01  George Thomas <george.thomas@atmel.com>
+
+	* include/opcode/avr.h: Rename AVR_ISA_XCH to AVR_ISA_RMW. Remove
+	from AVR_ISA_XMEGA and add new AVR_ISA_XMEGAU
+
+2013-05-06  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* COPYING.NEWLIB: Add Altera Corporation copyright.
+
+2013-04-29  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* config.guess: Update from config repo.
+	* config.sub: Ditto.
+
+2013-04-22  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* Makefile.def: Sync with GCC.
+	* Makefile.in: Regenerate.
+
+2013-04-22  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* configure.ac: Sync with GCC.
+	* configure: Regenerate.
+
+2013-03-22  Mike Frysinger  <vapier@gentoo.org>
+
+	* src-release (VER): Change bfd/configure.in sed to use the new
+	`bfd/configure --version` output.
+
+2013-02-15  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* configure.ac: Sync with GCC repo.
+	* configure: Ditto.
+
+2013-02-05  Ian Lance Taylor  <iant@google.com>
+
+	PR go/55969
+	* configure.ac: Disable libgo on some systems where it does not
+	work.
+	* configure: Rebuild.
+
+2013-02-05  Alan Modra  <amodra@gmail.com>
+
+	* configure: Regenerate after syncing config/.
+
+2013-01-15  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* configure.ac: Sync with GCC repo.
+	* configure: Ditto.
+	* Makefile.def: Ditto.
+	* Makefile.in: Ditto.
+
+2013-01-11  Joel Brobecker  <brobecker@adacore.com>
+
+	Sync with GCC, merge:
+
+	2013-01-09  Jason Merrill  <jason@redhat.com>
+
+	* .gitignore: Import from gdb repository.
+
+2013-01-11  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* config.sub: Update from config repo.
+
+2013-01-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* Makefile.tpl (BOOT_ADAFLAGS): Remove -gnata.
+	* Makefile.in: Regenerate.
+
+2013-01-09  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.def (configure-gcc): Depend on all-gmp.
+	(all-gcc): Remove dependency on all-gmp.
+	* Makefile.in: Regenerated.
+
+2013-01-08  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* config.guess: Update from config repo.
+	* config.sub: Ditto.
+
+2013-01-07  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* COPYING.LIBGLOSS: Remove license for mips/lsi33k-stub.h which no longer
+	exists and replace the new bfin license in its location.
+
+2013-01-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/14899
+	* Makefile.def (dependencies): Make all-binutils, all-gprof,
+	all-ld and all-gold depend on all-gas.
+	* Makefile.in: Regenerated.
+
+2012-12-29  Ben Elliston  <bje@gnu.org>
+
+	* config.guess: Update to 2012-12-29 version.
+	* config.sub: Likewise.
+
+2012-12-20  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* Makefile.def (install-target-libgo): Depend on
+	install-target-libatomic. Merged from GCC repo.
+	* Makefile.in: Regenerate.
+
+2012-12-17  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* COPYING.LIBGLOSS: Add license for bfin libgloss.
+
+2012-12-16  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* configure.ac (ENABLE_GOLD): Consider *-*-gnu* targets ELF.
+	* configure: Regenerate.
+
+2012-12-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.def (target_modules): Add bootstrap=true and
+	raw_cxx=true to libsanitizer.
+	* configure.ac (bootstrap_target_libs): Add libsanitizer.
+	* Makefile.in: Regenerated.
+	* configure: Likewise.
+
+2012-12-08  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* config.sub: Merge from config repo.
+
+2012-11-30  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* configure.ac: Merge from GCC.
+	* Makefile.tpl: Ditto.
+	* Makefile.in: Ditto.
+	* configure: Ditto.
+
+2012-11-28  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* configure.ac (noconfigdirs): Merge from GCC.
+	* configure: Regenerate.
+
+2012-11-19  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* config.sub (arm): Merge from upstream: Handle armv[6-8] targets.
+
+2012-11-14  Roland McGrath  <mcgrathr@google.com>
+
+	* configure.ac (ENABLE_GOLD): Consider *-*-nacl* targets ELF.
+	* configure: Regenerate.
+
+2012-11-13  Richard Henderson  <rth@redhat.com>
+
+	* configure.ac: Move libsanitizer logic to subdirectory.
+	* configure: Regenerate.
+
+2012-11-13  Dodji Seketeli  <dodji@redhat.com>
+
+	* configure.ac: Enable libsanitizer just on x86 linux for now.
+	* configure: Re-generate.
+
+2012-11-13  David Edelsohn  <dje.gcc@gmail.com>
+
+	* configure.ac: Merge libquadmath sections.
+	* configure: Regenerate.
+
+2012-11-12  Wei Mi <wmi@google.com>
+
+	* configure.ac: Add libsanitizer to target_libraries.
+	* Makefile.def: Ditto.
+	* configure: Regenerate.
+	* Makefile.in: Regenerate.
+
+2012-11-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2012-11-03  Robert Mason  <rbmj@verizon.net>
+
+	* configure.ac: add --disable-libstdcxx configure option
+	and handle defaulted state only for VxWorks, ARM-wince-pe and AVR.
+
+2012-10-24  Corinna Vinschen  <corinna@vinschen.de>
+
+	* configure.ac (FLAGS_FOR_TARGET,target=cygwin): Fix for building
+	against Mingw64 w32api.
+	* configure: Regenerate.
+
+2012-10-23  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR bootstrap/54820
+	* configure.ac (have_static_libs): Force 'no' for GCC version < 4.5.
+	* configure: Regenerate.
+
+2012-10-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR bootstrap/54820
+	* Makefile.tpl (STAGE1_FLAGS_TO_PASS): New variable.
+	(all-[+prefix+][+module+]): Pass stage1_args to sub-makes.
+	(all-stage[+id+]-[+prefix+][+module+]): Likewise, if prev is false.
+	(clean-stage[+id+]-[+prefix+][+module+]): Likewise, if prev is false.
+	(host_modules): Set stage1_args to STAGE1_FLAGS_TO_PASS.
+	* Makefile.in: Regenerate.
+	* configure.ac (have_static_libs): New variable and associated check.
+	(stage1-ldflags): Move to after stage1_libs and set to -static-libstdc++
+	-static-libgcc if stage1_libs is empty and have_static_libs is yes.
+	* configure: Regenerate.
+
+2012-10-10  David Holsgrove  <david.holsgrove@xilinx.com>
+
+	* config.guess, config.sub: Include updated version from
+	config-patches.  Adds microblaze little endian support.
+
+2012-09-28  Ian Lance Taylor  <iant@google.com>
+
+	* Makefile.def: Make all-target-libgo depend on
+	all-target-libbacktrace.
+	* Makefile.in: Rebuild.
+
+2012-09-26  Ian Lance Taylor  <iant@google.com>
+
+	* Makefile.def: Make all-gcc depend on all-libbacktrace.
+	* Makefile.in: Rebuild.
+
+2012-09-06  Diego Novillo  <dnovillo@google.com>
+
+	* configure.ac: Bump minimum GMP version to 4.2.3.
+	* configure: Re-generate.
+
+2012-09-05  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/54461
+	* configure.ac (noconfigdirs,target=avr-*-*): Add target-newlib,
+	target-libgloss if not configured --with-avrlibc=no.
+	* configure: Regenerate.
+
+2012-09-04  Jason Merrill  <jason@redhat.com>
+
+	* configure.ac: Fix --enable-languages=all.
+
+2012-09-03  Richard Guenther  <rguenther@suse.de>
+
+	PR bootstrap/54138
+	* configure.ac: Re-organize ISL / CLOOG checks to allow
+	disabling with either --without-isl or --without-cloog.
+	* configure: Regenerated.
+
+2012-09-03  Georg-Johann Lay  <avr@gjlay.de>
+
+	* configure.ac (noconfigdirs,target=avr): Add target-libquadmath.
+	* configure: Regenerate.
+
+2012-09-21  Steve Ellcey  <sellcey@mips.com>
+
+	* configure.ac: Add mips*-mti-elf* target.
+	* configure: Regenerate.
+
+2012-09-19  Ian Lance Taylor  <iant@google.com>
+
+	* configure.ac (host_libs): Add libbacktrace.
+	(target_libraries): Add libbacktrace.
+	* Makefile.def (host_modules): Add libbacktrace.
+	(target_modules): Likewise.
+	* configure, Makefile.in: Rebuild.
+
+2012-09-15  Jiong Wang  <jiwang@tilera.com>
+
+	* configure.ac (ENABLE_GOLD): support tilegx*
+	* configure: rebuild
+
+2012-09-14  David Edelsohn  <dje.gcc@gmail.com>
+
+	PR target/38607
+	Merge upstream change.
+	* libtool.m4 (_LT_COMPILER_PIC): Add -fPIC to GCC and GXX for AIX.
+
+	* configure.ac: Add target-libquadmath to noconfigdirs for AIX.
+	Add libgomp*.o to compare_exclusions for AIX.
+	* configure: Regenerate.
+
+2012-08-26  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/4970
+	* Makefile.def (host_modules): Rmove lib_path=.libs from bfd
+	and opcodes.
+	* Makefile.in: Regenerated.
+
+2012-08-14   Diego Novillo  <dnovillo@google.com>
+
+	Merge from cxx-conversion branch.
+
+	* Makefile.tpl (STAGE[+id+]_CXXFLAGS): Remove
+	POSTSTAGE1_CONFIGURE_FLAGS.
+	* Makefile.in: Regenerate.
+	* configure.ac (ENABLE_BUILD_WITH_CXX): Remove.  Update all users.
+	Force C++ when bootstrapping.
+	* configure: Regenerate.
+
+2012-07-06  Richard Guenther  <rguenther@suse.de>
+
+	* Makefile.def (cloog): Pass $(HOST_GMPINC) and $(HOST_ISLINC)
+	as CPPFLAGS, pass path to built gmp as LDFLAGS, always use
+	--with-gmp=system.
+	* Makefile.in: Regenerated.
+	* configure: Likewise.
+
+2012-07-06  Richard Guenther  <rguenther@suse.de>
+
+	* configure.ac (extra_isl_gmp_configure_flags): Initialize and subst.
+	* Makefile.def (isl): Use extra_isl_gmp_configure_flags and
+	supply V=1 as extra_make_flags.
+	* configure: Regenerated.
+	* Makefile.in: Likewise.
+
+2012-07-03  Richard Guenther  <rguenther@suse.de>
+
+	* Makfile.def (isl): Remove not necessary extra_exports and
+	extra_make_flags.
+	(cloog): Use $$CPPFLAGS instead of ${CPPFLAGS}.
+	* Makefile.in: Regenerated.
+
+2012-07-03  Richard Guenther  <rguenther@suse.de>
+
+	* Makefile.def (cloog): Add V=1 to extra_make_flags.
+	* configure.ac: If either the ISL or the CLooG check failed
+	do not try to build in-tree versions.
+	* Makefile.in: Regenerated.
+	* configure: Regenerated.
+
+2012-07-02  Richard Guenther  <rguenther@suse.de>
+	Michael Matz  <matz@suse.de>
+	Tobias Grosser <tobias@grosser.es>
+	Sebastian Pop <sebpop@gmail.com>
+
+	* Makefile.def: Add ISL host module, remove PPL host module.
+	Adjust ClooG host module to use the proper ISL.
+	* Makefile.tpl: Pass ISL include flags instead of PPL ones.
+	* configure.ac: Include config/isl.m4.  Add ISL host library,
+	remove PPL.  Remove PPL configury, add ISL configury, adjust
+	ClooG configury.
+	* Makefile.in: Regenerated.
+	* configure: Likewise.
+
+2012-07-02  Richard Guenther  <rguenther@suse.de>
+
+	Merge from graphite branch
+	2011-07-21  Tobias Grosser  <tobias@grosser.es>
+
+	* configure: Regenerated.
+	* config/cloog.m4: Remove support for CLooG-ppl and CLooG-parma,
+	both cloog.org and legacy versions. The only supported version will
+	be CLooG with the isl backend.
+
+	2011-07-21  Tobias Grosser  <tobias@grosser.es>
+
+	* configure: Regenerated.
+	* configure.ac: Require cloog isl 0.17.0
+
+	2011-07-21  Tobias Grosser  <tobias@grosser.es>
+
+	* configure: Regenerated.
+	* config/cloog.m4: Do not define CLOOG_ORG
+
+2012-06-29  Steven Bosscher  <steven@gcc.gnu.org>
+
+	* configure.ac: Skip C if explicitly selected.
+	* configure: Regenerate.
+
+2012-06-28  Christophe Lyon <christophe.lyon@st.com>
+
+	* configure.ac (CFLAGS_FOR_TARGET, CXXFLAGS_FOR_TARGET): Make sure
+	they contain -O2.
+	* configure: Regenerate.
+
+2012-06-20  Jason Merrill  <jason@redhat.com>
+
+	* Makefile.tpl (check-target-libgomp-c++): New.
+	(check-target-libitm-c++): New.
+	* Makefile.def (c++): Add them.
+	* Makefile.in: Regenerate.
+
+2012-05-16  Olivier Hainque  <hainque@adacore.com>
+
+	* Makefile.tpl (gcc-no-fixedincludes): Rename into ...
+	(gcc-install-no-fixedincludes): Now forwarder to local target in gcc/
+	(install-no-fixedincludes): Adjust accordingly.
+	* Makefile.in: Regenerate.
+
+2012-05-09  Nick Clifton  <nickc@redhat.com>
+	    Paul Smith  <psmith@gnu.org>
+
+	PR bootstrap/50461
+	* configure.ac (mpfr-dir): When using in-tree MPFR sources
+	allow for the fact that from release v3.1.0 of MPFR the source
+	files were moved into a src sub-directory.
+	* configure: Regenerate.
+
+2012-05-07  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	* configure.ac: Bump minimum MPFR version to 2.4.0.
+	* configure: Regenerated.
+
+2012-05-01  Richard Henderson  <rth@redhat.com>
+
+	* Makefile.def (libatomic): New target_module.
+	* configure.ac (target_libraries): Add libatomic.
+	(noconfigdirs): Check if libatomic is supported.
+	* Makefile.in, configure: Rebuild.
+
+2012-05-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Merge upstream change
+	* libtool.m4 (_LT_ENABLE_LOCK): Support x32.
+
+2011-11-21  Andreas Tobler  <andreast@fgznet.ch>
+
+	* libtool.m4: Additional FreeBSD 10 fixes.
+
+2012-06-28  Christophe Lyon <christophe.lyon@st.com>
+
+	* configure.ac (CFLAGS_FOR_TARGET, CXXFLAGS_FOR_TARGET): Make sure
+	they contain -O2.
+	* configure: Regenerate.
+
+2012-05-14  Catherine Moore  <clm@codesourcery.com>
+
+	* NEWS:  Mention PowerPC VLE port.
+
+2012-05-11  Mike Frysinger  <vapier@gentoo.org>
+
+	* MAINTAINERS (config/): Move to intl/ section.
+	(compile; depcomp; install-sh; missing; ylwrap): Likewise.
+
+2012-05-09  Nick Clifton  <nickc@redhat.com>
+	    Paul Smith  <psmith@gnu.org>
+
+	PR bootstrap/50461
+	* configure.ac (mpfr-dir): When using in-tree MPFR sources
+	allow for the fact that from release v3.1.0 of MPFR the source
+	files were moved into a src sub-directory.
+	* configure: Regenerate.
+
+2012-05-02  Roland McGrath  <mcgrathr@google.com>
+
+	* configure.ac (ENABLE_GOLD): Consider *-*-nacl* targets ELF.
+	* configure: Regenerate.
+
+2012-04-25  Joel Brobecker  <brobecker@adacore.com>
+
+	* config.sub: Update to 2012-04-18 version from official repo.
+
+2012-03-19  Tristan Gingold  <gingold@adacore.com>
+
+	* configure.ac (ia64*-*-*vms*): Add support for ld.
+	* configure: Regenerate.
+
+2012-03-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (enable_libgomp): Remove *-*-irix6*.
+	(unsupported_languages): Remove mips-sgi-irix6.*.
+	(noconfigdirs): Don't add ${libgcj} for mips*-*-irix6*.
+	(with_stabs): Remove.
+	* configure: Regenerate.
+
+2012-03-12  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (enable_libgomp): Remove *-*-osf*.
+	(with_stabs): Remove alpha*-*-osf*.
+	* configure: Regenerate.
+
+2012-03-09  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* COPYING.NEWLIB: Modify DJ Delorie license to include
+	modification rights in clause as permitted by DJ Delorie.
+	* COPYING.LIBGLOSS: Ditto.
+
+2012-03-09  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* COPYING.NEWLIB: Remove two unused licenses.
+
+2012-03-05  Tristan Gingold  <gingold@adacore.com>
+
+	* configure.ac: Enable gdb and readline for ia64*-*-*vms*.
+	* configure: Regenerate.
+
+2012-02-21  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* COPYING.NEWLIB: Add Adapteva notice.
+	* COPYING.LIBGLOSS: Add Adapteva notice.
+
 2011-12-18  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* configure: Regenerate.
@@ -54,7 +619,7 @@
 	2011-09-09  Linas Vepstas  <linasvepstas@gmail.com>
 	    Ben Elliston  <bje@gnu.org>
 
-        * config.sub (hexagon, hexagon-*): New.
+	* config.sub (hexagon, hexagon-*): New.
 
 	2011-08-23  Roland McGrath  <mcgrathr@google.com>
 
@@ -543,11 +1108,11 @@
 
 	* config.guess: Update to version 2011-02-02
 	* config.sub: Update to version 2011-02-24
-	
+
 2011-03-03  Sebastian Pop  <sebastian.pop@amd.com>
 
-        * configure.ac: Adjust test of with_ppl.
-        * configure: Regenerated.
+	* configure.ac: Adjust test of with_ppl.
+	* configure: Regenerated.
 
 2011-03-02  Sebastian Pop  <sebastian.pop@amd.com>
 
@@ -1154,11 +1719,11 @@
 	* lt~obsolete.m4: Likewise.
 
 2010-01-07  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
-            Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+	    Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
 
 	PR bootstrap/42424
 	* configure.ac: Include libtool m4 files.
-        (_LT_CHECK_OBJDIR): Call it.
+	(_LT_CHECK_OBJDIR): Call it.
 	(extra_mpc_mpfr_configure_flags, extra_mpc_gmp_configure_flags,
 	gmplibs, ppllibs, clooglibs): Use $lt_cv_objdir.
 
@@ -1571,8 +2136,8 @@
 2009-06-03  Jerome Guitton  <guitton@adacore.com>
 	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
-        * Makefile.tpl (all): Avoid a trailing backslash.
-        * Makefile.in: Regenerate.
+	* Makefile.tpl (all): Avoid a trailing backslash.
+	* Makefile.in: Regenerate.
 
 2009-06-03  Ben Elliston  <bje@au.ibm.com>
 
@@ -3735,7 +4300,7 @@
 	non-ported target libraries in noconfigdirs.
 	<cris-*, crisv32-*> Ditto, except for non-aout, non-elf,
 	non-linux-gnu.  Remove libgcj_ex_libffi.
- 	<lang_frag loop>: Set add_this_lang=no if the language is in
+	<lang_frag loop>: Set add_this_lang=no if the language is in
 	unsupported_languages.
 	* configure: Regenerate.
 
@@ -5056,8 +5621,8 @@
 
 2003-12-21  Bernardo Innocenti  <bernie@develer.com>
 
- 	* configure.in (*-*-uclinux): Exclude newlib, libgloss and rda.
- 	* configure: Regenerated.
+	* configure.in (*-*-uclinux): Exclude newlib, libgloss and rda.
+	* configure: Regenerated.
 
 2003-12-19  Nathanael Nerode  <neroden@gcc.gnu.org>
 
@@ -13146,8 +13711,8 @@ Mon May 10 05:58:35 1993  Ken Raeburn  (raeburn@kr-pc.cygnus.com)
 
 Sun May  9 17:47:57 1993  Rob Savoye  (rob at darkstar.cygnus.com)
 
-       * Makefile.in: Use srcroot to find runtest rather than rootme.
-       Pass RUNTESTFLAGS and EXPECT down in BASE_FLAGS_TO_PASS.
+	* Makefile.in: Use srcroot to find runtest rather than rootme.
+	Pass RUNTESTFLAGS and EXPECT down in BASE_FLAGS_TO_PASS.
 
 Fri May  7 14:55:59 1993  Ian Lance Taylor  (ian@cygnus.com)
 

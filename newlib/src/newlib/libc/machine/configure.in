@@ -24,6 +24,7 @@ fi
 if test -n "${machine_dir}"; then
   case ${machine_dir} in
 	a29k) AC_CONFIG_SUBDIRS(a29k) ;;
+	aarch64) AC_CONFIG_SUBDIRS(aarch64) ;;
 	arm) AC_CONFIG_SUBDIRS(arm) ;;
 	bfin) AC_CONFIG_SUBDIRS(bfin) ;;
 	cr16) AC_CONFIG_SUBDIRS(cr16) ;;
@@ -31,6 +32,7 @@ if test -n "${machine_dir}"; then
 	crx) AC_CONFIG_SUBDIRS(crx) ;;
 	d10v) AC_CONFIG_SUBDIRS(d10v) ;;
 	d30v) AC_CONFIG_SUBDIRS(d30v) ;;
+	epiphany) AC_CONFIG_SUBDIRS(epiphany) ;;
 	fr30) AC_CONFIG_SUBDIRS(fr30) ;;
 	frv) AC_CONFIG_SUBDIRS(frv) ;;
 	h8300) AC_CONFIG_SUBDIRS(h8300) ;;
@@ -51,8 +53,12 @@ if test -n "${machine_dir}"; then
 	mn10200) AC_CONFIG_SUBDIRS(mn10200) ;;
 	mn10300) AC_CONFIG_SUBDIRS(mn10300) ;;
 	moxie) AC_CONFIG_SUBDIRS(moxie) ;;
+	msp430) AC_CONFIG_SUBDIRS(msp430) ;;
 	mt) AC_CONFIG_SUBDIRS(mt) ;;
+	nds32) AC_CONFIG_SUBDIRS(nds32) ;;
 	necv70) AC_CONFIG_SUBDIRS(necv70) ;;
+	nios2) AC_CONFIG_SUBDIRS(nios2) ;;
+	or1k) AC_CONFIG_SUBDIRS(or1k) ;;
 	powerpc) AC_CONFIG_SUBDIRS(powerpc) ;;
 	rl78) AC_CONFIG_SUBDIRS(rl78) ;;
 	rx) AC_CONFIG_SUBDIRS(rx) ;;

@@ -1,39 +1,21 @@
 /*
- *  $Id: _types.h,v 1.5 2010/11/16 17:29:39 corinna Exp $
+ *  $Id: _types.h,v 1.12 2013/12/03 16:04:41 corinna Exp $
  */
 
 #ifndef _MACHINE__TYPES_H
 #define _MACHINE__TYPES_H
 
-/*
- * GCC wants type symmetry between size_t and ssize_t.
- * It supplies __SIZE_TYPE__, doesn't supply a corresponding __SSIZE_TYPE__,
- * so we have to guess on which type GCC wants ssize_t to be.
- * FIXME: GCC > 4.3.x supplies internal defines __SIZEOF_SIZE_T__ etc. which
- * could be applied here.
- */
-
-#if defined(__i386__) || defined(__m32r__) || defined(__h8300__) || defined(__arm__) || defined(__bfin__) || defined(__m68k__)
-#if defined(__H8300__)
-typedef signed int _ssize_t;
-#else
-typedef long signed int _ssize_t;
-#endif
-#define __ssize_t_defined 1
-#elif defined(__sparc__) && defined(__LP64__)
-typedef long signed int _ssize_t;
-#define __ssize_t_defined 1
-#elif defined(__AVR__) || defined(__lm32__) || defined(__m32c__) || defined(__mips__) || defined(__moxie__) || defined(__PPC__) || defined(__sparc__) || defined(__sh__)
-typedef signed int _ssize_t;
-#define __ssize_t_defined 1
-#else
-# error unsupported target
-#endif
+/* This disables some conflicting type definitions in <machine/types.h> */
+#define _HAVE_SYSTYPES
 
 #include <machine/_default_types.h>
+#include <stdint.h> /* For FreeBSD compatibility */
 
 typedef __int32_t blksize_t;
 typedef __int32_t blkcnt_t;
+
+typedef __uint64_t __dev_t;
+#define __dev_t_defined 1
 
 #if defined(__arm__) || defined(__i386__) || defined(__m68k__) || defined(__mips__) || defined(__PPC__) || defined(__sparc__)
 /* Use 64bit types */

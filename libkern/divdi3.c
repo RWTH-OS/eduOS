@@ -37,6 +37,10 @@
  * have been added in quad.h.
  */
 
+#include <eduos/stddef.h>
+
+#if __SIZEOF_POINTER__ == 4
+
 #include "quad.h"
 
 /*
@@ -61,3 +65,5 @@ __divdi3(a, b)
 	uq = __qdivrem(ua, ub, (u_quad_t *)0);
 	return (neg ? -uq : uq);
 }
+
+#endif

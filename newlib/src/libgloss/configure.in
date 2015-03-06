@@ -34,11 +34,19 @@ dnl indicates whether to run configure within the libnosys subdirectory
 config_libnosys=true
 
 case "${target}" in
-  *-eduos-elf*)
-        AC_CONFIG_SUBDIRS([eduos])
-        config_testsuite=false
-        config_libnosys=false
-        ;;
+ *-eduos-elf*)
+	AC_CONFIG_SUBDIRS([eduos])
+	config_testsuite=false
+	config_libnosys=false
+	;;
+  aarch64*-*-*)
+	AC_CONFIG_SUBDIRS(aarch64)
+	config_testsuite=true
+	;;
+  epiphany-*-*)
+	AC_CONFIG_SUBDIRS(epiphany)
+	config_testsuite=true
+	;;
   i[[3456]]86-*-elf* | i[[3456]]86-*-coff*)
 	AC_CONFIG_SUBDIRS([i386])
 	;;
@@ -47,6 +55,9 @@ case "${target}" in
 	;;
   m68hc11-*-* | m6811-*-* | m68hc12-*-* | m6812-*-*)
 	AC_CONFIG_SUBDIRS([m68hc11])
+	;;
+  nds32*-*-*)
+	AC_CONFIG_SUBDIRS([nds32])
 	;;
   fido-*-* | m68*-*-*)
 	AC_CONFIG_SUBDIRS([m68k])
@@ -63,7 +74,7 @@ case "${target}" in
   sparclet-*-aout* | sparc-*-elf* | sparc64-*-elf* | sparc86x-*-* | sparclite-*-*)
 	AC_CONFIG_SUBDIRS([sparc])
 	;;
-  sh*-*-pe | mips*-*-pe | *arm-wince-pe)
+  sh*-*-pe | mips*-*-pe | *arm*-wince-pe)
 	AC_CONFIG_SUBDIRS([wince])
 	;;
   mips*-*-*)
@@ -111,7 +122,7 @@ case "${target}" in
   moxie-*-*)
 	AC_CONFIG_SUBDIRS([moxie])
 	;;
-  microblaze-*-*)
+  microblaze*-*-*)
 	AC_CONFIG_SUBDIRS([microblaze])
 	;;
   mt-*-*)
@@ -129,13 +140,16 @@ case "${target}" in
   m32c-*-*)
 	AC_CONFIG_SUBDIRS([m32c])
 	;;
+  msp430*-*-elf)
+	AC_CONFIG_SUBDIRS([msp430])
+	;;
   rl78*-*-elf)
 	AC_CONFIG_SUBDIRS([rl78])
 	;;
   rx*-*-elf)
 	AC_CONFIG_SUBDIRS([rx])
 	;;
-  arm*-*-elf | arm*-*-coff | arm-*-*)
+  arm*-*-elf | arm*-*-coff | arm*-*-*)
 	AC_CONFIG_SUBDIRS([arm])
 	;;
   spu-*-elf)
@@ -149,6 +163,9 @@ case "${target}" in
 	;;
   iq2000-*-*)
 	AC_CONFIG_SUBDIRS([iq2000])
+	;;
+  or1k-*-* | or1knd-*-* )
+	AC_CONFIG_SUBDIRS([or1k])
 	;;
 esac
 

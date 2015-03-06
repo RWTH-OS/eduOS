@@ -4,6 +4,10 @@
 #include <machine/ieeefp.h>  /* floating point macros */
 #include <sys/features.h>	/* POSIX defs */
 
+#ifdef __aarch64__
+#define MALLOC_ALIGNMENT 16
+#endif
+
 /* exceptions first */
 #if defined(__H8500__) || defined(__W65__)
 #define __SMALL_BITFIELDS
@@ -71,6 +75,10 @@
 #define _POINTER_INT short
 #endif
 
+#if defined(__m68k__) || defined(__mc68000__)
+#define _READ_WRITE_RETURN_TYPE _ssize_t
+#endif
+
 #ifdef ___AM29K__
 #define _FLOAT_RET double
 #endif
@@ -86,9 +94,9 @@
 #define HAVE_GETDATE
 #define _HAVE_SYSTYPES
 #define _READ_WRITE_RETURN_TYPE _ssize_t
-/*#define __LARGE64_FILES 1*/
+#define __LARGE64_FILES 1
 /* we use some glibc header files so turn on glibc large file feature */
-/*#define _LARGEFILE64_SOURCE 1*/
+#define _LARGEFILE64_SOURCE 1
 #endif
 #endif
 
@@ -141,6 +149,21 @@
 #define __BUFSIZ__ 16
 #define _REENT_SMALL
 #endif
+
+#if defined __MSP430__
+#ifndef _REENT_SMALL
+#define _REENT_SMALL
+#endif
+
+#define __SMALL_BITFIELDS
+
+#ifdef __MSP430X_LARGE__
+#define _POINTER_INT long
+#else
+#define _POINTER_INT int
+#endif
+#endif
+
 #ifdef __m32c__
 #define __SMALL_BITFIELDS
 #undef INT_MAX
@@ -213,6 +236,8 @@
 #if defined(__rtems__)
 #define __FILENAME_MAX__ 255
 #define _READ_WRITE_RETURN_TYPE _ssize_t
+#define __DYNAMIC_REENT__
+#define _REENT_GLOBAL_ATEXIT
 #endif
 
 #ifndef __EXPORT
@@ -228,6 +253,12 @@
    "int" for some time.  If not specified, "int" is defaulted.  */
 #ifndef _READ_WRITE_RETURN_TYPE
 #define _READ_WRITE_RETURN_TYPE int
+#endif
+/* Define `count' parameter of read/write routines.  In POSIX, the `count'
+   parameter is "size_t" but legacy newlib code has been using "int" for some
+   time.  If not specified, "int" is defaulted.  */
+#ifndef _READ_WRITE_BUFSIZE_TYPE
+#define _READ_WRITE_BUFSIZE_TYPE int
 #endif
 
 #ifndef __WCHAR_MAX__

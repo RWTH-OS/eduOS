@@ -40,7 +40,7 @@ It is derived from following tutorials and software distributions.
 Requirements of eduOS
 ---------------------
 
-* Currently, eduOS supports only x86-based architectures.
+* Currently, eduOS supports only x86-based architectures (32 & 64 bit).
 * Following command line tools have to be installed:
   make, gcc, binutil, git, qemu, nams, gdb
 * The test PC has to use grub as bootloader.
@@ -48,7 +48,7 @@ Requirements of eduOS
 Building eduOS
 --------------
 
-0. Copy Makefile.example to Makefile and edit this Makefile to meet your individual convenience.
+0. Copy on a 64 bit system Makefile64.example or on 32 bit system Makefile32.example to Makefile. Edit this Makefile to meet your individual convenience.
 1. Copy include/eduos/config.h.example to include/eduos/config.h and edit this config file to 
    meet your individual convenience.
 2. Build kernel with "make"
@@ -114,6 +114,10 @@ Overview of all branches
 8. stage8 - HelloWorld in user space
 
    Add HelloWorld example with a small C library (newlib)
+
+9. stage9 - FPU & 64bit support
+
+   Add FPU and SSE support, switch to newlib 2.2.0, add basic x86_64 support
 
 Usefull Links
 -------------

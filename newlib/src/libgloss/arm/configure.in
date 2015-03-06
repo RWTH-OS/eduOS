@@ -49,7 +49,7 @@ AC_PROG_RANLIB
 LIB_AM_PROG_AS
 
 case "${target}" in
-  *-*-elf | *-*-eabi)
+  *-*-elf | *-*-eabi | *-*-tirtos*)
 	objtype=elf-
 	;;
   *-*-coff)
@@ -59,7 +59,7 @@ esac
 
 AC_SUBST(objtype)
 
-host_makefile_frag=${srcdir}/../config/default.mh
+host_makefile_frag=`cd $srcdir/../config;pwd`/default.mh
 
 dnl We have to assign the same value to other variables because autoconf
 dnl doesn't provide a mechanism to substitute a replacement keyword with
@@ -68,6 +68,21 @@ dnl
 host_makefile_frag_path=$host_makefile_frag
 AC_SUBST(host_makefile_frag_path)
 AC_SUBST_FILE(host_makefile_frag)
+
+# Configure cpu init plug-ins
+if test -d "${srcdir}/cpu-init"; then
+  subdirs="${subdirs} cpu-init"
+  AC_CONFIG_FILES(cpu-init/Makefile,
+  . ${libgloss_topdir}/config-ml.in,
+  srcdir=${srcdir}
+  target=${target}
+  with_multisubdir=${with_multisubdir}
+  ac_configure_args="${ac_configure_args} --enable-multilib"
+  CONFIG_SHELL=${CONFIG_SHELL-/bin/sh}
+  libgloss_topdir=${libgloss_topdir}
+  )
+  AC_SUBST(subdirs)
+fi
 
 AC_CONFIG_FILES(Makefile,
 . ${libgloss_topdir}/config-ml.in,

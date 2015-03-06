@@ -48,11 +48,15 @@ extern "C" {
 #endif
 
 #define TASK_INVALID	0
-#define TASK_READY	1
+#define TASK_READY		1
 #define TASK_RUNNING	2
 #define TASK_BLOCKED	3
 #define TASK_FINISHED	4
-#define TASK_IDLE	5
+#define TASK_IDLE		5
+
+#define TASK_DEFAULT_FLAGS	0
+#define TASK_FPU_INIT		(1 << 0)
+#define TASK_FPU_USED		(1 << 1)
 
 #define MAX_PRIO	31
 #define REALTIME_PRIO	31
@@ -73,6 +77,8 @@ typedef struct task {
 	size_t*			last_stack_pointer;
 	/// start address of the stack 
 	void*			stack;
+	/// Additional status flags. For instance, to signalize the using of the FPU
+	uint8_t			flags;
 	/// Task priority
 	uint8_t			prio;
 	/// Physical address of root page table
@@ -91,6 +97,8 @@ typedef struct task {
 	struct task*	next;
 	/// previous task in the queue
 	struct task*	prev;
+	/// FPU state
+	union fpu_state	fpu;
 } task_t;
 
 typedef struct {
@@ -109,7 +117,7 @@ typedef struct {
 	/// indicates the used priority queues
 	uint32_t	prio_bitmap;
 	/// a queue for each priority
-	task_list_t	queue[MAX_PRIO-1];
+	task_list_t	queue[MAX_PRIO];
 	/// lock for this runqueue
 	spinlock_irqsave_t lock;
 } readyqueues_t;

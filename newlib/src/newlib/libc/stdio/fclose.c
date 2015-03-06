@@ -76,17 +76,31 @@ _DEFUN(_fclose_r, (rptr, fp),
 
   CHECK_INIT (rptr, fp);
 
+  /* We can't use the _newlib_flockfile_XXX macros here due to the
+     interlocked locking with the sfp_lock. */
+#ifdef _STDIO_WITH_THREAD_CANCELLATION_SUPPORT
+  int __oldcancel;
+  pthread_setcancelstate (PTHREAD_CANCEL_DISABLE, &__oldcancel);
+#endif
   _flockfile (fp);
 
   if (fp->_flags == 0)		/* not open! */
     {
       _funlockfile (fp);
+#ifdef _STDIO_WITH_THREAD_CANCELLATION_SUPPORT
+      pthread_setcancelstate (__oldcancel, &__oldcancel);
+#endif
       return (0);
     }
-  /* Unconditionally flush to allow special handling for seekable read
-     files to reposition file to last byte processed as opposed to
-     last byte read ahead into the buffer.  */
-  r = _fflush_r (rptr, fp);
+#ifdef _STDIO_BSD_SEMANTICS
+  /* BSD and Glibc systems only flush streams which have been written to. */
+  r = (fp->_flags & __SWR) ? __sflush_r (rptr, fp) : 0;
+#else
+  /* Follow POSIX semantics exactly.  Unconditionally flush to allow
+     special handling for seekable read files to reposition file to last
+     byte processed as opposed to last byte read ahead into the buffer. */
+  r = __sflush_r (rptr, fp);
+#endif
   if (fp->_close != NULL && fp->_close (rptr, fp->_cookie) < 0)
     r = EOF;
   if (fp->_flags & __SMBF)
@@ -103,6 +117,9 @@ _DEFUN(_fclose_r, (rptr, fp),
 #endif
 
   __sfp_lock_release ();
+#ifdef _STDIO_WITH_THREAD_CANCELLATION_SUPPORT
+  pthread_setcancelstate (__oldcancel, &__oldcancel);
+#endif
 
   return (r);
 }

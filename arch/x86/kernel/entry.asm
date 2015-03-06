@@ -59,21 +59,63 @@ mboot:
     dd MULTIBOOT_CHECKSUM
     dd 0, 0, 0, 0, 0 ; address fields
 
+%ifdef CONFIG_X86_64
+ALIGN 4
+; we need already a valid GDT to switch in the 64bit modus
+GDT64:                           ; Global Descriptor Table (64-bit).
+    .Null: equ $ - GDT64         ; The null descriptor.
+    dw 0                         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 0                         ; Access.
+    db 0                         ; Granularity.
+    db 0                         ; Base (high).
+    .Code: equ $ - GDT64         ; The code descriptor.
+    dw 0                         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 10011000b                 ; Access.
+    db 00100000b                 ; Granularity.
+    db 0                         ; Base (high).
+    .Data: equ $ - GDT64         ; The data descriptor.
+    dw 0                         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 10010010b                 ; Access.
+    db 00000000b                 ; Granularity.
+    db 0                         ; Base (high).
+    .Pointer:                    ; The GDT-pointer.
+    dw $ - GDT64 - 1             ; Limit.
+    dq GDT64                     ; Base.
+%endif
+
 SECTION .text
 ALIGN 4
 stublet:
-; Initialize stack pointer
+	; Initialize stack pointer
     mov esp, boot_stack
-    add esp, KERNEL_STACK_SIZE-16
- ; Interpret multiboot information
+    add esp, KERNEL_STACK_SIZE - 16
+
+	; Interpret multiboot information
     mov DWORD [mb_info], ebx
-; Initialize CPU features
+
+    ; Initialize CPU features
     call cpu_init
 
-; Jump to the boot processors's C code
+	%ifdef CONFIG_X86_32
+		jmp start32
+	%elifdef CONFIG_X86_64
+		pop ebx ; restore pointer to multiboot structure
+		lgdt [GDT64.Pointer] ; Load the 64-bit global descriptor table.
+		jmp GDT64.Code:start64 ; Set the code segment and enter 64-bit long mode.
+	%endif
+
+start32:
+	; Jump to the boot processors's C code
     extern main
     call main
     jmp $
+
 
 ; This will set up the x86 control registers:
 ; Caching and the floating point unit are enabled
@@ -81,27 +123,42 @@ stublet:
 ; extensions (huge pages) enabled.
 global cpu_init
 cpu_init:
+
 ; initialize page tables
+
+; map vga 1:1
 %ifdef CONFIG_VGA
 	push edi
-	mov eax, VIDEO_MEM_ADDR
+	mov eax, VIDEO_MEM_ADDR   ; map vga
 	and eax, 0xFFFFF000       ; page align lower half
 	mov edi, eax
+%ifdef CONFIG_X86_64
+    shr edi, 9                ; (edi >> 12) * 8 (index for boot_pgt)
+%else
 	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+%endif
 	add edi, boot_pgt
 	or eax, 0x113             ; set present, global, writable and cache disable bits
 	mov DWORD [edi], eax
 	pop edi
 %endif
+
+    ; map multiboot info 1:1
     push edi
     mov eax, DWORD [mb_info]  ; map multiboot info
     and eax, 0xFFFFF000       ; page align lower half
     mov edi, eax
-    shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+%ifdef CONFIG_X86_64
+    shr edi, 9                ; (edi >> 12) * 8 (index for boot_pgt)
+%else
+	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+%endif
     add edi, boot_pgt
     or eax, 0x101             ; set present and global bits
     mov DWORD [edi], eax
     pop edi
+
+    ; map kernel 1:1
     push edi
     push ebx
     push ecx
@@ -113,7 +170,11 @@ L0: cmp ecx, ebx
 	mov eax, ecx
 	and eax, 0xFFFFF000       ; page align lower half
     mov edi, eax
+%ifdef CONFIG_X86_64
+    shr edi, 9                ; (edi >> 12) * 8 (index for boot_pgt)
+%else
 	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+%endif
 	add edi, boot_pgt
 	or eax, 0x103             ; set present, global and writable bits
 	mov DWORD [edi], eax
@@ -124,41 +185,139 @@ L1:
 	pop ebx
     pop edi
 
-; Set CR3
-    mov eax, boot_pgd
-    mov cr3, eax
+	%ifdef CONFIG_X86_64
+		; check for long mode
 
-; Set CR4
-    mov eax, cr4
-    and eax, 0xfffbf9ff	; disable SSE
-    or eax,  (1 <<  4)	; enable  PSE
-    mov cr4, eax
+		; do we have the instruction cpuid?
+		pushfd
+		pop eax
+		mov ecx, eax
+		xor eax, 1 << 21
+		push eax
+		popfd
+		pushfd
+		pop eax
+		push ecx
+		popfd
+		xor eax, ecx
+		jz Linvalid
 
-; Set CR0
-    mov eax, cr0
-    and eax, ~(1 << 30)	; enable  caching
-    or eax,   (1 << 31)	; enable  paging
-    mov cr0, eax
+		; cpuid > 0x80000000?
+		mov eax, 0x80000000
+		cpuid
+		cmp eax, 0x80000001
+		jb Linvalid ; It is less, there is no long mode.
 
-    ret
+		; do we have a long mode?
+		mov eax, 0x80000001
+		cpuid
+		test edx, 1 << 29 ; Test if the LM-bit, which is bit 29, is set in the D-register.
+		jz Linvalid ; They aren't, there is no long mode.
+
+
+		; we need to enable PAE modus
+		mov eax, cr4
+		or eax, 1 << 5
+		mov cr4, eax
+
+		; switch to the compatibility mode (which is part of long mode)
+		mov ecx, 0xC0000080
+		rdmsr
+		or eax, 1 << 8
+		wrmsr
+	%endif
+
+	; Set CR3
+	%ifdef CONFIG_X86_32
+	    mov eax, boot_pgd
+	%elifdef CONFIG_X86_64
+		mov eax, boot_pml4
+	%endif
+	    mov cr3, eax
+
+	; Set CR4
+	mov eax, cr4
+	and eax, 0xfffbf9ff     ; disable SSE
+	or eax, (1 << 4)        ; enable PSE
+	mov cr4, eax
+
+	; Set CR0
+	mov eax, cr0
+	and eax, ~(1 << 30)     ; enable caching
+	and eax, ~(1 << 16)	; allow kernel write access to read-only pages
+	or eax, (1 << 31)       ; enable paging
+	%ifdef CONFIG_X86_64
+		or eax, (1 << 0)    ; long mode also needs PM-bit set
+	%endif
+	mov cr0, eax
+
+	ret
+
+; there is no long mode
+Linvalid:
+	jmp $
+
+
+%ifdef CONFIG_X86_64
+
+[BITS 64]
+start64:
+	; initialize segment registers
+	mov ax, GDT64.Data
+	mov ds, ax
+	mov es, ax
+	mov ss, ax
+	mov ax, 0x00
+	mov fs, ax
+	mov gs, ax
+	; set default stack pointer
+	mov rsp, boot_stack
+	add rsp, KERNEL_STACK_SIZE-16
+	; interpret multiboot information
+	; extern multiboot_init
+	; mov rdi, rbx
+	; call multiboot_init
+
+	; jump to the boot processors's C code
+    extern main
+    call main
+    jmp $
+
+%endif
+
+global gdt_flush
+extern gp
+
+%ifdef CONFIG_X86_32
 
 ; This will set up our new segment registers. We need to do
 ; something special in order to set CS. We do what is called a
 ; far jump. A jump that includes a segment as well as an offset.
 ; This is declared in C as 'extern void gdt_flush();'
-global gdt_flush
-extern gp
 gdt_flush:
-    lgdt [gp]
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    jmp 0x08:flush2
+	lgdt [gp]
+	mov ax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov ss, ax
+	mov ax, 0x00
+	mov fs, ax
+	mov gs, ax
+	jmp 0x08:flush2
 flush2:
-    ret
+	ret
+
+%elifdef CONFIG_X86_64
+
+; This will set up our new segment registers and is declared in
+; C as 'extern void gdt_flush();'
+gdt_flush:
+	lgdt [gp]
+	ret
+
+%endif
+
+
 
 ; The first 32 interrupt service routines (ISR) entries correspond to exceptions.
 ; Some exceptions will push an error code onto the stack which is specific to
@@ -293,6 +452,11 @@ apic_svr:
 %assign i i+1
 %endrep
 
+extern irq_handler
+extern get_current_stack
+extern finish_task_switch
+
+%ifdef CONFIG_X86_32
 ; Used to realize system calls.
 ; By entering the handler, the interrupt flag is not cleared.
 global isrsyscall
@@ -333,11 +497,6 @@ isrsyscall:
     sti
     iret
 
-extern irq_handler
-extern irq_handler
-extern get_current_stack
-extern finish_task_switch
-
 ; Create a pseudo interrupt on top of the stack.
 ; Afterwards, we switch to the task with iret.
 ; We already are in kernel space => no pushing of SS required.
@@ -351,8 +510,8 @@ switch_context:
     push DWORD 0x0              ; Interrupt number
     push DWORD 0x00edbabe       ; Error code
     pusha                       ; push all general purpose registers...
-    push 0x10                   ; kernel data segment
-    push 0x10                   ; kernel data segment
+    push 0x10                   ; kernel data segment (for ES)
+    push 0x10                   ; kernel data segment (for DS)
 
     jmp common_switch
 
@@ -372,7 +531,6 @@ common_stub:
 ; Use the same handler for interrupts and exceptions
     push esp
 
-    extern set_kernel_stack
 global irq_caller
 ALIGN 4
 irq_caller:
@@ -393,6 +551,7 @@ common_switch:
     mov cr0, eax
 
 ; Set esp0 in the task state segment
+    extern set_kernel_stack
     call set_kernel_stack
 
 ; Call cleanup code
@@ -405,12 +564,159 @@ no_context_switch:
     add esp, 8
     iret
 
+%else
+
+global isrsyscall
+; used to realize system calls
+isrsyscall:
+	cli
+	; set kernel stack
+	extern get_kernel_stack
+	call get_kernel_stack
+	xchg rsp, rax ; => rax contains original rsp
+
+    push rax ; contains original rsp
+    push r15
+    push r14
+    push r13
+    push r12
+    push r11
+    push rbp
+    push rdx
+    push rcx
+    push rbx
+    push rdi
+    push rsi
+	sti
+
+    extern syscall_handler
+    call syscall_handler
+
+	cli
+    pop rsi
+    pop rdi
+    pop rbx
+    pop rcx
+    pop rdx
+    pop rbp
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+    pop r10
+    mov rsp, r10
+    sti
+    o64 sysret
+
+global switch_context
+ALIGN 8
+switch_context:
+    ; create on the stack a pseudo interrupt
+    ; afterwards, we switch to the task with iret
+    mov rax, rdi                ; rdi contains the address to store the old rsp
+    pushf                       ; RFLAGS
+    push QWORD 0x08             ; CS
+    push QWORD rollback         ; RIP
+    push QWORD 0x00             ; Interrupt number
+    push QWORD 0x00edbabe       ; Error code
+    push rax
+    push rcx
+    push rdx
+    push rbx
+    push rsp
+    push rbp
+    push rsi
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+
+    jmp common_switch
+
+ALIGN 8
+rollback:
+    ret
+
+ALIGN 8
+common_stub:
+    push rax
+    push rcx
+    push rdx
+    push rbx
+    push rsp
+    push rbp
+    push rsi
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+
+    ; use the same handler for interrupts and exceptions
+    mov rdi, rsp
+global irq_caller
+ALIGN 4
+irq_caller:
+    call irq_handler
+
+    cmp rax, 0
+    je no_context_switch
+
+common_switch:
+    mov [rax], rsp             ; store old rsp
+    call get_current_stack     ; get new rsp
+    xchg rax, rsp
+
+    ; set task switched flag
+    mov rax, cr0
+    or eax, 8
+    mov cr0, rax
+
+    ; set rsp0 in the task state segment
+    extern set_kernel_stack
+    call set_kernel_stack
+
+    ; call cleanup code
+    call finish_task_switch
+
+no_context_switch:
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rbp
+    add rsp, 8
+    pop rbx
+    pop rdx
+    pop rcx
+    pop rax
+
+    add rsp, 16
+    iretq
+%endif
+
 SECTION .data
 
 global mb_info:
-ALIGN 4
+ALIGN 8
 mb_info:
-	DD 0
+	DQ 0
 
 ALIGN 4096
 global boot_stack
@@ -421,13 +727,34 @@ boot_stack:
 ; These tables do a simple identity paging and will
 ; be replaced in page_init() by more fine-granular mappings.
 ALIGN 4096
+%ifdef CONFIG_X86_32
+global boot_map
 boot_map:
 boot_pgd:
-	DD boot_pgt + 0x103	; PG_PRESENT | PG_GLOBAL | PG_RW
+
+	DD boot_pgt + 0x107	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
 	DD boot_pgd + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
 	times 1024 DD 0
+%else
+global boot_map
+boot_map:
+boot_pml4:
+	DQ boot_pdpt + 0x107 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
+	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
+boot_pdpt:
+	DQ boot_pgd + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
+	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
+boot_pgd:
+	DQ boot_pgt + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
+	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
+boot_pgt:
+	times 512 DQ 0
+%endif
 
 ; add some hints to the ELF file
 SECTION .note.GNU-stack noalloc noexec nowrite progbits

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)syslimits.h	8.1 (Berkeley) 6/2/93
- * $Id: syslimits.h,v 1.2 2003/01/16 22:37:54 jjohnstn Exp $
+ * $Id: syslimits.h,v 1.3 2014/11/20 14:03:17 corinna Exp $
  */
 
 #ifndef _SYS_SYSLIMITS_H_
@@ -45,7 +45,7 @@
 #define	MAX_CANON		  255	/* max bytes in term canon input line */
 #define	MAX_INPUT		  255	/* max bytes in terminal input */
 #define	NAME_MAX		  255	/* max bytes in a file name */
-#define	NGROUPS_MAX		   16	/* max supplemental group id's */
+#define	NGROUPS_MAX		   15	/* max supplemental group id's */
 #ifndef OPEN_MAX
 #define	OPEN_MAX		   64	/* max open files per process */
 #endif

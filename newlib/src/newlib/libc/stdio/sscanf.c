@@ -35,15 +35,15 @@ INDEX
 ANSI_SYNOPSIS
         #include <stdio.h>
 
-        int scanf(const char *<[format]>, ...);
-        int fscanf(FILE *<[fd]>, const char *<[format]>, ...);
-        int sscanf(const char *<[str]>, const char *<[format]>, ...);
+        int scanf(const char *restrict <[format]>, ...);
+        int fscanf(FILE *restrict <[fd]>, const char *restrict <[format]>, ...);
+        int sscanf(const char *restrict <[str]>, const char *restrict <[format]>, ...);
 
-        int _scanf_r(struct _reent *<[ptr]>, const char *<[format]>, ...);
-        int _fscanf_r(struct _reent *<[ptr]>, FILE *<[fd]>, 
-                      const char *<[format]>, ...);
-        int _sscanf_r(struct _reent *<[ptr]>, const char *<[str]>,
-                      const char *<[format]>, ...);
+        int _scanf_r(struct _reent *<[ptr]>, const char *restrict <[format]>, ...);
+        int _fscanf_r(struct _reent *<[ptr]>, FILE *restrict <[fd]>, 
+                      const char *restrict <[format]>, ...);
+        int _sscanf_r(struct _reent *<[ptr]>, const char *restrict <[str]>,
+                      const char *restrict <[format]>, ...);
 
 
 TRAD_SYNOPSIS
@@ -399,8 +399,8 @@ Supporting OS subroutines required: <<close>>, <<fstat>>, <<isatty>>,
 #ifdef _HAVE_STDC
 int 
 _DEFUN(sscanf, (str, fmt),
-       _CONST char *str _AND
-       _CONST char *fmt _DOTS)
+       _CONST char *__restrict str _AND
+       _CONST char * fmt _DOTS)
 #else
 int 
 sscanf(str, fmt, va_alist)
@@ -430,20 +430,26 @@ sscanf(str, fmt, va_alist)
   return ret;
 }
 
+#ifdef _NANO_FORMATTED_IO
+int
+_EXFUN(siscanf, (const char *, const char *, ...)
+       _ATTRIBUTE ((__alias__("sscanf"))));
+#endif
+
 #endif /* !_REENT_ONLY */
 
 #ifdef _HAVE_STDC
 int 
 _DEFUN(_sscanf_r, (ptr, str, fmt), 
        struct _reent *ptr _AND
-       _CONST char *str   _AND
-       _CONST char *fmt _DOTS)
+       _CONST char *__restrict str   _AND
+       _CONST char *__restrict fmt _DOTS)
 #else
 int 
 _sscanf_r(ptr, str, fmt, va_alist)
           struct _reent *ptr;
-          _CONST char *str;
-          _CONST char *fmt;
+          _CONST char *__restrict str;
+          _CONST char *__restrict fmt;
           va_dcl
 #endif
 {
@@ -467,3 +473,9 @@ _sscanf_r(ptr, str, fmt, va_alist)
   va_end (ap);
   return ret;
 }
+
+#ifdef _NANO_FORMATTED_IO
+int
+_EXFUN(_siscanf_r, (struct _reent *, const char *, const char *, ...)
+       _ATTRIBUTE ((__alias__("_sscanf_r"))));
+#endif

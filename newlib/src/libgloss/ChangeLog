@@ -1,4 +1,751 @@
-2011-12-18  Mike Frysinger  <vapier@gentoo.org>
+2014-12-15  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/Makefile.in: Build and install board libraries
+	* or1k/board.h: New file
+	* or1k/boards/README: New file
+	* or1k/boards/atlys.S: New file
+	* or1k/boards/de0_nano.S: New file
+	* or1k/boards/ml501.S: New file
+	* or1k/boards/ml509.S: New file
+	* or1k/boards/optimsoc.S: New file
+	* or1k/boards/or1ksim-uart.S: New file
+	* or1k/boards/or1ksim.S: New file
+	* or1k/boards/ordb1a3pe1500.S: New file
+	* or1k/boards/ordb2a.S: New file
+	* or1k/boards/orpsocrefdesign.S: New file
+	* or1k/boards/tmpl.S: New file
+	* or1k/boards/tmpl.c: New file
+
+2014-12-15  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/Makefile.in: Add libor1k
+	* or1k/README: New file
+	* or1k/caches-asm.S: New file
+	* or1k/exceptions-asm.S: New file
+	* or1k/exceptions.c: New file
+	* or1k/impure.c: New file
+	* or1k/include/or1k-nop.h: New file
+	* or1k/include/or1k-support.h: New file
+	* or1k/interrupts-asm.S: New file
+	* or1k/interrupts.c: New file
+	* or1k/mmu-asm.S: New file
+	* or1k/or1k-internals.h: New file
+	* or1k/or1k_uart.c: New file
+	* or1k/or1k_uart.h: New file
+	* or1k/outbyte.S: New file
+	* or1k/sbrk.c: New file
+	* or1k/sync-asm.S: New file
+	* or1k/syscalls.c: New file
+	* or1k/timer.c: New file
+	* or1k/util.c: New file
+
+2014-12-15  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* README: Add details about or1k.
+	* configure.in: Add or1k/or1knd
+	* configure: Regenerated.
+	* or1k/aclocal.m4: New file.
+	* or1k/configure: Ditto.
+	* or1k/Makefile.in: New file
+	* or1k/configure.in: New file
+	* or1k/crt0.S: New file
+	* or1k/include/or1k-asm.h: New file
+
+2014-12-15  Nick Hung  <nick@andestech.com>
+
+	* libgloss/nds32/_exit.S: Finish with an infinite loop in _exit.
+	* libgloss/nds32/_getpid.S: Don't issue _getpid system call, it is
+	always successful.
+	* libgloss/nds32/_gettimeofday.S: No error for _gettimeofday is defined
+	in SYS_geterr handler.
+	* libgloss/nds32/_isatty.S: No error for _isatty is defined in
+	SYS_geterr handler.
+	* libgloss/nds32/_kill.S: Alway fail. errno = EINVAL.
+	* libgloss/nds32/_link.S: Alway fail. errno =  EMLINK.
+	* libgloss/nds32/_times.S: Alway fail. errno = EACCES.
+	* libgloss/nds32/_unlink.S: fix copy and paste error.
+	* libgloss/nds32/crt0.S: Add pre_c_init, post_c_init, arg_init.
+	* libgloss/nds32/crt1.S: Add pre_c_init, post_c_init, arg_init.
+	* libgloss/nds32/syscall_extra.h: Re-format.
+	* libgloss/nds32/vh.h: Add more virtual hosting number.
+
+2014-12-11  Anthony Green  <green@moxielogic.com>
+
+	* moxie/configure: Rebuilt.
+
+2014-11-28  Jaydeep Patil  <jaydeep.patil@imgtec.com>
+	    Matthew Fortune  <Matthew.Fortune@imgtec.com>
+
+	* mips/crt0.S: Configure processor based on .MIPS.abiflags.
+	Remove FPU availability check, just use the pre-processor flags
+	to indicicate what the user wanted.
+	* mips/abiflags.S: New file.
+	* mips/regs.S (SR_MSA): Define macro.
+	* mips/mti32.ld: Place .MIPS.abiflags and wrap in marker symbols.
+	* mips/mti64.ld: Likewise.
+	* mips/mti64_64.ld: Likewise.
+	* mips/mti64_n32.ld: Likewise.
+
+2014-11-26  Matthew Fortune  <Matthew.Fortune@imgtec.com>
+
+	* mips/crt0.S: Remove .set noreorder throughout.
+	(zerobss): Open code the bltu macro instruction so that the
+	zero-loop does not have a NOP in the branch delay slot.
+
+2014-11-13  Nick Clifton  <nickc@redhat.com>
+
+	* msp430/Makefile.in (CRT_OBJS): Add crt_high_bss.o.
+	* msp430/crt0.S (high_bss): Add.
+	* msp430/msp430-sim.ld: Add error message if .upper sections are
+	detected.
+	* msp430/msp430xl-sim.ld (MEMORY): Adjust to better mimic real
+	life MCUs.  Add support for upper and lower sections.
+
+2014-10-22  Tim Harder  <radhermit@gmail.com>
+
+	* msp430/Makefile.in: Respect DESTDIR during install.
+
+2014-09-22  Peter A. Bigot  <pab@pabigot.com>
+
+	* configure.in: Remove config_libnosys=false
+	* configure: Regenerated.
+	* msp430/nosyscalls.S: Rename to ciosyscalls.S
+	* msp430/Makefile.in: Change LIBNOSYS to LIB_CIO.
+
+2014-08-14  Bin Cheng  <bin.cheng@arm.com>
+
+	* arm/elf-nano.specs: New file.
+	* arm/elf-rdimon.specs: Support nano.specs.
+	* arm/Makefile.in: Support nano.specs.
+	* libnosys/nosys.specs: Support nano.specs.
+
+2014-07-27  Anthony Green  <green@moxielogic.com>
+
+	* moxie/Makefile.in (LD_SCRIPTS): Add moxiebox.ld
+	Conditionally build and install crt0.o.
+	* moxie/configure.in: Don't build crt0.o for moxiebox.
+	* moxie/moxiebox.ld: New file.
+
+2014-07-16  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* arm/elf-aprofile-validation.specs (*link): Make text segment
+	64k-aligned.
+	* arm/elf-aprofile-ve.specs (*link): Likewise.
+
+2014-04-30  Nick Clifton  <nickc@redhat.com>
+
+	* msp430/Makefile.in (NOSYS_OBJS): Add unlink.o.
+	(SCRIPTS): Remove msp430F5438A-s.ld and msp430F5438A-s.ld.
+	* unlink.c: New file.
+
+2014-04-04  Ashish Kapania  <akapania@ti.com>
+
+	* arm/configure.in: (*-*-tirtos*) Accept TIRTOS target when setting
+	objtype
+	* arm/configure: Regenerated.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/_sbrk.S: Add .size and .type directive.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/crt0.S: Tweak initialization sqeuence.
+	* nds32/crt1.S: Ditto.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/_argv.S: Replace syscall with break.
+	* nds32/_argvlen.S: Ditto.
+	* nds32/_chdir.S: Ditto.
+	* nds32/_chmod.S: Ditto.
+	* nds32/_close.S: Ditto.
+	* nds32/_exit.S: Ditto.
+	* nds32/_fstat.S: Ditto.
+	* nds32/_getpid.S: Ditto.
+	* nds32/_gettimeofday.S: Ditto.
+	* nds32/_isatty.S: Ditto.
+	* nds32/_kill.S: Ditto.
+	* nds32/_link.S: Ditto.
+	* nds32/_lseek.S: Ditto.
+	* nds32/_open.S: Ditto.
+	* nds32/_read.S: Ditto.
+	* nds32/_rename.S: Ditto.
+	* nds32/_stat.S: Ditto.
+	* nds32/_system.S: Ditto.
+	* nds32/_time.S: Ditto.
+	* nds32/_times.S: Ditto.
+	* nds32/_unlink.S: Ditto.
+	* nds32/_utime.S: Ditto.
+	* nds32/_write.S: Ditto.
+	* nds32/syscall_error_handler.S: Ditto.
+	* nds32/vh.h: New.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/crt0.S: Initialize ITB base.
+	* nds32/crt1.S: Ditto.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/Makefile.in: Alter filename.
+	* nds32/syscall_argv.S: Rename to _argv.S
+	* nds32/syscall_argvlen.S: Rename to _argvlen.S
+	* nds32/syscall_chdir.S: Rename to _chdir.S
+	* nds32/syscall_chmod.S: Rename to _chmod.S
+	* nds32/syscall_close.S: Rename to _close.S
+	* nds32/syscall_exit.S: Rename to _exit.S
+	* nds32/syscall_fstat.S: Rename to _fstat.S
+	* nds32/syscall_getpid.S: Rename to _getpid.S
+	* nds32/syscall_gettimeofday.S: Rename to _gettimeofday.S
+	* nds32/syscall_isatty.S: Rename to _isatty.S
+	* nds32/syscall_kill.S: Rename to _kill.S
+	* nds32/syscall_link.S: Rename to _link.S
+	* nds32/syscall_lseek.S: Rename to _lseek.S
+	* nds32/syscall_open.S: Rename to _open.S
+	* nds32/syscall_read.S: Rename to _read.S
+	* nds32/syscall_rename.S: Rename to _rename.S
+	* nds32/syscall_sbrk.S: Rename to _sbrk.S
+	* nds32/syscall_stat.S: Rename to _stat.S
+	* nds32/syscall_system.S: Rename to _system.S
+	* nds32/syscall_time.S: Rename to _time.S
+	* nds32/syscall_times.S: Rename to _times.S
+	* nds32/syscall_unlink.S: Rename to _unlink.S
+	* nds32/syscall_utime.S: Rename to _utime.S
+	* nds32/syscall_write.S: Rename to _write.S
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/syscall_argv.S: Correct the method to set errno.
+	* nds32/syscall_argvlen.S: Ditto.
+	* nds32/syscall_chdir.S: Ditto.
+	* nds32/syscall_chmod.S: Ditto.
+	* nds32/syscall_close.S: Ditto.
+	* nds32/syscall_error_handler.S: Ditto.
+	* nds32/syscall_fstat.S: Ditto.
+	* nds32/syscall_getpid.S: Ditto.
+	* nds32/syscall_gettimeofday.S: Ditto.
+	* nds32/syscall_isatty.S: Ditto.
+	* nds32/syscall_kill.S: Ditto.
+	* nds32/syscall_link.S: Ditto.
+	* nds32/syscall_lseek.S: Ditto.
+	* nds32/syscall_open.S: Ditto.
+	* nds32/syscall_read.S: Ditto.
+	* nds32/syscall_rename.S: Ditto.
+	* nds32/syscall_sbrk.S: Ditto.
+	* nds32/syscall_stat.S: Ditto.
+	* nds32/syscall_system.S: Ditto.
+	* nds32/syscall_time.S: Ditto.
+	* nds32/syscall_times.S: Ditto.
+	* nds32/syscall_unlink.S: Ditto.
+	* nds32/syscall_utime.S: Ditto.
+	* nds32/syscall_write.S: Ditto.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/crt0.S: Use pseudo-instruction "bal frame" to replace 
+	"la + jral".
+	* nds32/crt1.S: Ditto.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/crt0.S: Eliminate initialization for $fp.
+	* nds32/crt1.S: Ditto.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/crt0.S: Refine.
+	* nds32/crt1.S: Refine.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/crt0.S: Set argc=argv=env=0.
+	* nds32/crt1.S: Ditto.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/Makefile.in: Add syscall_error_handler.o.
+	* nds32/syscall_error_handler.S: New.
+	* nds32/syscall_extra.h: Reduce code size.
+
+2014-03-21  Sabrini Ni  <sabrinanitw@gmail.com>
+
+	* nds32/syscall_extra.h: Define macro.
+	* nds32/syscall_argv.S: Use define macro.
+	* nds32/syscall_argvlen.S: Ditto.
+	* nds32/syscall_chdir.S: Ditto.
+	* nds32/syscall_chmod.S: Ditto.
+	* nds32/syscall_close.S: Ditto.
+	* nds32/syscall_fstat.S: Ditto.
+	* nds32/syscall_getpid.S: Ditto.
+	* nds32/syscall_gettimeofday.S: Ditto.
+	* nds32/syscall_isatty.S: Ditto.
+	* nds32/syscall_kill.S: Ditto.
+	* nds32/syscall_link.S: Ditto.
+	* nds32/syscall_lseek.S: Ditto.
+	* nds32/syscall_open.S: Ditto.
+	* nds32/syscall_read.S: Ditto.
+	* nds32/syscall_rename.S: Ditto.
+	* nds32/syscall_stat.S: Ditto.
+	* nds32/syscall_system.S: Ditto.
+	* nds32/syscall_time.S: Ditto.
+	* nds32/syscall_times.S: Ditto.
+	* nds32/syscall_unlink.S: Ditto.
+	* nds32/syscall_utime.S: Ditto.
+	* nds32/syscall_write.S: Ditto.
+
+2014-02-27  Joey Ye  <joey.ye@arm.com>
+
+	* libnosys/sbrk.c (_sbrk): Remove TWS
+
+2014-02-11  Joey Ye  <joey.ye@arm.com>
+
+	* arm/syscalls.c (_sbrk): Define as weak symbols.
+	(_read, _write): Ditto.
+
+2014-02-03  Richard Earnshaw  <rearnsha@arm.com>
+
+	* aarch64/Makefile.in (RDIMON_SCRIPTS): Rule to build in-tree copies
+	of scripts.
+	(all): Build the in-tree copies of the scripts.
+	(clean): Also delete the in-tree copies of the scripts.
+
+2014-01-29  DJ Delorie  <dj@redhat.com>
+
+	* msp430/Makefile.in (crt0-minrt.o, crtn-minrt.o): New.  Build
+	from crt0.S with -DMINRT.
+	(CRT_OBJS): Expand.
+	(crt_%.o): New rule pattern.  Build multiple objects from crt0.S.
+	* msp430/crt0.S: Further break out functionality.  Support -DMINRT
+	that omits all init/fini logic.
+	* msp430/crtn.S: Likewise.
+	* msp430/msp430-sim.ld: Wildcard all .crt_* sections, sorted.
+	* msp430/msp430.ld: Likewise.
+	* msp430/msp430xl-sim.ld: Likewise.
+
+2014-01-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* aarch64/cpu-init/rdimon-aem-el3.S (flat_map): Use bic-immediate
+	form to clear WXN bit.
+
+2014-01-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* aarch64/cpu-init/rdimon-aem-el3.S (flat_map): Clear WXN bit
+	in SCTLR_EL3. Add dsb.
+
+2014-01-10  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* arm/configure.in: Revert previous fix and change host_makefile_frag
+	to calculate the absolute location of srcdir/../config/default.mh.
+	* arm/configure: Regenerated.
+
+2014-01-07  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* arm/configure.in: Fix host_makefile_frag to use ac_abs_srcdir.
+	* arm/configure: Regenerated.
+
+2013-12-04  Steve Ellcey <sellcey@mips.com>
+
+	* mips/cfe_api.h: Include stdint.h.
+
+2013-11-21  Daniel Ramirez <javamonn@gmail.com>
+
+	* d30v/syscalls.c, i960/mon960.c, m68k/io-stat.c, mt/stat.c,
+	spu/lstat.c, spu/stat.c: Add restrict keyword.
+
+2013-11-21  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* aarch64/ftruncate.c: Include errno.h.
+	(ftruncate) Set errno.
+	* aarch64/truncate.c: Include errno.h.
+	(truncate) Set errno.
+
+2013-11-20  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* arm/ftruncate.c: Include errno.h.
+	(ftruncate) Set errno.
+	* arm/truncate.c: Include errno.h.
+	(truncate) Set errno.
+
+2013-11-18  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* arm/ftruncate.c: New.
+	* arm/truncate.c: New.
+	* arm/Makefile.in (RDPMON_OBJS): Add ftruncate.o and truncate.o.
+	(rdimon-ftruncate.o, rdimon-truncate.o): New rule:
+
+2013-10-14  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* arm/cpu-init/rdimon-aem.S: Disable for M class cores.
+	* arm/crt0.S: Don't call _rdimon_hw_init_hook for non-A class cores.
+	* arm/cpu-init/Makefile.in (CPU_INIT_OBJS): Use CFLAGS.
+
+2013-09-30  Steve Ellcey  <sellcey@mips.com>
+
+	* mips/Makefile.in (install): Add mkdir, fix install command.
+
+2013-09-27  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* arm/Makefile.in (RDIMON_SCRIPTS): Add aprofile-validation.specs.
+	* arm/elf-aprofile-validation.specs: New.
+
+2013-09-20  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+	    Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+	    Greta Yorsh  <greta.yorsh@arm.com>
+
+	* arm/Makefile.in: Add support for cpu-init directory and add
+	elf-aprofile-ve.specs.
+	* arm/configure.in: Likewise.
+	* arm/configure: Regenerate.
+	* arm/cpu-init: New directory.
+	* arm/cpu-init/Makefile.in: New file.
+	* arm/cpu-init/rdimon-aem.S: Likewise.
+	* arm/crt0.S: Call _rdimon_init_hook
+	* arm/elf-aprofile-ve.specs: New file.
+
+2013-09-18  Nick Clifton  <nickc@redhat.com>
+
+	* msp430/Makefile.in (SCRIPTS): Add intr_vectors.ld.
+	(LIB_CRT): New.
+	(CRT_OBJS): New.
+	(all): Add dependency upon LIB_CRT.
+	(install): Likewise.
+	* msp430/msp430-sim.ld: Include intr_vectors.ld.
+	KEEP crt code, lowtext code and tm_clone_table.
+	Separate the noinit section from the .bss section.
+	Allow for extended .debug_line sections.
+	* msp430/msp430.ld: Likewise.
+	* msp430/msp430F5438A-l.ld: Likewise.
+	* msp430/msp430F5438A-s.ld: Likewise.
+	* msp430/msp430xl-sim.ld: Likewise
+.	* msp430/crt_movedata.S: New.
+	* msp430/crt_bss.S: New.
+	* msp430/intr_vectors.ld: New.
+
+2013-09-17  Joey Ye  <joey.ye@arm.com>
+
+	* libnosys/Makefile.in: Install nosys.specs.
+	* libnosys/nosys.specs: New specs.
+
+2013-08-12  Yufeng Zhang  <Yufeng.Zhang@arm.com>
+
+	* aarch64/crt0.S: Remove 'start'.
+	* arm/crt0.S: Ditto.
+	* arm/redboot-crt0.S: Ditto.
+
+2013-07-24  Steve Ellcey  <sellcey@mips.com>
+
+	* mips/idtmon.S (unlink, lseek, stat): Add new functions.
+
+2013-07-23  Nagaraju Mekala  <nagaraju.mekala@xilinx.com>
+
+	* microblaze/_exception_handler.S: Adjust to be weak.
+
+2013-07-23  Edgar E. Iglesias  <edgar.iglesias@xilinx.com>
+
+	* microblaze/Makefile.in: Add LINUX_BSP.
+	* microblaze/elf-gloss-linux.ld: New file.
+	* microblaze/elf-gloss-linux.specs: Likewise.
+	* microblaze/linux-crt0.S: Likewise.
+	* microblaze/linux-inbyte.c: Likewise.
+	* microblaze/linux-outbyte.c: Likewise.
+	* microblaze/linux-syscalls-wrap.c: Likewise.
+	* microblaze/linux-syscalls.S: Likewise.
+	* microblaze/linux-syscalls.h: Likewise.
+
+2013-07-17  Yaakov Selkowitz  <yselkowitz@users.sourceforge.net>
+
+	* lm32/configure: Regenerate.
+	* moxie/configure: Ditto.
+	* spu/configure: Ditto.
+
+2013-07-16  David Holsgrove <david.holsgrove@xilinx.com>
+
+	* microblaze/Makefile.in: Add GENOBJS and target_makefile_frag.
+	* microblaze/configure.in: Add target_makefile_frag.
+	* microblaze/configure: Regenerate.
+	* microblaze/xil_printf.c: Add new file.
+
+2013-07-16  David Holsgrove <david.holsgrove@xilinx.com>
+
+	* configure.in: Change to microblaze*.
+	* configure: Regenerate.
+	* microblaze/xilinx.ld: Remove OUTPUT_FORMAT.
+
+2013-07-12  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* aarch64/cpu-init/rdimon-aem-el3.S (vectors): Page align.
+
+2013-07-09  Sabrina Ni  <sabrina@andestech.com>
+
+	* configure.in: Add nds32 subdir.
+	* configure: Regenerated.
+	* nds32/configure.in: New.
+	* nds32/configure: New (autogenerated).
+	* nds32/{crt0.S,crt1.S}: New.
+	* nds32/Makefile.in: New.
+	* nds32/{syscall_argvlen.S,syscall_argv.S,
+	syscall_chdirS, syscall_chmod.S,
+	syscall_close.S,syscall_exit.S,syscall_extra.h, syscall_fstat.S,
+	syscall_getpid.S,syscall_gettimeofday.S,syscall_isatty.S,syscall_kill.S,
+	syscall_link.S,syscall_lseek.S,syscall_open.S,syscall_read.S,
+	syscall_rename.S,syscall_sbrk.S,syscall_stat.S,syscall_system.S,
+	syscall_time.S,syscall_times.S,syscall_unlink.S,syscall_utime.S,
+	syscall_write.S}: New.
+
+2013-07-04  Yufeng Zhang  <Yufeng.Zhang@arm.com>
+
+	* aarch64/syscalls.c (stack_ptr): Defined with asm ("wsp") if __ILP32__
+	is defined.
+
+2013-07-02  Joey Ye  <joey.ye@arm.com>
+
+	* arm/crt0.S (_mainCRTStartup): Weak reference to atexit and _fini
+	when lite exit is enabled.
+
+2013-06-28  Yufeng Zhang  <Yufeng.Zhang@arm.com>
+
+	* aarch64/syscalls.c (POINTER_TO_PARAM_BLOCK_T): New macro.
+	(initialise_monitor_handles): Replace cast with macro
+	POINTER_TO_PARAM_BLOCK_T.
+	(_swiread): Likewise.
+	(_swiwrite): Likewise.
+	(_swiopen): Likewise.
+	(_unlink): Likewise.
+	(_system): Likewise.
+	(_rename): Likewise.
+
+2013-06-25  Yufeng Zhang  <Yufeng.Zhang@arm.com>
+
+	* aarch64/crt0.S (GEN_DWORD): New macro definition.
+	(PTR_REG): Ditto.
+	(PTR_SIZE): Ditto.
+	(PTR_LOG_SIZE): Ditto.
+	(start): Use GEN_DWORD to replace the .dword of HeapBase,
+	__bss_start__, __bss_end__, FUNCTION(_fini), env and
+	CommandLine; when __ILP32__ is defined, set the stack base to
+	the top end of the 32-bit address space if the returned value
+	from the Angel API call is larger than or equal to 4 GiB.
+	Also carry out sanity check on the heap base; abort if the
+	base is larger than or equal to 4 GiB.  Use other new
+	macros in the instructions that processes the argv arrays.
+	(StackBase): New lable; replace __stack_base__.
+	(__stack_base__): Set with StackBase or StackBase + 4.
+
+2013-05-30  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* rs6000/Makefile.in: Add sim-times support.  This file has been
+	moved from newlib/libc/machine/powerpc and renamed.
+	* rs6000/sim-times.c: New file.
+
+2013-05-14  DJ Delorie  <dj@redhat.com>
+	    Nick Clifton  <nickc@redhat.com>
+
+	* configure.in (msp430*-*-elf): Add.
+	* configure: Regenerate.
+	* msp430: New directory.
+
+2013-04-19  Steve Ellcey  <sellcey@imgtec.com>
+
+	* mips/cfe_api.h (int64_t): Remove define.
+	(uint64_t): Remove define.
+	(intptr_t): Remove define.
+	(uintptr_t): Remove define.
+	(sys/types.h): Remove include.
+	(_ansi.h): Remove include.
+
+2013-04-19  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* aarch64/Makefile.in (rdimon-crt0.o, rdimon-trap.o)
+	(rdimon-_exit.o, rdimon-_kill.o, rdimon-syscalls.o)
+	(rdimon-libcfunc.o): Add $(CFLAGS) to the compiler command line.
+	* aarch64/cpu-init/Makefile.in (${CPU_INIT_OBJS}): Add $(CFLAGS)
+	to the compiler command line.
+
+2013-02-10  Peter Marheine  <peter@taricorp.net>
+
+	* libgloss/rx/Makefile.in: Respect DESTDIR when installing
+
+2013-02-04  Greta Yorsh  <greta.yorsh@arm.com>
+
+	* arm/elf-rdimon.specs (-lrdimon): Change link to lib.
+
+2013-02-01  Nick Clifton  <nickc@redhat.com>
+
+	* v850/crt0.S: Add recognition of the e3v5
+	architecture variant.
+
+2013-01-18  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* aarch64/Machine.in (RDIMON_SCRIPTS):
+	Add aem-ve.specs and aem-validation.specs.
+	* aarch64/elf-aem-validation.specs: New file.
+	* aarch64/elf-aem-ve.specs: New file.
+
+2013-01-15  Nick Clifton  <nickc@redhat.com>
+
+	* v850/crt0.S (_start): Enable FPU for the V850e2v3.
+
+2012-12-17  Stuart Henderson  <shenders@gcc.gnu.org>
+
+	* bfin/Makefile.in: Add BF60x support.
+	* bfin/basiccrt.S: Add core1 support.
+	* bfin/bf606.ld: New file.
+	* bfin/bf606c0.ld: New file.
+	* bfin/bf606c1.ld: New file.
+	* bfin/bf606m.ld: New file.
+	* bfin/bf607.ld: New file.
+	* bfin/bf607c0.ld: New file.
+	* bfin/bf607c1.ld: New file.
+	* bfin/bf607m.ld: New file.
+	* bfin/bf608.ld: New file.
+	* bfin/bf608c0.ld: New file.
+	* bfin/bf608c1.ld: New file.
+	* bfin/bf608m.ld: New file.
+	* bfin/bf609.ld: New file.
+	* bfin/bf609c0.ld: New file.
+	* bfin/bf609c1.ld: New file.
+	* bfin/bf609m.ld: New file.
+	* bfin/bfin-common-mc0.ld: New file.
+	* bfin/include/cdefBF606.h : New file.
+	* bfin/include/cdefBF607.h : New file.
+	* bfin/include/cdefBF608.h : New file.
+	* bfin/include/cdefBF609.h : New file.
+	* bfin/include/defBF606.h : New file.
+	* bfin/include/defBF607.h : New file.
+	* bfin/include/defBF608.h : New file.
+	* bfin/include/defBF609.h : New file.
+	* bfin/include/sys/_adi_platform.h: Add BF60x support.
+	* bfin/include/sys/anomaly_macros_rtl.h : Clean up.
+
+2012-11-23  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* aarch64/configure.in: Replace the direct generation of
+	cpu-init/Makefile.in with AC_CONFIG_SUBDIRS(cpu-init).
+	* aarch64/configure: Re-generate.
+	* aarch64/cpu-init/Makefile.in (objtype): Remove.
+	(Makefile, config.status): Update the rules.
+	* aarch64/cpu-init/aclocal.m4: New file (generated).
+	* aarch64/cpu-init/configure.in: New file.
+	* aarch64/cpu-init/configure: New file (generated).
+
+2012-10-27  Anthony Green  <green@moxielogic.com>
+
+	* moxie/sim-unlink.S (unlink): Loop forever.
+	moxie/sim-time.S (_sim_time): Ditto.
+
+2012-10-27  Anthony Green  <green@moxielogic.com>
+
+	* moxie/crt0.S (_start): Call memset with correct
+	ABI.
+
+2012-10-03  DJ Delorie  <dj@redhat.com>
+
+	* rl78/crt0.S (_interrupt_vector_table): Convert from CPP macros
+	to GAS macros, to avoid dependence on the line separation
+	character.
+
+2012-10-01  DJ Delorie  <dj@redhat.com>
+
+	* v850/sbrk.c (_sbrk): Change heap_start to be an array of
+	undefined size, to avoid problems when compiled with -msda=4.
+
+2012-09-26  Ian Bolton  <ian.bolton@arm.com>
+        Jim MacArthur  <jim.macarthur@arm.com>
+        Marcus Shawcroft  <marcus.shawcroft@arm.com>
+        Nigel Stephens  <nigel.stephens@arm.com>
+        Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+        Richard Earnshaw  <rearnsha@arm.com>
+        Sofiane Naci  <sofiane.naci@arm.com>
+        Tejas Belagod  <tejas.belagod@arm.com>
+        Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* aarch64/Makefile.in: New file.
+	* aarch64/_exit.c: New file.
+	* aarch64/_kill.c: New file.
+	* aarch64/aclocal.m4: Generated.
+	* aarch64/configure: Generated.
+	* aarch64/configure.in: New file.
+	* aarch64/cpu-init/Makefile.in: New file.
+	* aarch64/cpu-init/rdimon-aem-el3.S: New file.
+	* aarch64/crt0.S: New file.
+	* aarch64/elf-rdimon.specs: New file.
+	* aarch64/libcfunc.c: New file.
+	* aarch64/svc.h: New file.
+	* aarch64/syscalls.c: New file.
+	* configure.in: Add AArch64.
+	* configure: Re-generated.
+
+2012-09-13  Anthony Green  <green@moxielogic.com>
+
+	* moxie/moxie-elf-common.ld: Add bi-endian support.
+
+2012-08-30  DJ Delorie  <dj@redhat.com>
+
+	* rx/rx.ld: Add W_* sections to .rodata.
+	* rx/rx-sim.ld: Likewise.
+
+2012-08-30  Kaushik Phatak  <kaushik.phatak@kpitcummins.com>
+
+	* cr16/sys/syscall.h: New file.
+
+2012-05-02  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* arm/redboot-crt0.S (__change_mode): Replace mov with movs.
+
+2012-03-23  Mike Frysinger  <vapier@gentoo.org>
+
+	* cris/Makefile.in (install-lin): Add $(DESTDIR) before ${tooldir}.
+
+2012-03-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* libnosys/Makefile.in (NEWLIB_CFLAGS, NEWLIB_LDFLAGS,
+	INCLUDES, CFLAGS_FOR_TARGET, LDFLAGS_FOR_TARGET,
+	AR_FLAGS, .c.o, .C.o, .s.o, .S.o, .c.s): Delete and replace
+	with @host_makefile_frag@.
+
+2012-03-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/default.mh (AR_FLAGS): Set to rc.
+
+2012-03-09  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* epiphany/access.c: Add modification rights to clause as
+	permitted by DJ Delorie.
+	* iq2000/access.c: Ditto.
+	* mn10200/access.c: Ditto.
+	* mn10300/access.c: Ditto.
+	* mt/access.c: Ditto.
+	* v850/access.c: Ditto.
+
+2012-03-02  Bin Cheng  <bin.cheng@arm.com>
+
+	* configure.in: Accept "arm*" target spec instead of just "arm".
+	* configure: Regenerated.
+	* libnosys/configure.in: Likewise.
+	(libc_symbol_prefix): Renamed to libc_cv_symbol_prefix.
+	* libnosys/configure: Regenerated (using autoconf v2.68).
+
+2012-02-21  Jeremy Bennett  <jeremy.bennett@embecosm.com>
+            Alan Lehotsky  <apl@alum.mit.edu>
+            Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* configure.in: Add Epiphany support.
+	* configure: Regenerate.
+	* epiphany: New directory.
+	* libgloss/README: Add Epiphany entry.
+
+2012-01-23  Stuart Henderson  <stuart.henderson@analog.com>
+
+	* bfin/_exit.c: New file.
+	* bfin/Makefile.in (BOARD_OBJS): Add _exit.o.
+
+2012-01-17  Bin Cheng  <bin.cheng@arm.com>
+
+	* arm/linux-crt0.c: Use ldr instead of adr to get address of
+	_start_thumb.
+
+2011-12-18  Steve Kilbane  <stephen.kilbane@analog.com>
 
 	* bfin/clear_cache_range.c: New file.
 	* bfin/Makefile.in (SIM_OBJS): Add clear_cache_range.o.

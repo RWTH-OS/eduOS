@@ -93,6 +93,28 @@ int create_kernel_task(tid_t* id, entry_point_t ep, void* args, uint8_t prio);
  */
 int create_user_task(tid_t* id, const char* fame, char** argv);
 
+/** @brief Create a task with a specific entry point
+ *
+ * @todo Don't acquire table_lock for the whole task creation.
+ *
+ * @param id Pointer to a tid_t struct were the id shall be set
+ * @param ep Pointer to the function the task shall start with
+ * @param arg Arguments list
+ * @param prio Desired priority of the new task
+ * @param core_id Start the new task on the core with this id
+ *
+ * @return
+ * - 0 on success
+ * - -ENOMEM (-12) or -EINVAL (-22) on failure
+ */
+int create_task(tid_t* id, entry_point_t ep, void* arg, uint8_t prio);
+
+/** @brief Cleanup function for the task termination
+ *
+ * On termination, the task call this function to cleanup its address space.
+ */
+void finish_task_switch(void);
+
 /** @brief determine the highest priority of all tasks, which are ready
  *
  * @return 

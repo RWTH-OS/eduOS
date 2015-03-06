@@ -44,15 +44,15 @@ static int sys_write(int fd, const char* buf, size_t len)
 	return 0;
 }
 
-static int sys_sbrk(int incr)
+static ssize_t sys_sbrk(int incr)
 {
 	task_t* task = current_task;
 	vma_t* heap = task->heap;
-	int ret;
+	ssize_t ret;
 
 	spinlock_lock(&task->vma_lock);
 
-	if (BUILTIN_EXPECT(!heap,0 )) {
+	if (BUILTIN_EXPECT(!heap, 0)) {
 		kprintf("sys_sbrk: missing heap!\n");
 		abort();
 	}
@@ -70,9 +70,9 @@ static int sys_sbrk(int incr)
 	return ret;
 }
 
-int syscall_handler(uint32_t sys_nr, ...)
+ssize_t syscall_handler(uint32_t sys_nr, ...)
 {
-	int ret = -EINVAL;
+	ssize_t ret = -EINVAL;
 	va_list vl;
 
 	va_start(vl, sys_nr);

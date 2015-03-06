@@ -24,8 +24,9 @@ INDEX
 
 ANSI_SYNOPSIS
 	#include <time.h>
-	size_t strftime(char *<[s]>, size_t <[maxsize]>,
-			const char *<[format]>, const struct tm *<[timp]>);
+	size_t strftime(char *restrict <[s]>, size_t <[maxsize]>,
+			const char *restrict <[format]>,
+                        const struct tm *restrict <[timp]>);
 
 TRAD_SYNOPSIS
 	#include <time.h>
@@ -662,10 +663,10 @@ static size_t __strftime (CHAR *, size_t, const CHAR *, const struct tm *,
 
 size_t
 _DEFUN (strftime, (s, maxsize, format, tim_p),
-	CHAR *s _AND
+	CHAR *__restrict s _AND
 	size_t maxsize _AND
-	_CONST CHAR *format _AND
-	_CONST struct tm *tim_p)
+	_CONST CHAR *__restrict format _AND
+	_CONST struct tm *__restrict tim_p)
 {
   era_info_t *era_info = NULL;
   alt_digits_t *alt_digits = NULL;
@@ -686,19 +687,19 @@ __strftime (CHAR *s, size_t maxsize, const CHAR *format,
 
 size_t
 _DEFUN (strftime, (s, maxsize, format, tim_p),
-	CHAR *s _AND
+	CHAR *__restrict s _AND
 	size_t maxsize _AND
-	_CONST CHAR *format _AND
-	_CONST struct tm *tim_p)
+	_CONST CHAR *__restrict format _AND
+	_CONST struct tm *__restrict tim_p)
 #endif /* !_WANT_C99_TIME_FORMATS */
 {
   size_t count = 0;
-  int i, len;
+  int len = 0;
   const CHAR *ctloc;
 #if defined (MAKE_WCSFTIME) && !defined (__HAVE_LOCALE_INFO_EXTENDED__)
   CHAR ctlocbuf[CTLOCBUFLEN];
 #endif
-  size_t ctloclen;
+  size_t i, ctloclen;
   CHAR alt;
   CHAR pad;
   unsigned long width;
@@ -1298,7 +1299,7 @@ recurse:
 	case CQ('Z'):
 	  if (tim_p->tm_isdst >= 0)
 	    {
-	      int size;
+	      size_t size;
 	      TZ_LOCK;
 	      size = strlen(_tzname[tim_p->tm_isdst > 0]);
 	      for (i = 0; i < size; i++)

@@ -58,6 +58,49 @@ extern atomic_int32_t total_pages;
 extern atomic_int32_t total_allocated_pages;
 extern atomic_int32_t total_available_pages;
 
+#if 0
+// Demo of a user-level task
+static void NORETURN userfoo(void* arg)
+{
+	char str[] = "hello from userfoo\n";
+
+	SYSCALL3(__NR_write, 0, str, 20);
+	SYSCALL1(__NR_exit, 0);
+
+	while(1) ;
+}
+
+static char ustack[KERNEL_STACK_SIZE]  __attribute__ ((aligned (PAGE_SIZE)));
+
+static int wrapper(void* arg)
+{
+	size_t* stack = (size_t*) (ustack+KERNEL_STACK_SIZE-16);
+
+	memset(ustack, 0xCD, KERNEL_STACK_SIZE);
+	*stack-- = (size_t) arg;
+	*stack = (size_t) NULL; // put exit function as caller on the stack
+
+#if 0
+	// this triggers a page fault because a user task is not able to access the kernel space
+	return jump_to_user_code((size_t) userfoo, (size_t) stack);
+#else
+	// dirty hack, map userfoo to the user space
+	size_t phys = virt_to_phys(((size_t) userfoo) & PAGE_MASK);
+	size_t vuserfoo = KERNEL_SPACE+PAGE_SIZE;
+	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_USER);
+	vuserfoo += (size_t)userfoo & (PAGE_SIZE-1);
+
+	// dirty hack, map ustack to the user space
+	phys = virt_to_phys((size_t) ustack);
+	size_t vstack = 3*KERNEL_SPACE;
+	page_map(vstack, phys, KERNEL_STACK_SIZE >> PAGE_BITS, PG_PRESENT | PG_RW | PG_USER);
+	vstack = (vstack + KERNEL_STACK_SIZE - 16);
+
+	return jump_to_user_code(vuserfoo, vstack);
+#endif
+}
+#endif
+
 static int foo(void* arg)
 {
 	int i;
@@ -95,7 +138,8 @@ static int eduos_init(void)
 
 int main(void)
 {
-	char* argv[] = {"/bin/hello", NULL};
+	char* argv1[] = {"/bin/hello", NULL};
+	//char* argv2[] = {"/bin/jacobi", NULL};
 
 	eduos_init();
 	system_calibration(); // enables also interrupts
@@ -105,15 +149,21 @@ int main(void)
 	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
 	kprintf("Total memory: %lu KiB\n", atomic_int32_read(&total_pages) * PAGE_SIZE / 1024);
 	kprintf("Current allocated memory: %lu KiB\n", atomic_int32_read(&total_allocated_pages) * PAGE_SIZE / 1024);
-	kprintf("Curren available memory: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
+	kprintf("Current available memory: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
+
 
 	create_kernel_task(NULL, foo, "foo", NORMAL_PRIO);
-	create_user_task(NULL, "/bin/hello", argv);
+	create_user_task(NULL, "/bin/hello", argv1);
+	//create_user_task(NULL, "/bin/jacobi", argv2);
+	//create_user_task(NULL, "/bin/jacobi", argv2);
 
 #if 0
 	kputs("Filesystem:\n");
 	list_fs(fs_root, 1);
 #endif
+
+	// x64: wrapper maps function to user space to start a user-space task
+	//create_kernel_task(NULL, wrapper, "userfoo", NORMAL_PRIO);
 
 	while(1) { 
 		HALT;

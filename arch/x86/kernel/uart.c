@@ -99,7 +99,7 @@
 #define UART_MCR_DTR		0x01 /* DTR complement */
 
 static uint8_t	mmio = 0;
-static uint32_t	iobase = 0;
+static size_t	iobase = 0;
 static tid_t	id;
 static mailbox_uint8_t input_queue;
 

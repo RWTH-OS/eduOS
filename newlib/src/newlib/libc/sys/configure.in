@@ -27,6 +27,7 @@ if test -n "${sys_dir}"; then
 	arm) AC_CONFIG_SUBDIRS(arm) ;;
 	d10v) AC_CONFIG_SUBDIRS(d10v) ;;
 	decstation) AC_CONFIG_SUBDIRS(decstation) ;;
+	epiphany) AC_CONFIG_SUBDIRS(epiphany) ;;
 	h8300hms) AC_CONFIG_SUBDIRS(h8300hms) ;;
 	h8500hms) AC_CONFIG_SUBDIRS(h8500hms) ;;
 	linux) AC_CONFIG_SUBDIRS(linux) ;;
@@ -44,9 +45,9 @@ if test -n "${sys_dir}"; then
 	sysvi386) AC_CONFIG_SUBDIRS(sysvi386) ;;
 	sysvnecv70) AC_CONFIG_SUBDIRS(sysvnecv70) ;;
 	tic80) AC_CONFIG_SUBDIRS(tic80) ;;
+	tirtos) AC_CONFIG_SUBDIRS(tirtos) ;;
 	w65) AC_CONFIG_SUBDIRS(w65) ;;
 	z8ksim) AC_CONFIG_SUBDIRS(z8ksim) ;;
-	eduos) AC_CONFIG_SUBDIRS(eduos) ;;
   esac;
 fi
 

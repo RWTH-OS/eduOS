@@ -28,7 +28,6 @@
 .endm
 	.code 32
 #endif
-	FUNC_START SYM_NAME(start)
 	FUNC_START SYM_NAME(_start)
     /* Unnecessary to set fp for v6-m/v7-m, which don't support
        ARM state.  */
@@ -97,7 +96,7 @@ __change_mode:
 
 	movs 	a1, #0
 	ldr	a2, .LC3
-	mov	a3, a2
+	movs	a3, a2
 	bl	SYM_NAME(main)
     1:	bl	SYM_NAME(exit)
 	b	1b

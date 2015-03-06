@@ -77,31 +77,50 @@ OBJCOPY = `if [ -f ${objroot}/../binutils/objcopy ] ; \
 
 CRT = crt0.o crt1.o crt2.o crt3.o crt4.o crtinit.o pgcrtinit.o sim-crtinit.o sim-pgcrtinit.o
 LIB = libgloss.a
-OBJS = sbrk.o timer.o _exception_handler.o _hw_exception_handler.o _interrupt_handler.o _program_clean.o _program_init.o xil_malloc.o xil_sbrk.o 
+GENOBJS = fstat.o getpid.o isatty.o kill.o lseek.o print.o putnum.o stat.o unlink.o \
+          open.o close.o read.o write.o
+OBJS = ${GENOBJS} sbrk.o timer.o _exception_handler.o _hw_exception_handler.o \
+       _interrupt_handler.o _program_clean.o _program_init.o \
+       xil_malloc.o xil_sbrk.o xil_printf.o
 SCRIPTS	= xilinx.ld
+
+# Tiny Linux BSP.
+LINUX_BSP     = libgloss-linux.a
+CRT          += linux-crt0.o
+LINUX_OBJS    = linux-syscalls.o linux-syscalls-wrap.o
+LINUX_OBJS   += linux-outbyte.o linux-inbyte.o
+LINUX_SCRIPTS = elf-gloss-linux.specs
 
 CPU = @CPU@
 
 #### Host specific Makefile fragment comes in here.
 @host_makefile_frag@
 
-all: ${CRT} ${LIB}
+all: ${CRT} ${LIB} ${LINUX_BSP}
 
-install: ${CRT} ${LIB}
+install: ${CRT} ${LIB} install-linux
 	@for crt in ${CRT}; do \
 	$(INSTALL_PROGRAM) $${crt} $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/$${crt}; \
 	done
 	$(INSTALL_PROGRAM) ${LIB} $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}
 	$(INSTALL_PROGRAM) $(srcdir)/${SCRIPTS} $(DESTDIR)$(tooldir)/lib/
 
+install-linux: ${LINUX_BSP}
+	$(INSTALL_PROGRAM) ${LINUX_BSP} $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}
+	set -e; for x in ${LINUX_SCRIPTS}; do ${INSTALL_DATA} ${srcdir}/${objtype}$$x $(DESTDIR)${tooldir}/lib${MULTISUBDIR}/$$x; done
+
 crt0.o:	crt0.S
 crt1.o:	crt1.S
 crt2.o:	crt2.S
 crt3.o:	crt3.S
 crt4.o:	crt4.S
+linux-crt0.o: linux-crt0.S
 crtinit.o: crtinit.S
 sim-crtinit.o: sim-crtinit.S
 sim-pgcrtinit.o: sim-pgcrtinit.S
+
+# target specific makefile fragment comes in here.
+@target_makefile_frag@
 
 clean mostlyclean:
 	rm -f *.o *.a *.map *.x
@@ -113,12 +132,16 @@ ${LIB}:	${OBJS}
 	${AR} ${ARFLAGS} $@ ${OBJS}
 	${RANLIB} $@
 
+${LINUX_BSP}: ${LINUX_OBJS}
+	${AR} ${ARFLAGS} $@ ${LINUX_OBJS}
+	${RANLIB} $@
+
 .PHONY: info dvi doc install-info clean-info
 info doc dvi:
 install-info:
 clean-info:
 
-Makefile: Makefile.in config.status @host_makefile_frag_path@ \
+Makefile: Makefile.in config.status @host_makefile_frag_path@ @target_makefile_frag_path@ \
 	$(SHELL) config.status
 
 config.status: configure

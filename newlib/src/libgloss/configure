@@ -665,10 +665,13 @@ target_alias
 CCAS
 CCASFLAGS'
 ac_subdirs_all='doc
+aarch64
+epiphany
 eduos
 i386
 m32r
 m68hc11
+nds32
 m68k
 pa
 i960
@@ -696,12 +699,14 @@ v850
 xc16x
 xstormy16
 m32c
+msp430
 rl78
 rx
 arm
 spu
 tic6x
 iq2000
+or1k
 libnosys'
 
 # Initialize some variables set by options.
@@ -2392,11 +2397,21 @@ config_libnosys=true
 
 case "${target}" in
   *-eduos-elf*)
-        subdirs="$subdirs eduos"
+	subdirs="$subdirs eduos"
 
-        config_testsuite=false
-        config_libnosys=false
-        ;;
+	config_testsuite=false
+	config_libnosys=false
+	;;
+  aarch64*-*-*)
+	subdirs="$subdirs aarch64"
+
+	config_testsuite=true
+	;;
+  epiphany-*-*)
+	subdirs="$subdirs epiphany"
+
+	config_testsuite=true
+	;;
   i[3456]86-*-elf* | i[3456]86-*-coff*)
 	subdirs="$subdirs i386"
 
@@ -2407,6 +2422,10 @@ case "${target}" in
 	;;
   m68hc11-*-* | m6811-*-* | m68hc12-*-* | m6812-*-*)
 	subdirs="$subdirs m68hc11"
+
+	;;
+  nds32*-*-*)
+	subdirs="$subdirs nds32"
 
 	;;
   fido-*-* | m68*-*-*)
@@ -2429,7 +2448,7 @@ case "${target}" in
 	subdirs="$subdirs sparc"
 
 	;;
-  sh*-*-pe | mips*-*-pe | *arm-wince-pe)
+  sh*-*-pe | mips*-*-pe | *arm*-wince-pe)
 	subdirs="$subdirs wince"
 
 	;;
@@ -2493,7 +2512,7 @@ case "${target}" in
 	subdirs="$subdirs moxie"
 
 	;;
-  microblaze-*-*)
+  microblaze*-*-*)
 	subdirs="$subdirs microblaze"
 
 	;;
@@ -2517,6 +2536,10 @@ case "${target}" in
 	subdirs="$subdirs m32c"
 
 	;;
+  msp430*-*-elf)
+	subdirs="$subdirs msp430"
+
+	;;
   rl78*-*-elf)
 	subdirs="$subdirs rl78"
 
@@ -2525,7 +2548,7 @@ case "${target}" in
 	subdirs="$subdirs rx"
 
 	;;
-  arm*-*-elf | arm*-*-coff | arm-*-*)
+  arm*-*-elf | arm*-*-coff | arm*-*-*)
 	subdirs="$subdirs arm"
 
 	;;
@@ -2542,6 +2565,10 @@ case "${target}" in
 	;;
   iq2000-*-*)
 	subdirs="$subdirs iq2000"
+
+	;;
+  or1k-*-* | or1knd-*-* )
+	subdirs="$subdirs or1k"
 
 	;;
 esac

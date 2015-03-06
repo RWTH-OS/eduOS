@@ -68,27 +68,45 @@ int create_default_frame(task_t* task, entry_point_t ep, void* arg);
  */
 static inline int register_task(void)
 {
+#ifdef CONFIG_X86_32
 	uint16_t sel = 5 << 3;
+#else
+	uint16_t sel = 6 << 3;
+#endif
 
 	asm volatile ("ltr %%ax" : : "a"(sel));
 
 	return 0;
 }
 
-/** @brief Jump back to user code
+/** @brief Jump to user code
  *
  * This function runs the user code after stopping it just as if
  * it was a return from a procedure.
  *
  * @return 0 in any case
  */
-static inline int jump_to_user_code(uint32_t ep, uint32_t stack)
+static inline int jump_to_user_code(size_t ep, size_t stack)
 {
-	asm volatile ("mov %0, %%ds; mov %0, %%fs; mov %0, %%gs; mov %0, %%es" :: "r"(0x23));
-	asm volatile ("push $0x23; push %0; push $0x1B; push %1" :: "r"(stack), "r"(ep));
-	asm volatile ("lret" ::: "cc");
+	// Create a pseudo interrupt on the stack and return to user function
+#ifdef CONFIG_X86_32
+	size_t ds = 0x23, cs = 0x1b;
+
+	asm volatile ("mov %0, %%ds; mov %0, %%es" :: "r"(ds));
+	asm volatile ("push %0; push %1; pushf; push %2; push %3" :: "r"(ds), "r"(stack), "r"(cs), "r"(ep));
+	asm volatile ("iret");
 
 	return 0;
+#else
+	size_t ds = 0x23, cs = 0x2b;
+
+	// x86_64 doesn't longer use segment registers
+	//asm volatile ("mov %0, %%ds; mov %0, %%es" :: "r"(ds));
+	asm volatile ("push %0; push %1; pushfq; push %2; push %3" :: "r"(ds), "r"(stack), "r"(cs), "r"(ep));
+	asm volatile ("iretq");
+
+	return 0;
+#endif
 }
 
 #ifdef __cplusplus
