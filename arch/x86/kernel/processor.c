@@ -155,8 +155,8 @@ int cpu_detection(void) {
 
 		kprintf("Physical adress-width: %u bits\n", cpu_info.addr_width & 0xff);
 		kprintf("Linear adress-width: %u bits\n", (cpu_info.addr_width >> 8) & 0xff);
-		kprintf("Sysenter support: %s\n", (cpu_info.feature1 & CPU_FEATURE_SEP) ? "available" : "unavailable");
-		kprintf("Syscall support: %s\n", (cpu_info.feature3 & CPU_FEATURE_SYSCALL) ? "available" : "unavailable");
+		kprintf("Sysenter instruction: %s\n", (cpu_info.feature1 & CPU_FEATURE_SEP) ? "available" : "unavailable");
+		kprintf("Syscall instruction: %s\n", (cpu_info.feature3 & CPU_FEATURE_SYSCALL) ? "available" : "unavailable");
 	}
 
 	cr4 = read_cr4();
