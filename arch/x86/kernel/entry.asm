@@ -522,47 +522,44 @@ global isrsyscall
 ; used to realize system calls
 isrsyscall:
 	cli
+	; set kernel stack
+	extern get_kernel_stack
+	call get_kernel_stack
+	xchg rsp, rax ; => rax contains original rsp
+
+    push rax ; contains original rsp
     push r15
     push r14
     push r13
     push r12
     push r11
-    push r10
-    push r9
-    push r8
-    push rdi
-    push rsi
     push rbp
-    push rsp
-    push rbx
     push rdx
     push rcx
-    push rax
+    push rbx
+    push rdi
+    push rsi
 	sti
 
     extern syscall_handler
     call syscall_handler
 
 	cli
-	add rsp, 8 ; rax contains the return value
-               ; => we did not restore rax
-    pop rcx
-    pop rdx
-    pop rbx
-    add rsp, 8
-    pop rbp
     pop rsi
     pop rdi
-    pop r8
-    pop r9
-    pop r10
+    pop rbx
+    pop rcx
+    pop rdx
+    pop rbp
     pop r11
     pop r12
     pop r13
     pop r14
     pop r15
+    pop r10
+    mov rsp, r10
     sti
-    iretq
+    o64 sysret
 
 global switch_context
 ALIGN 8

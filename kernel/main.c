@@ -151,7 +151,7 @@ int main(void)
 	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
 	kprintf("Total memory: %lu KiB\n", atomic_int32_read(&total_pages) * PAGE_SIZE / 1024);
 	kprintf("Current allocated memory: %lu KiB\n", atomic_int32_read(&total_allocated_pages) * PAGE_SIZE / 1024);
-	kprintf("Curren available memory: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
+	kprintf("Current available memory: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
 
 
 	create_kernel_task(NULL, foo, "foo", NORMAL_PRIO);

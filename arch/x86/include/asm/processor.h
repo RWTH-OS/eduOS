@@ -67,6 +67,7 @@ extern "C" {
 #define CPU_FEATURE_HYPERVISOR	(1 << 31)
 
 // CPUID.80000001H:EDX feature list
+#define CPU_FEATURE_SYSCALL		(1 << 11)
 #define CPU_FEATURE_NX			(1 << 20)
 #define CPU_FEATURE_1GBHP		(1 << 26)
 #define CPU_FEATURE_LM			(1 << 29)

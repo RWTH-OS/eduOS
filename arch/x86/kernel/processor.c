@@ -32,6 +32,8 @@
 #include <eduos/processor.h>
 #include <eduos/tasks.h>
 
+extern void isrsyscall(void);
+
 cpu_info_t cpu_info = { 0, 0, 0, 0};
 static uint32_t cpu_freq = 0;
 
@@ -154,6 +156,7 @@ int cpu_detection(void) {
 		kprintf("Physical adress-width: %u bits\n", cpu_info.addr_width & 0xff);
 		kprintf("Linear adress-width: %u bits\n", (cpu_info.addr_width >> 8) & 0xff);
 		kprintf("Sysenter support: %s\n", (cpu_info.feature1 & CPU_FEATURE_SEP) ? "available" : "unavailable");
+		kprintf("Syscall support: %s\n", (cpu_info.feature3 & CPU_FEATURE_SYSCALL) ? "available" : "unavailable");
 	}
 
 	cr4 = read_cr4();
@@ -164,6 +167,15 @@ int cpu_detection(void) {
 	if (has_pge())
 		cr4 |= CR4_PGE;
 	write_cr4(cr4);
+
+#ifdef CONFIG_X86_64
+	if (cpu_info.feature3 & CPU_FEATURE_SYSCALL) {
+		wrmsr(MSR_EFER, rdmsr(MSR_EFER) | EFER_LMA | EFER_SCE);
+		wrmsr(MSR_STAR, (0x1BULL << 48) | (0x08ULL << 32));
+		wrmsr(MSR_LSTAR, (size_t) &isrsyscall);
+		wrmsr(MSR_SYSCALL_MASK, 0); // we didn't clear RFLAGS during an interrupt
+	} else kputs("Processor doesn't support syscalls\n");
+#endif
 
 	//if (has_nx())
 	//	wrmsr(MSR_EFER, rdmsr(MSR_EFER) | EFER_NXE);

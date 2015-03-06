@@ -92,9 +92,11 @@ void idt_install(void)
 		idtp.limit = (sizeof(idt_entry_t) * 256) - 1;
 		idtp.base = (size_t)&idt;
 
+#ifdef CONFIG_X86_32
 		/* Add any new ISRs to the IDT here using idt_set_gate */
 		idt_set_gate(INT_SYSCALL, (size_t)isrsyscall, KERNEL_CODE_SELECTOR,
 			IDT_FLAG_PRESENT|IDT_FLAG_RING3|IDT_FLAG_32BIT|IDT_FLAG_TRAPGATE);
+#endif
 	}
 
 	/* Points the processor's internal register to the new IDT */

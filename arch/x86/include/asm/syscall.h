@@ -64,28 +64,28 @@ inline static long
 syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
 	unsigned long arg3, unsigned long arg4)
 {
-        long res;
+	long res;
 
 	asm volatile (_SYSCALLSTR(INT_SYSCALL)
-             : "=a" (res)
-             : "0" (nr), "b" (arg0), "c" (arg1), "d" (arg2), "S" (arg3), "D" (arg4)
-             : "memory", "cc");
+			: "=a" (res)
+			: "0" (nr), "b" (arg0), "c" (arg1), "d" (arg2), "S" (arg3), "D" (arg4)
+			: "memory", "cc");
 
-        return res;
+	return res;
 }
 #else
 inline static long
 syscall(int nr, unsigned long arg0, unsigned long arg1, unsigned long arg2,
 	unsigned long arg3, unsigned long arg4)
 {
-        long res;
+	long res;
 
-	asm volatile ("mov %5, %%r8; mov %6, %%r9;" _SYSCALLSTR(INT_SYSCALL)
-             : "=a" (res)
-             : "D" (nr), "S" (arg0), "d" (arg1), "c" (arg2), "r" (arg3), "r" (arg4)
-             : "memory", "cc", "%r8", "%r9");
+	asm volatile ("mov %5, %%r8; mov %6, %%r9; syscall"
+			: "=a" (res)
+			: "D" (nr), "S" (arg0), "d" (arg1), "c" (arg2), "m" (arg3), "m" (arg4)
+			: "memory", "cc", "%r8", "%r9");
 
-        return res;
+	return res;
 }
 #endif
 
