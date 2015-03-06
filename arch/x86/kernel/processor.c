@@ -175,10 +175,10 @@ int cpu_detection(void) {
 		wrmsr(MSR_LSTAR, (size_t) &isrsyscall);
 		wrmsr(MSR_SYSCALL_MASK, 0); // we didn't clear RFLAGS during an interrupt
 	} else kputs("Processor doesn't support syscalls\n");
-#endif
 
-	//if (has_nx())
-	//	wrmsr(MSR_EFER, rdmsr(MSR_EFER) | EFER_NXE);
+	if (has_nx())
+		wrmsr(MSR_EFER, rdmsr(MSR_EFER) | EFER_NXE);
+#endif
 
 	if (first_time && has_sse())
 		wmb = sfence;
