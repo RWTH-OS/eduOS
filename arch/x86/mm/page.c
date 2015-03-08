@@ -55,9 +55,6 @@ extern const void kernel_start;
 /** Lock for kernel space page tables */
 static spinlock_t kslock = SPINLOCK_INIT;
 
-/** This PGD table is initialized in entry.asm */
-extern size_t* boot_map;
-
 /** A self-reference enables direct access to all page tables */
 static size_t* self[PAGE_LEVELS] = {
 	(size_t *) 0xFFC00000,
@@ -84,16 +81,6 @@ size_t virt_to_phys(size_t addr)
 int page_set_flags(size_t viraddr, uint32_t npages, int flags)
 {
 	return -EINVAL;
-}
-
-int page_map_bootmap(size_t viraddr, size_t phyaddr, size_t bits)
-{
-	if (BUILTIN_EXPECT(viraddr >= PAGE_MAP_ENTRIES*PAGE_SIZE, 0))
-		return -EINVAL;
-
-	boot_map[PAGE_MAP_ENTRIES + (viraddr >> PAGE_BITS)] = phyaddr | bits | PG_PRESENT;
-
-	return 0;
 }
 
 int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
@@ -130,7 +117,7 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 						atomic_int32_inc(&current_task->user_usage);
 
 					/* Reference the new table within its parent */
-					self[lvl][vpn] = phyaddr | bits | PG_PRESENT;
+					self[lvl][vpn] = phyaddr | bits | PG_PRESENT | PG_USER | PG_RW;
 
 					/* Fill new table with zeros */
 					memset(&self[lvl-1][vpn<<PAGE_MAP_BITS], 0, PAGE_SIZE);
