@@ -142,6 +142,11 @@ static inline uint32_t ioapic_max_redirection_entry(void)
 	return 0;
 }
 
+static inline int apic_is_enabled(void)
+{
+	return (lapic && initialized);
+}
+
 /*
  * Send a 'End of Interrupt' command to the APIC
  */
@@ -168,11 +173,6 @@ void apic_eoi(size_t int_no)
 		 */
 		outportb(0x20, 0x20);
 	}
-}
-
-int apic_is_enabled(void)
-{
-	return (lapic && initialized);
 }
 
 uint32_t apic_cpu_id(void)
