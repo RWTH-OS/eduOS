@@ -248,30 +248,8 @@ size_t** irq_handler(struct state *s)
 			handler(s);
 	} else kprintf("Invalid interrupt number %d\n", s->int_no);
 
-	/* 
-	 * If the IDT entry that was invoked was greater-than-or-equal to 48,
-	 * then we use the APIC
-	 */
-	if (apic_is_enabled() || s->int_no >= 123) {
-		apic_eoi();
-		goto leave_handler;
-	}
+	apic_eoi(s->int_no);
 
-	/*
-	 * If the IDT entry that was invoked was greater-than-or-equal to 40 
-	 * and lower than 48 (meaning IRQ8 - 15), then we need to 
-	 * send an EOI to the slave controller of the PIC
-	 */
-	if (s->int_no >= 40)
-		outportb(0xA0, 0x20);
-
-	/* 
-	 * In either case, we need to send an EOI to the master
-	 * interrupt controller of the PIC, too 
-	 */
-	outportb(0x20, 0x20);
-
-leave_handler:
 	// timer interrupt?
 	if (s->int_no == 32)
 		return scheduler(); // switch to a new task

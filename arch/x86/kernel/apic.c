@@ -145,9 +145,29 @@ static inline uint32_t ioapic_max_redirection_entry(void)
 /*
  * Send a 'End of Interrupt' command to the APIC
  */
-void apic_eoi(void)
+void apic_eoi(size_t int_no)
 {
-	lapic_write(APIC_EOI, 0);
+	/*
+	 * If the IDT entry that was invoked was greater-than-or-equal to 48,
+	 * then we use the APIC
+	 */
+	if (apic_is_enabled() || int_no >= 123) {
+		lapic_write(APIC_EOI, 0);
+	} else {
+		/*
+		 * If the IDT entry that was invoked was greater-than-or-equal to 40
+		 * and lower than 48 (meaning IRQ8 - 15), then we need to
+		 * send an EOI to the slave controller of the PIC
+		 */
+		if (int_no >= 40)
+			outportb(0xA0, 0x20);
+
+		/*
+		 * In either case, we need to send an EOI to the master
+		 * interrupt controller of the PIC, too
+		 */
+		outportb(0x20, 0x20);
+	}
 }
 
 int apic_is_enabled(void)

@@ -197,7 +197,7 @@ typedef struct {
 } __attribute__ ((packed)) ioapic_route_t;
 
 int apic_init(void);
-void apic_eoi(void);
+void apic_eoi(size_t int_no);
 uint32_t apic_cpu_id(void);
 int apic_calibration(void);
 int apic_is_enabled(void);
