@@ -47,6 +47,8 @@ static gdt_entry_t		gdt[GDT_ENTRIES] = {[0 ... GDT_ENTRIES-1] = {0, 0, 0, 0, 0, 
  */
 extern void gdt_flush(void);
 
+extern const void boot_stack;
+
 void set_kernel_stack(void)
 {
 	task_t* curr_task = current_task;
@@ -136,7 +138,7 @@ void gdt_install(void)
 	/* set default values */
 	task_state_segment.eflags = 0x1202;
 	task_state_segment.ss0 = 0x10;			// data segment
-	task_state_segment.esp0 = 0xDEADBEEF;	// invalid pseudo address
+	task_state_segment.esp0 = (size_t) &boot_stack - 0x10;
 	task_state_segment.cs = 0x0b;
 	task_state_segment.ss = task_state_segment.ds = task_state_segment.es = task_state_segment.fs = task_state_segment.gs = 0x13;
 	gdt_set_gate(5, (unsigned long) (&task_state_segment), sizeof(tss_t)-1,
