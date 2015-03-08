@@ -138,6 +138,8 @@ extern "C" {
 
 // x86-64 specific MSRs
 
+/// APIC register
+#define MSR_APIC_BASE			0x0000001B
 /// extended feature register
 #define MSR_EFER				0xc0000080
 /// legacy mode SYSCALL target

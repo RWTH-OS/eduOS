@@ -478,7 +478,7 @@ check_lapic:
 
 	if (has_x2apic()) {
 		kprintf("Enable X2APIC support!\n");
-		wrmsr(0x1B, lapic | 0xD00);
+		wrmsr(MSR_APIC_BASE, lapic | 0xD00);
 		lapic_read = lapic_read_msr;
 		lapic_write = lapic_write_msr;
 	} else {

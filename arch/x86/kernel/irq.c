@@ -83,7 +83,7 @@ extern void apic_svr(void);
  * This array is actually an array of function pointers. We use
  * this to handle custom IRQ handlers for a given IRQ
  */
-static void* irq_routines[MAX_HANDLERS] = {[0 ... MAX_HANDLERS-1] = NULL };
+static void* irq_routines[MAX_HANDLERS] = {[0 ... MAX_HANDLERS-1] = NULL};
 
 /* This installs a custom IRQ handler for the given IRQ */
 int irq_install_handler(unsigned int irq, irq_handler_t handler)
