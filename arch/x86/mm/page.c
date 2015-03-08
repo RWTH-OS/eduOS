@@ -137,8 +137,8 @@ int page_map(size_t viraddr, size_t phyaddr, size_t npages, size_t bits)
 					if (bits & PG_USER)
 						atomic_int32_inc(&current_task->user_usage);
 
-#ifdef CONFIG_X86_32
 					/* Reference the new table within its parent */
+#ifdef CONFIG_X86_32
 					self[lvl][vpn] = phyaddr | bits | PG_PRESENT | PG_USER | PG_RW;
 #elif defined(CONFIG_X86_64)
 					self[lvl][vpn] = (phyaddr | bits | PG_PRESENT | PG_USER | PG_RW) & ~PG_XD;
@@ -227,7 +227,7 @@ int page_map_copy(task_t *dest)
 					size_t phyaddr = get_pages(1);
 					if (BUILTIN_EXPECT(!phyaddr, 0))
 						return -ENOMEM;
-					
+
 					atomic_int32_inc(&dest->user_usage);
 
 					other[lvl][vpn] = phyaddr | (self[lvl][vpn] & ~PAGE_MASK);
