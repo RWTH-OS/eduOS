@@ -251,7 +251,7 @@ size_t** irq_handler(struct state *s)
 	apic_eoi(s->int_no);
 
 	// timer interrupt?
-	if (s->int_no == 32)
+	if ((s->int_no == 32) || (s->int_no == 123))
 		return scheduler(); // switch to a new task
 	else if ((s->int_no >= 32) && (get_highest_priority() > current_task->prio))
 		return scheduler();
