@@ -119,6 +119,10 @@ Overview of all branches
 
    Add FPU and SSE support, switch to newlib 2.2.0, add basic x86_64 support
 
+10. stage10 - APIC support
+
+   Add support of the Local APIC and preliminary support of the I/O APIC
+
 Usefull Links
 -------------
 0. http://www.gnu.org/software/grub/manual/multiboot/
