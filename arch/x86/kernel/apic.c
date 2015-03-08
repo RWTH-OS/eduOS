@@ -42,14 +42,14 @@
 #include <asm/apic.h>
 #include <asm/multiboot.h>
 
-#define IOAPIC_ADDR	((size_t) KERNEL_SPACE - 1*PAGE_SIZE)
-#define LAPIC_ADDR	((size_t) KERNEL_SPACE - 2*PAGE_SIZE)
+/*
+ * Note that linker symbols are not variables, they have no memory allocated for
+ * maintaining a value, rather their address is their value.
+ */
+extern const void kernel_start;
 
-// position to add the new apic interrupt handler
-extern const void irq_caller;
-
-// forward declaration of the new interrupt handler
-extern void** apic_irq_handler(void *s);
+#define IOAPIC_ADDR	((size_t) &kernel_start - 1*PAGE_SIZE)
+#define LAPIC_ADDR	((size_t) &kernel_start - 2*PAGE_SIZE)
 
 // IO APIC MMIO structure: write reg, then read or write data.
 typedef struct {
@@ -93,7 +93,7 @@ static lapic_read_func lapic_read = lapic_read_default;
 
 static void lapic_write_default(uint32_t addr, uint32_t value)
 {
-#if 1
+#ifdef CONFIG_X86_32
 	/*
 	 * to avoid a pentium bug, we have to read a apic register
 	 * before we write a value to this register
@@ -150,7 +150,7 @@ void apic_eoi(void)
 	lapic_write(APIC_EOI, 0);
 }
 
-static inline int apic_is_enabled(void)
+int apic_is_enabled(void)
 {
 	return (lapic && initialized);
 }
@@ -329,11 +329,6 @@ int apic_calibration(void)
 	}
 
 	initialized = 1;
-	// patch kernel to use the APIC-based interrupt handler
-	ssize_t off =  (size_t) apic_irq_handler;
-	off -= (size_t) &irq_caller + 1 + sizeof(size_t);
-	memcpy(((uint8_t*) &irq_caller)+1, &off, sizeof(size_t));
-	flush_cache();
 	irq_nested_enable(flags);
 
 	return 0;

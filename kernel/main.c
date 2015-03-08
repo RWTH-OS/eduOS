@@ -151,6 +151,7 @@ int main(void)
 	kprintf("Current allocated memory: %lu KiB\n", atomic_int32_read(&total_allocated_pages) * PAGE_SIZE / 1024);
 	kprintf("Current available memory: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
 
+	//vma_dump();
 
 	create_kernel_task(NULL, foo, "foo", NORMAL_PRIO);
 	create_user_task(NULL, "/bin/hello", argv1);

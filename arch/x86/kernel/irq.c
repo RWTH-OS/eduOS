@@ -230,6 +230,8 @@ int irq_init(void)
  * only send an EOI command to the first controller. If you don't send
  * an EOI, it won't raise any more IRQs.
  *
+ * Note: If we enabled the APIC, we also disabled the PIC. Afterwards,
+ * we get no interrupts between 0 and 15.
  */
 size_t** irq_handler(struct state *s)
 {
@@ -247,6 +249,15 @@ size_t** irq_handler(struct state *s)
 	} else kprintf("Invalid interrupt number %d\n", s->int_no);
 
 	/* 
+	 * If the IDT entry that was invoked was greater-than-or-equal to 48,
+	 * then we use the APIC
+	 */
+	if (apic_is_enabled() || s->int_no >= 123) {
+		apic_eoi();
+		goto leave_handler;
+	}
+
+	/*
 	 * If the IDT entry that was invoked was greater-than-or-equal to 40 
 	 * and lower than 48 (meaning IRQ8 - 15), then we need to 
 	 * send an EOI to the slave controller of the PIC
@@ -260,40 +271,9 @@ size_t** irq_handler(struct state *s)
 	 */
 	outportb(0x20, 0x20);
 
+leave_handler:
 	// timer interrupt?
 	if (s->int_no == 32)
-		return scheduler(); // switch to a new task
-	else if ((s->int_no >= 32) && (get_highest_priority() > current_task->prio))
-		return scheduler();
-
-	return NULL;
-}
-
-/** @brief APIC-based default IRQ handler
- *
- * If we enabled the APIC, we also disabled the PIC. Afterwards,
- * we get no interrupts between 0 and 15 and could use this
- * optimized handler.
- */
-size_t** apic_irq_handler(struct state *s)
-{
-	/* This is a blank function pointer */
-	void (*handler) (struct state * s);
-
-	/*
-	 * Find out if we have a custom handler to run for this
-	 * IRQ and then finally, run it
-	 */
-	if (BUILTIN_EXPECT(s->int_no < MAX_HANDLERS, 1)) {
-		handler = irq_routines[s->int_no];
-		if (handler)
-			handler(s);
-	} else kprintf("Invalid interrupt number %d\n", s->int_no);
-
-	apic_eoi();
-
-	// timer interrupt?
-	if ((s->int_no == 32) || (s->int_no == 123))
 		return scheduler(); // switch to a new task
 	else if ((s->int_no >= 32) && (get_highest_priority() > current_task->prio))
 		return scheduler();

@@ -317,8 +317,6 @@ gdt_flush:
 
 %endif
 
-
-
 ; The first 32 interrupt service routines (ISR) entries correspond to exceptions.
 ; Some exceptions will push an error code onto the stack which is specific to
 ; the exception caused. To decrease the complexity, we handle this by pushing a
@@ -400,57 +398,42 @@ isrstub_pseudo_error 9
         jmp common_stub
 %endmacro
 
-global apic_timer
-apic_timer:
-	; apic timer  is registered as "Interrupt Gate"
-	; Therefore, the interrupt flag (IF) is already cleared.
-	; cli
-	push byte 0 ; pseudo error code
-	push byte 123
-	jmp common_stub
-
-global apic_lint0
-apic_lint0:
-	; lint0 is registered as "Interrupt Gate"
-	; Therefore, the interrupt flag (IF) is already cleared.
-	; cli
-	push byte 0 ; pseudo error code
-	push byte 124
-	jmp common_stub
-
-global apic_lint1
-apic_lint1:
-	; lint1 is registered as "Interrupt Gate"
-	; Therefore, the interrupt flag (IF) is already cleared.
-	; cli
-	push byte 0 ; pseudo error code
-	push byte 125
-	jmp common_stub
-
-global apic_error
-apic_error:
-	; LVT error interrupt is registered as "Interrupt Gate"
-	; Therefore, the interrupt flag (IF) is already cleared.
-	; cli
-	push byte 0 ; pseudo error code
-	push byte 126
-	jmp common_stub
-
-global apic_svr
-apic_svr:
-	; SVR is registered as "Interrupt Gate"
-	; Therefore, the interrupt flag (IF) is already cleared.
-	; cli
-	push byte 0 ; pseudo error code
-	push byte 127
-	jmp common_stub
-
 ; Create entries for the interrupts 0 to 23
 %assign i 0
 %rep    24
     irqstub i
 %assign i i+1
 %endrep
+
+global apic_timer
+apic_timer:
+	push byte 0 ; pseudo error code
+	push byte 123
+	jmp common_stub
+
+global apic_lint0
+apic_lint0:
+	push byte 0 ; pseudo error code
+	push byte 124
+	jmp common_stub
+
+global apic_lint1
+apic_lint1:
+	push byte 0 ; pseudo error code
+	push byte 125
+	jmp common_stub
+
+global apic_error
+apic_error:
+	push byte 0 ; pseudo error code
+	push byte 126
+	jmp common_stub
+
+global apic_svr
+apic_svr:
+	push byte 0 ; pseudo error code
+	push byte 127
+	jmp common_stub
 
 extern irq_handler
 extern get_current_stack
@@ -530,10 +513,6 @@ common_stub:
 
 ; Use the same handler for interrupts and exceptions
     push esp
-
-global irq_caller
-ALIGN 4
-irq_caller:
     call irq_handler
     add esp, 4
 
@@ -664,9 +643,6 @@ common_stub:
 
     ; use the same handler for interrupts and exceptions
     mov rdi, rsp
-global irq_caller
-ALIGN 4
-irq_caller:
     call irq_handler
 
     cmp rax, 0
@@ -724,12 +700,8 @@ boot_stack:
 	TIMES (KERNEL_STACK_SIZE) DB 0xcd
 
 ; Bootstrap page tables are used during the initialization.
-; These tables do a simple identity paging and will
-; be replaced in page_init() by more fine-granular mappings.
 ALIGN 4096
 %ifdef CONFIG_X86_32
-global boot_map
-boot_map:
 boot_pgd:
 
 	DD boot_pgt + 0x107	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
@@ -738,8 +710,6 @@ boot_pgd:
 boot_pgt:
 	times 1024 DD 0
 %else
-global boot_map
-boot_map:
 boot_pml4:
 	DQ boot_pdpt + 0x107 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
