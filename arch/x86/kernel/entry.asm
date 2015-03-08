@@ -365,7 +365,7 @@ ALIGN 4096
 boot_pgd:
 	DD boot_pgt + 0x107	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
 	times 1022 DD 0		; PAGE_MAP_ENTRIES - 2
-	DD boot_pgd + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
+	DD boot_pgd + 0x303	; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
 boot_pgt:
 	times 1024 DD 0
 
