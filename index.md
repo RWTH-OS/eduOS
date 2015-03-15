@@ -44,7 +44,9 @@ It is derived from following tutorials and software distributions.
 You are able to download the source code at [GitHub](https://github.com/RWTH-OS/eduOS) or to create a clone with following command on your desktop:
 
 <pre>
+<code>
 git clone https://github.com/RWTH-OS/eduOS
+</code>
 </pre>
 
 Most parts of the source code is BSD licensed (3-clause). Please look into the source code to find more detailed information.
@@ -75,6 +77,7 @@ Most parts of the source code is BSD licensed (3-clause). Please look into the s
    the installed Linux system. For instance, we added following lines to /boot/grub/grub.cfg:
 
 <pre>
+<code>
    ### BEGIN /etc/grub.d/40_custom ###
    # This file provides an easy way to add custom menu entries.  Simply type the
    # menu entries you want to add after this comment.  Be careful not to change
@@ -83,6 +86,7 @@ Most parts of the source code is BSD licensed (3-clause). Please look into the s
           multiboot       /boot/eduos.bin
           boot
    }
+</code>
 </pre>
 
 ### Overview of all branches
