@@ -2,9 +2,9 @@
 layout: default
 title : eduOS
 ---
-## eduOS - A teaching operating system
+## A teaching operating system
 
-###Introduction
+### Introduction
 
 eduOS is a Unix-like computer operating system based on a monolithic architecture for educational purposes,
 which is developed for the course [Operating Systems](http://www.os.rwth-aachen.de) at the RWTH Aachen Univeristy.
