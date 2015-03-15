@@ -146,3 +146,7 @@ Most parts of the source code is BSD licensed (3-clause). Please look into the s
 4. [http://www.os.rwth-aachen.de](http://www.os.rwth-aachen.de)
 5. [http://www.noteblok.net/2014/06/14/bachelor](http://www.noteblok.net/2014/06/14/bachelor)
 6. [https://sourceware.org/newlib/](https://sourceware.org/newlib/)
+
+### Contact
+
+* Stefan Lankes, [Institute for Automation of Complex Power Systems](http://www.acs.eonerc.rwth-aachen.de/), [E.ON Energy Research Center](http://www.eonerc.rwth-aachen.de/), [RWTH Aachen University](http://www.rwth-aachen.de/), Germany, E-mail: <slankes@eonerc.rwth-aachen.de>
