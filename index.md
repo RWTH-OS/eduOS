@@ -3,7 +3,6 @@ layout: default
 title : eduOS
 ---
 ## eduOS - A teaching operating system
-eduOS - A teaching operating system
 
 ###Introduction
 
@@ -14,7 +13,7 @@ It is derived from following tutorials and software distributions.
 0. bkerndev - Bran's Kernel Development Tutorial
 
    The first steps to realize eduOS based on Bran's Kernel Development 
-   Tutorial (http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial).
+   Tutorial ([http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial](http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial)).
    In particular, the initialization of GDT, IDT and the interrupt handlers are derived
    from this tutorial.
 
@@ -28,7 +27,7 @@ It is derived from following tutorials and software distributions.
 2. JamesM's kernel development tutorials
    The first version of eduOS's virtual filesystem and its initial
    ramdiks is is derived from JamesM's kernel development tutorials.
-   (http://www.jamesmolloy.co.uk/tutorial_html/index.html)
+   ([http://www.jamesmolloy.co.uk/tutorial_html/index.html](http://www.jamesmolloy.co.uk/tutorial_html/index.html))
 
 3. newlib
    The C library "newlib" is used to build user-level aplications on the top
@@ -102,7 +101,7 @@ It is derived from following tutorials and software distributions.
 
 5. stage5 - Enabling paging
 
-   Add support of paging. See http://www.noteblok.net/2014/06/14/bachelor
+   Add support of paging. See [http://www.noteblok.net/2014/06/14/bachelor](http://www.noteblok.net/2014/06/14/bachelor)
    for a detailed description.
 
 6. stage6 - Add UART support
@@ -127,10 +126,10 @@ It is derived from following tutorials and software distributions.
 
 ### Usefull Links
 
-0. http://www.gnu.org/software/grub/manual/multiboot/
-1. http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial
-2. http://www.jamesmolloy.co.uk/tutorial_html/index.html
-3. http://techblog.lankes.org/tutorials/
-4. http://www.os.rwth-aachen.de
-5. http://www.noteblok.net/2014/06/14/bachelor
-6. https://sourceware.org/newlib/
+0. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)
+1. [http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial](http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial)
+2. [http://www.jamesmolloy.co.uk/tutorial_html/index.html](http://www.jamesmolloy.co.uk/tutorial_html/index.html)
+3. [http://techblog.lankes.org/tutorials/](http://techblog.lankes.org/tutorials/)
+4. [http://www.os.rwth-aachen.de](http://www.os.rwth-aachen.de)
+5. [http://www.noteblok.net/2014/06/14/bachelor](http://www.noteblok.net/2014/06/14/bachelor)
+6. [https://sourceware.org/newlib/](https://sourceware.org/newlib/)
