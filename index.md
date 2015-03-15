@@ -47,6 +47,8 @@ You are able to download the source code at [GitHub](https://github.com/RWTH-OS/
 git clone https://github.com/RWTH-OS/eduOS
 </pre>
 
+Most parts of the source code is BSD licensed (3-clause). However, you find in the source code more detailed information.
+
 ### Requirements of eduOS
 
 * Currently, eduOS supports only x86-based architectures (32 & 64 bit).
