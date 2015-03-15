@@ -39,6 +39,13 @@ It is derived from following tutorials and software distributions.
    of newlib's licenses are gathered up into the file COPYING.NEWLIB,
    which is included in the directory newlib or in newlib's source code.
 
+### Availability
+
+You are able to download the source code at [GitHub](https://github.com/RWTH-OS/eduOS) or to create a clone with following command on your desktop:
+
+<pre>
+git clone https://github.com/RWTH-OS/eduOS
+</pre>
 
 ### Requirements of eduOS
 
