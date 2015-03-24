@@ -27,7 +27,7 @@ initrd.img: $(EXECFILES) make_initrd
 make_initrd: make_initrd.o
 	$Q$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) 
 
-eduos.iso: initrd.img ../eduos.elf
+eduos.iso: initrd.img
 	@echo [MAKE_ISO] eduos.iso
 	$Qcp ../eduos.elf iso/boot/
 	$Qcp initrd.img iso/boot/
