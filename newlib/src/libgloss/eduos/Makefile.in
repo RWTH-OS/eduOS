@@ -115,9 +115,11 @@ dup.o: $(srcdir)/dup.c
 dup2.o: $(srcdir)/dup2.c
 
 install: $($(CPU)_INSTALL)
+	mkdir -p  $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}
 	$(INSTALL_DATA) $(CRT0) $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/crt0.o
 	$(INSTALL_DATA) $(EDUOS_BSP) $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/$(EDUOS_BSP)
 	$(INSTALL_DATA) ${srcdir}/link$(BIT).ld $(DESTDIR)$(tooldir)/lib${MULTISUBDIR}/link.ld
+	mkdir -p ${DESTDIR}${tooldir}/include/sys
 	for i in ${srcdir}/include/sys/*.h; do \
 	 ${INSTALL_DATA} $$i ${DESTDIR}${tooldir}/include/sys/`basename $$i`; \
 	done;
