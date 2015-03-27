@@ -10,3 +10,5 @@ newlib/tmp/
 newlib/x86/
 tools/initrd.img
 tools/make_initrd
+tools/eduos.iso
+tools/iso/boot/initrd.img

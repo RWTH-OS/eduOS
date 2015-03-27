@@ -94,7 +94,7 @@
 #define HAVE_GETDATE
 #define _HAVE_SYSTYPES
 #define _READ_WRITE_RETURN_TYPE _ssize_t
-#define __LARGE64_FILES 1
+/* #define __LARGE64_FILES 1 */
 /* we use some glibc header files so turn on glibc large file feature */
 #define _LARGEFILE64_SOURCE 1
 #endif

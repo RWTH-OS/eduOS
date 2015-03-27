@@ -18,7 +18,7 @@ endif
 
 default: all
 	
-all: make_initrd initrd.img
+all: make_initrd initrd.img eduos.iso
 
 initrd.img: $(EXECFILES) make_initrd
 	@echo [MAKE_INITRD] initrd.img
@@ -27,13 +27,19 @@ initrd.img: $(EXECFILES) make_initrd
 make_initrd: make_initrd.o
 	$Q$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) 
 
+eduos.iso: initrd.img ../eduos.elf
+	@echo [MAKE_ISO] eduos.iso
+	$Qcp ../eduos.elf iso/boot/
+	$Qcp initrd.img iso/boot/
+	$Qgenisoimage -R -b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table -quiet -o eduos.iso iso
+
 clean:
 	@echo Cleaning tools
-	$Q$(RM) -rf *.o *~ make_initrd initrd.img
+	$Q$(RM) -rf *.o *~ make_initrd initrd.img eduos.iso iso/boot/eduos.elf iso/boot/initrd.img
 
 veryclean:
 	@echo Propper cleaning tools
-	$Q$(RM) -rf *.o *~ make_initrd initrd.img
+	$Q$(RM) -rf *.o *~ make_initrd initrd.img eduos.iso iso/boot/eduos.elf iso/boot/initrd.img
 
 depend:
 	$Q$(CC) -MM $(CFLAGS) *.c > Makefile.dep
