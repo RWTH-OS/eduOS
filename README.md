@@ -27,7 +27,7 @@ It is derived from following tutorials and software distributions.
    (http://www.jamesmolloy.co.uk/tutorial_html/index.html)
 
 3. newlib
-   The C library "newlib" is used to build user-level aplications on the top
+   The C library "newlib" is used to build user-level applications on the top
    of eduOS. Newlib is a collection of source code, it is
    distributed under the terms of several different licenses. All of the
    licensing is either public domain or BSD-like, which means that even
