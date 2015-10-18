@@ -55,7 +55,7 @@ Most parts of the source code is BSD licensed (3-clause). Please look into the s
 
 * Currently, eduOS supports only x86-based architectures (32 & 64 bit).
 * Following command line tools have to be installed:
-  make, gcc, binutil, git, qemu, nams, gdb
+  make, gcc, binutils, git, qemu, nasm, gdb
 * The test PC has to use grub as bootloader.
 
 ### Building eduOS
