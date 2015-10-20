@@ -82,13 +82,11 @@ inline static void rmb(void) { asm volatile("lfence" ::: "memory"); }
 inline static void wmb(void) { asm volatile("sfence" ::: "memory"); }
 
 /// A one-instruction-do-nothing
-#define NOP1	asm  volatile ("nop")
-/// A two-instruction-do-nothing
-#define NOP2	asm  volatile ("nop;nop")
-/// A four-instruction-do-nothing
-#define NOP4	asm  volatile ("nop;nop;nop;nop")
-/// A eight-instruction-do-nothing
-#define NOP8	asm  volatile ("nop;nop;nop;nop;nop;nop;nop;nop")
+#define NOP	asm  volatile ("nop")
+/// The PAUSE instruction provides a hint to the processor that the code sequence is a spin-wait loop.
+#define PAUSE	asm volatile ("pause")
+/// The HALT instruction stops the processor until the next interrupt arrives
+#define HALT	asm volatile ("hlt")
 
 #ifdef __cplusplus
 }

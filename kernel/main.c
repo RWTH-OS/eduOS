@@ -60,7 +60,7 @@ int main(void)
 	kprintf("\nHello World!\n");
 	
 	while(1) { 
-		NOP8;
+		HALT;
 	}
 
 	return 0;
