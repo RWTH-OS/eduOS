@@ -87,29 +87,7 @@ ACX_CHECK_INSTALLED_TARGET_TOOL(RANLIB_FOR_TARGET, ranlib)
 ACX_CHECK_INSTALLED_TARGET_TOOL(READELF_FOR_TARGET, readelf)
 ACX_CHECK_INSTALLED_TARGET_TOOL(STRIP_FOR_TARGET, strip)
 
-# Checks for libraries.
-
-# Checks for header files.
-
-# Checks for typedefs, structures, and compiler characteristics.
-#AC_C_INLINE
-#AC_TYPE_INT16_T
-#AC_TYPE_INT32_T
-#AC_TYPE_INT64_T
-#AC_TYPE_INT8_T
-#AC_TYPE_OFF_T
-#AC_TYPE_SIZE_T
-#AC_TYPE_SSIZE_T
-#AC_TYPE_UINT16_T
-#AC_TYPE_UINT32_T
-#AC_TYPE_UINT64_T
-#AC_TYPE_UINT8_T
-#AC_CHECK_TYPES(size_t)
-
-# Checks for library functions.
-#AC_CHECK_FUNCS(memset)
-
-# defien eduOS specific constants
+# define eduOS specific constants
 AC_DEFINE(HAVE_ARCH_MEMSET, 1, Define to use machine specific version of memset)
 AC_DEFINE(HAVE_ARCH_MEMCPY, 1, Define to use machine specific version of memcpy)
 AC_DEFINE(HAVE_ARCH_STRLEN, 1, Define to use machine specific version of strlen)
