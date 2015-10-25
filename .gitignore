@@ -3,4 +3,7 @@
 *~
 *.elf
 *.sym
+config.log
+config.status
+Makefile
 include/eduos/config.h
