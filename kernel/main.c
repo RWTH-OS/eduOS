@@ -55,7 +55,7 @@ int main(void)
 {
 	eduos_init();
 
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
+	kprintf("This is %s Build %u, %u\n", PACKAGE_STRING, &__BUILD_DATE, &__BUILD_TIME);
 	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
 	kprintf("\nHello World!\n");
 	
