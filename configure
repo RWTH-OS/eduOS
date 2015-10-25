@@ -681,6 +681,8 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+with_max_tasks
+with_stack_size
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1321,6 +1323,12 @@ if test -n "$ac_init_help"; then
      short | recursive ) echo "Configuration of eduOS 0.1:";;
    esac
   cat <<\_ACEOF
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-max-tasks=N      specify the maximum number of running tasks
+  --with-stack-size=SIZE  specify the size of the kernel stack
 
 Some influential environment variables:
   CC          C compiler command
@@ -6491,11 +6499,41 @@ $as_echo "#define HAVE_ARCH_STRCPY 1" >>confdefs.h
 $as_echo "#define HAVE_ARCH_STRNCPY 1" >>confdefs.h
 
 
+
+# Check whether --with-max-tasks was given.
+if test "${with_max_tasks+set}" = set; then :
+  withval=$with_max_tasks;
+fi
+
+if test "x$with_max_tasks" != x; then
+
+cat >>confdefs.h <<_ACEOF
+#define MAX_TASKS $with_max_tasks
+_ACEOF
+
+else
+
 $as_echo "#define MAX_TASKS 16" >>confdefs.h
 
+fi
 
-$as_echo "#define KERNEL_STACK_SIZE (8*1024)" >>confdefs.h
 
+# Check whether --with-stack-size was given.
+if test "${with_stack_size+set}" = set; then :
+  withval=$with_stack_size;
+fi
+
+if test "x$with_stack_size" != x; then
+
+cat >>confdefs.h <<_ACEOF
+#define KERNEL_STACK_SIZE $with_stack_size
+_ACEOF
+
+else
+
+$as_echo "#define KERNEL_STACK_SIZE 8192" >>confdefs.h
+
+fi
 
 ac_config_files="$ac_config_files Makefile"
 

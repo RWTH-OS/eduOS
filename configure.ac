@@ -115,8 +115,20 @@ AC_DEFINE(HAVE_ARCH_MEMCPY, 1, Define to use machine specific version of memcpy)
 AC_DEFINE(HAVE_ARCH_STRLEN, 1, Define to use machine specific version of strlen)
 AC_DEFINE(HAVE_ARCH_STRCPY, 1, Define to use machine specific version of strcpy)
 AC_DEFINE(HAVE_ARCH_STRNCPY, 1, Define to use machine specific version of strncpy)
+
+AC_ARG_WITH(max-tasks, [AS_HELP_STRING([--with-max-tasks=N], [specify the maximum number of running tasks])])
+if test "x$with_max_tasks" != x; then
+AC_DEFINE_UNQUOTED(MAX_TASKS, $with_max_tasks, Define the maximum number of running tasks)
+else
 AC_DEFINE(MAX_TASKS, 16, Define the maximum number of running tasks)
-AC_DEFINE(KERNEL_STACK_SIZE, (8*1024), Define the size of the kernel stack)
+fi
+
+AC_ARG_WITH(stack-size, [AS_HELP_STRING([--with-stack-size=SIZE], [specify the size of the kernel stack])])
+if test "x$with_stack_size" != x; then
+AC_DEFINE_UNQUOTED(KERNEL_STACK_SIZE, $with_stack_size, Define the size of the kernel stack)
+else
+AC_DEFINE(KERNEL_STACK_SIZE, 8192, Define the size of the kernel stack)
+fi
 
 AC_CONFIG_FILES(Makefile)
 AC_OUTPUT
