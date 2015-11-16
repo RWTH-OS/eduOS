@@ -3,7 +3,6 @@
 *~
 *.elf
 *.sym
-Makefile
 config.log
 config.status
 documentation/html/
