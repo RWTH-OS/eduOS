@@ -106,7 +106,7 @@ int main(void)
 	tid_t id2;
 	eduos_init();
 
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
+	kprintf("This is %s Build %u, %u\n", PACKAGE_STRING, &__BUILD_DATE, &__BUILD_TIME);
 	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
 
 	irq_enable();

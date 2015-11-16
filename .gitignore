@@ -3,6 +3,8 @@
 *~
 *.elf
 *.sym
+config.log
+config.status
 documentation/html/
 include/eduos/config.h
 include/eduos/config.inc

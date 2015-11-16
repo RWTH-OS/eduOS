@@ -35,9 +35,7 @@ static spinlock_irqsave_t olock = SPINLOCK_IRQSAVE_INIT;
 
 int koutput_init(void)
 {
-#ifdef CONFIG_VGA
 	vga_init();
-#endif
 
 	return 0;
 }
@@ -45,9 +43,7 @@ int koutput_init(void)
 int kputchar(int c)
 {
 	spinlock_irqsave_lock(&olock);
-#ifdef CONFIG_VGA
 	vga_putchar(c);
-#endif
 	spinlock_irqsave_unlock(&olock);
 
 	return 1;
@@ -55,12 +51,9 @@ int kputchar(int c)
 
 int kputs(const char *str)
 {
-#ifdef CONFIG_VGA
 	int i;
 	for(i=0; str[i] != '\0'; i++)
 		vga_putchar((int) str[i]);
 
 	return i;
-#else
-#endif
 }
