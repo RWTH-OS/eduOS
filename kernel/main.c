@@ -144,7 +144,7 @@ int main(void)
 	irq_enable();
 	system_calibration();
 
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
+	kprintf("This is %s Build %u, %u\n", PACKAGE_STRING, &__BUILD_DATE, &__BUILD_TIME);
 	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
 	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
 	kprintf("Total memory: %lu KiB\n", atomic_int32_read(&total_pages) * PAGE_SIZE / 1024);

@@ -29,8 +29,6 @@
 #include <asm/io.h>
 #include <asm/vga.h>
 
-#ifdef CONFIG_VGA
-
 /*
  * These define our textpointer, our background and foreground
  * colors (attributes), and x and y cursor coordinates 
@@ -235,5 +233,3 @@ void vga_init(void)
 	textmemptr = (unsigned short *)VIDEO_MEM_ADDR;
 	vga_clear();
 }
-
-#endif

@@ -41,10 +41,38 @@
 extern "C" {
 #endif
 
+#define TIMER_FREQ		100	/* in HZ */
+#define CLOCK_TICK_RATE		1193182	/* 8254 chip's internal oscillator frequency */
+#define VIDEO_MEM_ADDR		0xB8000 // the video memora address
+#define CACHE_LINE		64
+#define KERNEL_SPACE		(1 << 30) /* 1 GiB */
+#define KMSG_SIZE		(8*1024)
+#define INT_SYSCALL		0x80
+#define MAILBOX_SIZE		32
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define BYTE_ORDER BIG_ENDIAN
+#else
+#define BYTE_ORDER LITTLE_ENDIAN
+#endif
+
+#ifdef __GNUC__
+#define BUILTIN_EXPECT(exp, b)  __builtin_expect((exp), (b))
+#else
+#define BUILTIN_EXPECT(exp, b)	(exp)
+#endif
+#define NORETURN		__attribute__((noreturn))
+#define STDCALL			__attribute__((stdcall))
+
 #define NULL 		((void*) 0)
 
 /// represents a task identifier
 typedef unsigned int tid_t;
+
+#define PAGE_SHIFT		12
+#define PAGE_BITS		PAGE_SHIFT
+#define PAGE_SIZE		(1 << PAGE_SHIFT)
+#define PAGE_MASK		~(PAGE_SIZE - 1)
+#define PAGE_ALIGN(addr)	(((addr) + PAGE_SIZE - 1) & PAGE_MASK)
 
 struct task;
 /// pointer to the current (running) task
