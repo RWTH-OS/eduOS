@@ -63,12 +63,10 @@ int vma_init(void)
 	if (BUILTIN_EXPECT(ret, 0))
 		goto out;
 
-#ifdef CONFIG_VGA
 	// add VGA video memory
 	ret = vma_add(VIDEO_MEM_ADDR, VIDEO_MEM_ADDR + PAGE_SIZE, VMA_READ|VMA_WRITE);
 	if (BUILTIN_EXPECT(ret, 0))
 		goto out;
-#endif
 
 	// add Multiboot structures as modules
 	if (mb_info) {

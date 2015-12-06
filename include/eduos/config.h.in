@@ -1,0 +1,43 @@
+/* include/eduos/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define the bitmap size */
+#undef BITMAP_SIZE
+
+/* Define to use machine specific version of memcpy */
+#undef HAVE_ARCH_MEMCPY
+
+/* Define to use machine specific version of memset */
+#undef HAVE_ARCH_MEMSET
+
+/* Define to use machine specific version of strcpy */
+#undef HAVE_ARCH_STRCPY
+
+/* Define to use machine specific version of strlen */
+#undef HAVE_ARCH_STRLEN
+
+/* Define to use machine specific version of strncpy */
+#undef HAVE_ARCH_STRNCPY
+
+/* Define the size of the kernel stack */
+#undef KERNEL_STACK_SIZE
+
+/* Define the maximum number of running tasks */
+#undef MAX_TASKS
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
