@@ -93,7 +93,13 @@ AC_DEFINE(HAVE_ARCH_MEMCPY, 1, Define to use machine specific version of memcpy)
 AC_DEFINE(HAVE_ARCH_STRLEN, 1, Define to use machine specific version of strlen)
 AC_DEFINE(HAVE_ARCH_STRCPY, 1, Define to use machine specific version of strcpy)
 AC_DEFINE(HAVE_ARCH_STRNCPY, 1, Define to use machine specific version of strncpy)
+
+AC_ARG_WITH(bitmap-size, [AS_HELP_STRING([--with-bitmap-size=N], [specify the bitmap size])])
+if test "x$with_bitmap_size" != x; then
+AC_DEFINE_UNQUOTED(BITMAP_SIZE, $with_bitmap_size, Define the bitmap isze)
+else
 AC_DEFINE(BITMAP_SIZE, 4096, Define the bitmap size)
+fi
 
 AC_ARG_WITH(max-tasks, [AS_HELP_STRING([--with-max-tasks=N], [specify the maximum number of running tasks])])
 if test "x$with_max_tasks" != x; then
@@ -113,6 +119,8 @@ AC_ARG_ENABLE(uart, [AS_HELP_STRING([--enable-uart], [enable UART support])], []
 if test "x$enable_uart" = "xyes"; then
 AC_DEFINE(CONFIG_UART, 1, Enable UART support)
 fi
+
+AC_DEFINE(CONFIG_PCI, 1, Enable PCI support)
 
 AC_CONFIG_FILES(Makefile)
 AC_OUTPUT

@@ -3,6 +3,9 @@
 /* Define the bitmap size */
 #undef BITMAP_SIZE
 
+/* Enable PCI support */
+#undef CONFIG_PCI
+
 /* Enable UART support */
 #undef CONFIG_UART
 

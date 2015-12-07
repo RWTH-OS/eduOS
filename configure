@@ -681,6 +681,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+with_bitmap_size
 with_max_tasks
 with_stack_size
 enable_uart
@@ -1334,6 +1335,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-bitmap-size=N    specify the bitmap size
   --with-max-tasks=N      specify the maximum number of running tasks
   --with-stack-size=SIZE  specify the size of the kernel stack
 
@@ -6484,8 +6486,23 @@ $as_echo "#define HAVE_ARCH_STRCPY 1" >>confdefs.h
 $as_echo "#define HAVE_ARCH_STRNCPY 1" >>confdefs.h
 
 
+
+# Check whether --with-bitmap-size was given.
+if test "${with_bitmap_size+set}" = set; then :
+  withval=$with_bitmap_size;
+fi
+
+if test "x$with_bitmap_size" != x; then
+
+cat >>confdefs.h <<_ACEOF
+#define BITMAP_SIZE $with_bitmap_size
+_ACEOF
+
+else
+
 $as_echo "#define BITMAP_SIZE 4096" >>confdefs.h
 
+fi
 
 
 # Check whether --with-max-tasks was given.
@@ -6535,6 +6552,10 @@ if test "x$enable_uart" = "xyes"; then
 $as_echo "#define CONFIG_UART 1" >>confdefs.h
 
 fi
+
+
+$as_echo "#define CONFIG_PCI 1" >>confdefs.h
+
 
 ac_config_files="$ac_config_files Makefile"
 

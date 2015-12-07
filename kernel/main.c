@@ -83,7 +83,7 @@ static int wrapper(void* arg)
 #else
 	// dirty hack, map userfoo to the user space
 	size_t phys = virt_to_phys(((size_t) userfoo) & PAGE_MASK);
-	size_t vuserfoo = 0x40000000; 
+	size_t vuserfoo = 0x40000000;
 	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_USER);
 	vuserfoo += (size_t)userfoo & 0xFFF;
 	vma_add(vuserfoo, vuserfoo + 2*PAGE_SIZE, VMA_USER|VMA_CACHEABLE|VMA_READ|VMA_EXECUTE);
@@ -151,11 +151,12 @@ int main(void)
 	kprintf("Current allocated memory: %lu KiB\n", atomic_int32_read(&total_allocated_pages) * PAGE_SIZE / 1024);
 	kprintf("Curren available memory: %lu KiB\n", atomic_int32_read(&total_available_pages) * PAGE_SIZE / 1024);
 
+	//print_pci_adapters();
 
 	create_kernel_task(&id1, foo, "foo1", NORMAL_PRIO);
 	create_kernel_task(&id2, wrapper, "userfoo", NORMAL_PRIO);
 
-	while(1) { 
+	while(1) {
 		HALT;
 	}
 
