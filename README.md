@@ -31,7 +31,7 @@ Requirements of eduOS
 
 * Currently, eduOS supports only x86-based architectures.
 * Following command line tools have to be installed:
-  make, gcc, binutil, git, qemu, nams, gdb
+  make, gcc, binutils, git, qemu, nasm, gdb
 * The test PC has to use grub as bootloader.
 
 Building eduOS
