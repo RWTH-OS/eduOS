@@ -108,7 +108,12 @@ else
 AC_DEFINE(KERNEL_STACK_SIZE, 8192, Define the size of the kernel stack)
 fi
 
-AC_DEFINE(BITMAP_SIZE,	4096, Define the bitmap size)
+AC_ARG_WITH(bitmap-size, [AS_HELP_STRING([--with-bitmap-size=N], [specify the bitmap size])])
+if test "x$with_bitmap_size" != x; then
+AC_DEFINE_UNQUOTED(BITMAP_SIZE, $with_bitmap_size, Define the bitmap isze)
+else
+AC_DEFINE(BITMAP_SIZE, 4096, Define the bitmap size)
+fi
 
 AC_CONFIG_FILES(Makefile)
 AC_OUTPUT

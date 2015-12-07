@@ -683,6 +683,7 @@ ac_user_opts='
 enable_option_checking
 with_max_tasks
 with_stack_size
+with_bitmap_size
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1329,6 +1330,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-max-tasks=N      specify the maximum number of running tasks
   --with-stack-size=SIZE  specify the size of the kernel stack
+  --with-bitmap-size=N    specify the bitmap size
 
 Some influential environment variables:
   CC          C compiler command
@@ -6514,8 +6516,22 @@ $as_echo "#define KERNEL_STACK_SIZE 8192" >>confdefs.h
 fi
 
 
+# Check whether --with-bitmap-size was given.
+if test "${with_bitmap_size+set}" = set; then :
+  withval=$with_bitmap_size;
+fi
+
+if test "x$with_bitmap_size" != x; then
+
+cat >>confdefs.h <<_ACEOF
+#define BITMAP_SIZE $with_bitmap_size
+_ACEOF
+
+else
+
 $as_echo "#define BITMAP_SIZE 4096" >>confdefs.h
 
+fi
 
 ac_config_files="$ac_config_files Makefile"
 
