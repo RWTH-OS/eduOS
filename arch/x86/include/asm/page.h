@@ -40,13 +40,6 @@
 #ifndef __PAGE_H__
 #define __PAGE_H__
 
-/// Page offset bits
-#define PAGE_BITS		12
-/// The size of a single page in bytes
-#define PAGE_SIZE		( 1L << PAGE_BITS)
-/// Mask the page address without page map flags
-#define PAGE_MASK		(-1L << PAGE_BITS)
-
 /// Total operand width in bits
 #define BITS			32
 /// Linear/virtual address width

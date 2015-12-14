@@ -84,7 +84,7 @@ static int wrapper(void* arg)
 #else
 	// dirty hack, map userfoo to the user space
 	size_t phys = virt_to_phys(((size_t) userfoo) & PAGE_MASK);
-	size_t vuserfoo = 0x40000000; 
+	size_t vuserfoo = 0x40000000;
 	page_map(vuserfoo, phys, 2, PG_PRESENT | PG_USER);
 	vuserfoo += (size_t)userfoo & 0xFFF;
 	vma_add(vuserfoo, vuserfoo + 2*PAGE_SIZE, VMA_USER|VMA_CACHEABLE|VMA_READ|VMA_EXECUTE);
@@ -146,7 +146,7 @@ int main(void)
 	irq_enable();
 	system_calibration();
 
-	kprintf("This is eduOS %s Build %u, %u\n", EDUOS_VERSION, &__BUILD_DATE, &__BUILD_TIME);
+	kprintf("This is %s Build %u, %u\n", PACKAGE_STRING, &__BUILD_DATE, &__BUILD_TIME);
 	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
 	kprintf("Processor frequency: %u MHz\n", get_cpu_frequency());
 	kprintf("Total memory: %lu KiB\n", atomic_int32_read(&total_pages) * PAGE_SIZE / 1024);
@@ -162,7 +162,7 @@ int main(void)
 	list_fs(fs_root, 1);
 #endif
 
-	while(1) { 
+	while(1) {
 		HALT;
 	}
 

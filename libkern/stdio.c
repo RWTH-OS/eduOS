@@ -34,9 +34,7 @@
 #include <asm/atomic.h>
 #include <asm/processor.h>
 #include <asm/multiboot.h>
-#ifdef CONFIG_VGA
 #include <asm/vga.h>
-#endif
 #ifdef CONFIG_UART
 #include <asm/uart.h>
 #endif
@@ -45,10 +43,10 @@
 #define VGA_EARLY_PRINT		0x01
 #define UART_EARLY_PRINT	0x02
 
-#ifdef CONFIG_VGA
-static uint32_t early_print = VGA_EARLY_PRINT;
+#ifdef CONFIG_UART
+static uint32_t early_print = UART_EARLY_PRINT;
 #else
-static uint32_t early_print = NO_EARLY_PRINT;
+static uint32_t early_print = VGA_EARLY_PRINT;
 #endif
 static spinlock_irqsave_t olock = SPINLOCK_IRQSAVE_INIT;
 static atomic_int32_t kmsg_counter = ATOMIC_INIT(0);
@@ -152,9 +150,7 @@ int kmsg_init(vfs_node_t * node, const char *name)
 
 int koutput_init(void)
 {
-#ifdef CONFIG_VGA
 	vga_init();
-#endif
 #ifdef CONFIG_UART
 	if (mb_info && (mb_info->flags & MULTIBOOT_INFO_CMDLINE))
 		if (!uart_early_init((char*) mb_info->cmdline))
@@ -174,10 +170,8 @@ int kputchar(int c)
 	pos = atomic_int32_inc(&kmsg_counter);
 	kmessages[pos % KMSG_SIZE] = (unsigned char) c;
 
-#ifdef CONFIG_VGA
 	if (early_print & VGA_EARLY_PRINT)
 		vga_putchar(c);
-#endif
 #ifdef CONFIG_UART
 	if (early_print & UART_EARLY_PRINT)
 		uart_putchar(c);
@@ -199,10 +193,8 @@ int kputs(const char *str)
 	for(i=0; i<len; i++) {
 		pos = atomic_int32_inc(&kmsg_counter);
 		kmessages[pos % KMSG_SIZE] = str[i];
-#ifdef CONFIG_VGA
 		if (early_print & VGA_EARLY_PRINT)
 			vga_putchar(str[i]);
-#endif
 #ifdef CONFIG_UART
 		if (early_print & UART_EARLY_PRINT)
 			uart_putchar(str[i]);

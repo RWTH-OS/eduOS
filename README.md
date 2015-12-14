@@ -37,10 +37,9 @@ Requirements of eduOS
 Building eduOS
 --------------
 
-0. Copy Makefile.example to Makefile and edit this Makefile to meet your individual convenience.
-1. Copy include/eduos/config.h.example to include/eduos/config.h and edit this config file to 
-   meet your individual convenience.
-2. Build kernel with "make"
+0. It is now possible to automatically configure eduOS with one command. To configure the system,
+   run the "configure" script in the this dirctory, e.g.: ./configure
+1. Build kernel with "make"
 
 Start eduOS via qemu
 --------------------
