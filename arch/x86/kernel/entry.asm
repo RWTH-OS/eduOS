@@ -82,17 +82,16 @@ stublet:
 global cpu_init
 cpu_init:
 ; initialize page tables
-%ifdef CONFIG_VGA
-	push edi
-	mov eax, VIDEO_MEM_ADDR
-	and eax, 0xFFFFF000       ; page align lower half
-	mov edi, eax
-	shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
-	add edi, boot_pgt
-	or eax, 0x113             ; set present, global, writable and cache disable bits
-	mov DWORD [edi], eax
-	pop edi
-%endif
+    push edi
+    mov eax, VIDEO_MEM_ADDR
+    and eax, 0xFFFFF000       ; page align lower half
+    mov edi, eax
+    shr edi, 10               ; (edi >> 12) * 4 (index for boot_pgt)
+    add edi, boot_pgt
+    or eax, 0x113             ; set present, global, writable and cache disable bits
+    mov DWORD [edi], eax
+    pop edi
+
     push edi
     mov eax, DWORD [mb_info]  ; map multiboot info
     and eax, 0xFFFFF000       ; page align lower half
