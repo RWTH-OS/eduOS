@@ -10,3 +10,4 @@ newlib/tmp/
 newlib/x86/
 tools/initrd.img
 tools/make_initrd
+newlib/examples/hello
