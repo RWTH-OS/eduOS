@@ -6,10 +6,10 @@ Introduction
 
 eduOS is a Unix-like computer operating system based on a monolithic architecture for educational purposes.
 It is derived from following tutorials and software distributions.
- 
+
 0. bkerndev - Bran's Kernel Development Tutorial
 
-   The first steps to realize eduOS based on Bran's Kernel Development 
+   The first steps to realize eduOS based on Bran's Kernel Development
    Tutorial (http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial).
    In particular, the initialization of GDT, IDT and the interrupt handlers are derived
    from this tutorial.
@@ -47,11 +47,8 @@ Requirements of eduOS
 
 Building eduOS
 --------------
-
-0. Copy Makefile.example to Makefile and edit this Makefile to meet your individual convenience.
-1. Copy include/eduos/config.h.example to include/eduos/config.h and edit this config file to 
-   meet your individual convenience.
-2. Build kernel with "make"
+0. It is now possible to automatically configure eduOS with one command. To configure the system, run the "configure" script in the this dirctory, e.g.: ./configure
+1. Build kernel with "make"
 
 Start eduOS via qemu
 --------------------
@@ -61,7 +58,7 @@ Start eduOS via qemu
 Boot eduOS via grub
 -------------------
 0. Copy eduos.elf as eduos.bin into the directory /boot. (cp eduos.elf /boot/eduos.bin)
-1. Create a boot entry in the grub menu. This depends on the version of grub, which is used by 
+1. Create a boot entry in the grub menu. This depends on the version of grub, which is used by
    the installed Linux system. For instance, we added following lines to /boot/grub/grub.cfg:
 
 <pre>
@@ -77,7 +74,7 @@ Boot eduOS via grub
 
 Overview of all branches
 ------------------------
-0. stage0 - Smallest HelloWorld of the World 
+0. stage0 - Smallest HelloWorld of the World
 
    Description of loading a minimal 32bit kernel
 
