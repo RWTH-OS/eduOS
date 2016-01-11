@@ -277,10 +277,7 @@ static int load_task(load_args_t* largs)
 	elf_header_t header;
 	elf_program_header_t prog_header;
 	//elf_section_header_t sec_header;
-	///!!! kfree is missing!
-	fildes_t *file = kmalloc(sizeof(fildes_t));
-	file->offset = 0;
-	file->flags = 0;
+	fildes_t file;
 
 	//TODO: init the hole fildes_t struct!
 	task_t* curr_task = current_task;
@@ -289,11 +286,12 @@ static int load_task(load_args_t* largs)
 	if (!largs)
 		return -EINVAL;
 
-	file->node = largs->node;
-	if (!file->node)
+	memset(&file, 0x00, sizeof(file));
+	file.node = largs->node;
+	if (!file.node)
 		return -EINVAL;
 
-	err = read_fs(file, (uint8_t*)&header, sizeof(elf_header_t));
+	err = read_fs(&file, (uint8_t*)&header, sizeof(elf_header_t));
 	if (err < 0) {
 		kprintf("read_fs failed: %d\n", err);
 		return err;
@@ -319,8 +317,8 @@ static int load_task(load_args_t* largs)
 
 	// interpret program header table
 	for (i=0; i<header.ph_entry_count; i++) {
-		file->offset = header.ph_offset+i*header.ph_entry_size;
-		if (read_fs(file, (uint8_t*)&prog_header, sizeof(elf_program_header_t)) == 0) {
+		file.offset = header.ph_offset+i*header.ph_entry_size;
+		if (read_fs(&file, (uint8_t*)&prog_header, sizeof(elf_program_header_t)) == 0) {
 			kprintf("Could not read programm header!\n");
 			continue;
 		}
@@ -351,8 +349,8 @@ static int load_task(load_args_t* largs)
 				heap = prog_header.virt_addr + prog_header.mem_size;
 
 			// load program
-			file->offset = prog_header.offset;
-			read_fs(file, (uint8_t*)prog_header.virt_addr, prog_header.file_size);
+			file.offset = prog_header.offset;
+			read_fs(&file, (uint8_t*)prog_header.virt_addr, prog_header.file_size);
 
 			flags = VMA_CACHEABLE;
 			if (prog_header.flags & PF_R)
