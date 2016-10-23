@@ -1,0 +1,4 @@
+/home/jan/eduOS/arch/x86/include/asm/timer.h:12:27: fatal error: eduos/stddef.h: Datei oder Verzeichnis nicht gefunden
+  #include <eduos/stddef.h>
+                           ^
+compilation terminated.
