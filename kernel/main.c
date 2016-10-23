@@ -29,8 +29,9 @@
 #include <eduos/stdio.h>
 #include <eduos/string.h>
 #include <eduos/processor.h>
+#include <asm/timer.h>
 
-/* 
+/*
  * Note that linker symbols are not variables, they have no memory allocated for
  * maintaining a value, rather their address is their value.
  */
@@ -58,8 +59,13 @@ int main(void)
 	kprintf("This is %s Build %u, %u\n", PACKAGE_STRING, &__BUILD_DATE, &__BUILD_TIME);
 	kprintf("Kernel starts at %p and ends at %p\n", &kernel_start, &kernel_end);
 	kprintf("\nHello World!\n");
-	
-	while(1) { 
+	for (int i = 0; i < 60; i++) {
+		sleep(1);
+		kprintf("Sleeping for %d seconds\n", i+1);
+	}
+	kprintf("Done sleeping!\n");
+	kprintf("System going to HALT!\n");
+	while(1) {
 		HALT;
 	}
 

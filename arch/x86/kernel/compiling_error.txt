@@ -1,0 +1,4 @@
+/home/jan/eduOS/arch/x86/kernel/timer.c:1:26: fatal error: eduos/string.h: Datei oder Verzeichnis nicht gefunden
+ #include <eduos/string.h>
+                          ^
+compilation terminated.
