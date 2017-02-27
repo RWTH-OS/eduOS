@@ -91,7 +91,7 @@ typedef struct {
 #ifdef CONFIG_X86_64
 	/// In 64 bit mode, the "highest" 32 bits of the handler function's base address
 	uint32_t base_hi64;
-	/// resvered entries
+	/// reserved entries
 	uint32_t reserved;
 #endif
 } __attribute__ ((packed)) idt_entry_t;
